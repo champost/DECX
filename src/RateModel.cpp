@@ -138,7 +138,8 @@ void RateModel::setup_dists(vector<vector<int> > indists, bool include){
 	/*
 	 print out a visual representation of the matrix
 	 */
-	if (VERBOSE){
+//	if (VERBOSE){
+	if (true){
 		cout << "dists" <<endl;
 		for (unsigned int j=0; j< dists.size(); j++){
 			cout << j << " ";
@@ -147,7 +148,10 @@ void RateModel::setup_dists(vector<vector<int> > indists, bool include){
 			}
 			cout << endl;
 		}
+		cout << endl;
 	}
+	else
+		cout << "Found " << dists.size() - 1 << " compatible distributions." << endl;
 }
 
 
@@ -306,7 +310,7 @@ void RateModel::setup_Q(){
 		}
 	}
 	if(VERBOSE){
-		cout << "Q" <<endl;
+	cout << "Q" <<endl;
 		for (unsigned int i=0;i<Q.size();i++){
 			for (unsigned int j=0;j<Q[i].size();j++){
 				for (unsigned int k=0;k<Q[i][j].size();k++){
@@ -405,7 +409,7 @@ vector<vector<double > > RateModel::setup_fortran_P(int period, double t, bool s
 	}
 
 	if(VERBOSE){
-		cout << "p " << period << " "<< t << endl;
+	cout << "p " << period << " "<< t << endl;
 		for (unsigned int i=0;i<p.size();i++){
 			for (unsigned int j=0;j<p[i].size();j++){
 				cout << p[i][j] << " ";

@@ -71,11 +71,13 @@ public:
 	BioGeoTree(Tree * tr, vector<double> ps);
 	void set_store_p_matrices(bool);
 	void set_use_stored_matrices(bool);
+	void print_segs();
 	void set_default_model(RateModel * mod);
 	void update_default_model(RateModel * mod);
 	Superdouble eval_likelihood(bool marg);
 	void set_excluded_dist(vector<int> ind,Node * node);
 	void set_tip_conditionals(map<string,vector<int> > distrib_data);
+	void remove_big_tips(map<string, vector<int> > distrib_data, int numareas);
 	vector<Superdouble> conditionals(Node & node, bool marg, bool sparse);
 	//void ancdist_conditional_lh(bpp::Node & node, bool marg);
 	void ancdist_conditional_lh(Node & node, bool marg);

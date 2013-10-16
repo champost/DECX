@@ -47,14 +47,14 @@ void TrimSpaces( string& str)  {
 
 	/*
 		    // Code for  Trim Leading Spaces only
-		    size_t startpos = str.find_first_not_of(Ó \tÓ); // Find the first character position after excluding leading blank spaces
+		    size_t startpos = str.find_first_not_of(ï¿½ \tï¿½); // Find the first character position after excluding leading blank spaces
 		    if( string::npos != startpos )
 		        str = str.substr( startpos );
 	 */
 
 	/*
 		    // Code for Trim trailing Spaces only
-		    size_t endpos = str.find_last_not_of(Ó \tÓ); // Find the first character position from reverse af
+		    size_t endpos = str.find_last_not_of(ï¿½ \tï¿½); // Find the first character position from reverse af
 		    if( string::npos != endpos )
 		        str = str.substr( 0, endpos+1 );
 	 */
@@ -214,6 +214,91 @@ map< int, vector<int> > iterate_all_bv2(int m){
 		rangemap[i+1] =  idx2bitvect(it.at(i),m);
 	}
 	return rangemap;
+}
+
+vector< vector<int> >  iterate_all_from_num_max_areas(int m, int n){
+	vector< vector<int> > results;
+	for (int areaSize = 1; areaSize <= n; areaSize++){
+		vector< vector<int> > it = iterate(m, areaSize);
+		for (unsigned int i = 0; i < it.size(); i++)
+			results.push_back(it[i]);
+	}
+	return results;
+}
+
+map< int, vector<int> > iterate_all_bv_from_num_max_areas_with_adjacency(int m, int n, vector <vector<bool> > adjMat, bool defaultAdjMat, map<int,string> areanamemaprev){
+	vector< vector<int> > it = iterate_all_from_num_max_areas(m,n);
+	map<int,vector<int> > rangemap;
+	if (defaultAdjMat) {
+		for (unsigned int i = 0; i < it.size(); i++)
+			rangemap[i] =  idx2bitvect(it.at(i),m);
+	}
+	else {
+		unsigned int rangemapIndex = 0;
+		for (unsigned int i = 0; i < it.size(); i++) {
+
+#ifdef CBR
+			cout << i << " ";
+			for (unsigned int x=0;x<it.at(i).size();x++){
+				cout << areanamemaprev[it.at(i)[x]];
+				if (x < (it.at(i).size() - 1))
+					cout << "_";
+			}
+			if (adjacency_compliant(it.at(i), adjMat))
+				cout << " Pass";
+			else
+				cout << " Fail";
+			cout << endl;
+#endif
+
+			if (adjacency_compliant(it.at(i), adjMat)) {
+				rangemap[rangemapIndex] = idx2bitvect(it.at(i),m);
+				++rangemapIndex;
+			}
+		}
+	}
+	return rangemap;
+}
+
+bool adjacency_compliant(vector <int> indices, vector <vector<bool> > adjMat) {
+	if (indices.size() == 1)
+		return true;
+
+	if (indices.size() == 2)
+		return adjMat[indices[0]][indices[1]];
+	else if (indices.size() > 2) {
+		int minimalAdjacency = indices.size() - 1, numAdjLinks = 0;
+		for (unsigned int i = 0; i < (indices.size() - 1); i++) {
+			for (unsigned int j = i+1; j < indices.size(); j++) {
+				if (adjMat[indices[i]][indices[j]])
+					++numAdjLinks;
+			}
+		}
+
+		if (numAdjLinks < minimalAdjacency)
+			return false;
+		else {
+			bool foundDisjointArea = false;
+			for (unsigned int i = 0; i < indices.size(); i++) {
+				int adjacencyCount = 0;
+				for (unsigned int j = 0; j < indices.size(); j++) {
+					if ((j != i) && (adjMat[indices[i]][indices[j]]))
+						++adjacencyCount;
+				}
+				if (adjacencyCount == 0) {
+					foundDisjointArea = true;
+					break;
+				}
+			}
+
+			if (foundDisjointArea)
+				return false;
+			else
+				return true;
+		}
+	}
+
+	return false;
 }
 
 

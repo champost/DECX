@@ -18,7 +18,7 @@
 #include "superdouble.h"
 using namespace std;
 
-#ifdef BIGTREE
+#ifdef XYZ
 #include "gmpfrxx/gmpfrxx.h"
 #endif
 
@@ -29,7 +29,7 @@ using namespace std;
   be a null vector or matrix. otherwise, c++ numerics library should
   be used for speed.
  */
-#ifdef BIGTREE
+#ifdef XYZ
 double calculate_vector_mpfr_class_double_sum(vector<mpfr_class> & in);
 #endif
 double calculate_vector_double_sum(vector<double> & in);
@@ -69,6 +69,22 @@ void print_vector_double(vector<double> & in);
   would be designated in the config file
  */
 vector<vector<int> > generate_dists_from_num_max_areas(int totalnum,int numareas);
+
+/*
+  used for generating all the distributions with maximium number of areas involved and adjacency matrix (specified/default)
+  would be designated in the config file
+ */
+//vector<vector<int> > generate_dists_from_num_max_areas_with_adjacency(int totalnumareas, int numareas, vector <vector<bool> > adjMat, bool defaultAdjMat, map<string,int> areanamemap);
+vector<vector<int> > generate_dists_from_num_max_areas_with_adjacency(int totalnumareas, int numareas, vector <vector<bool> > adjMat, bool defaultAdjMat, map<int,string> areanamemaprev);
+/*
+  concatenates the present taxon distribution to the list of possible distributions
+ */
+vector<vector<int> > include_tip_dists(map<string,vector<int> > distrib_data, vector<vector<int> > includedists, int numareas, bool defaultAdjMat);
+
+/*
+  used for processing custom adjacency matrix config file designated in the main config file
+ */
+vector <vector<bool> > processAdjacencyMatrixConfigFile(string filename, int totalNumAreas, vector<string> areaNames);
 
 /*
   used for processing custom rate matrix config files designated in the main config file

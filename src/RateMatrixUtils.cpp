@@ -21,12 +21,12 @@
 #include <algorithm>
 using namespace std;
 
-#ifdef BIGTREE
+#ifdef XYZ
 #include "gmpfrxx/gmpfrxx.h"
 #endif
 
 
-#ifdef BIGTREE
+#ifdef XYZ
 double calculate_vector_mpfr_class_double_sum(vector<mpfr_class> & in){
 	double sum = 0;
 	for (unsigned int i=0;i<in.size();i++){
@@ -118,7 +118,7 @@ int get_vector_int_index_from_multi_vector_int(vector<int> * in, vector<vector<i
 	}
 	cout << "the distribution " << dstring << " is not included in the possible distributions" << endl;
 	exit(0);
-	return NULL;
+	return 0;
 }
 
 vector<vector<int> > generate_dists_from_num_max_areas(int totalnumareas, int numareas){
@@ -139,6 +139,68 @@ vector<vector<int> > generate_dists_from_num_max_areas(int totalnumareas, int nu
 			dists.push_back(a[f]);
 	}
 	return dists;
+}
+
+
+vector<vector<int> > generate_dists_from_num_max_areas_with_adjacency(int totalnumareas, int numareas, vector <vector<bool> > adjMat, bool defaultAdjMat, map<int,string> areanamemaprev){
+	vector<vector<int> > dists;
+	map< int, vector<int> > a = iterate_all_bv_from_num_max_areas_with_adjacency(totalnumareas, numareas, adjMat, defaultAdjMat, areanamemaprev);
+	//global extinction
+	vector<int> empt;
+	for (unsigned int i=0;i<a[0].size();i++){
+		empt.push_back(0);
+	}
+	dists.push_back(empt);
+	map<int, vector<int> >::iterator pos;
+	for (pos = a.begin(); pos != a.end(); ++pos){
+		int f = pos->first;
+		dists.push_back(a[f]);
+	}
+	return dists;
+}
+
+vector<vector<int> > include_tip_dists(map<string,vector<int> > distrib_data, vector<vector<int> > includedists, int numareas, bool defaultAdjMat){
+	map<string, vector<int> >::iterator pos;
+	bool bigTipMsg = false, adjacentTipMsg = false;
+
+	if (!defaultAdjMat) {
+		for (pos = distrib_data.begin(); pos != distrib_data.end(); ++pos) {
+			string taxon = pos->first;
+			int taxon_numareas = accumulate(distrib_data[taxon].begin(),distrib_data[taxon].end(),0);
+			if ((taxon_numareas > 1) && (taxon_numareas <= numareas)) {
+				bool tipIncluded = false;
+				for (unsigned int j = 0; j < includedists.size(); j++) {
+					if (distrib_data[taxon] == includedists[j]) {
+						tipIncluded = true;
+						break;
+					}
+				}
+				if (!adjacentTipMsg && !tipIncluded) {
+					cout << "accounting for those tips whose range conflicts with the specified adjacency matrix..." << endl;
+					adjacentTipMsg = true;
+				}
+				if (!tipIncluded) {
+					includedists.push_back(distrib_data[taxon]);
+					cout << "Example of missing taxon distribution cf. " << taxon << endl;
+				}
+			}
+		}
+	}
+
+	for (pos = distrib_data.begin(); pos != distrib_data.end(); ++pos){
+		string taxon = pos->first;
+		int taxon_numareas = accumulate(distrib_data[taxon].begin(),distrib_data[taxon].end(),0);
+		if (taxon_numareas > numareas) {
+			if (!bigTipMsg)
+				cout << "accounting for those tips whose range size is bigger than maxareas(= " << numareas << ")..." << endl;
+			includedists.push_back(distrib_data[taxon]);
+			cout << taxon << " : " << taxon_numareas << endl;
+			bigTipMsg = true;
+		}
+	}
+	if (bigTipMsg)
+		cout << endl;
+	return includedists;
 }
 
 /*
@@ -241,6 +303,48 @@ void convert_matrix_to_single_row_for_fortran(vector<vector<double> > & inmatrix
 			count += 1;
 		}
 	}
+}
+
+vector <vector<bool> > processAdjacencyMatrixConfigFile(string filename, int totalNumAreas, vector<string> areaNames) {
+	vector <vector<bool> > adjMat;
+	ifstream ifs(filename.c_str());
+	string line;
+	vector <string> tokens;
+	string del(" ,\t");
+	int lineCount = 0;
+	cout << "\nreading adjacency matrix..." << endl;
+	for (unsigned int j = 0; j < areaNames.size(); j++)
+		cout << "\t" << areaNames[j];
+	cout << endl << endl;
+	while(getline(ifs,line)) {
+		vector <bool> adjMatRow(totalNumAreas,true);
+		tokens.clear();
+		Tokenize(line, tokens, del);
+
+		if (tokens.size() != totalNumAreas) {
+			cout << "Line " << lineCount + 1 << " of the Adjacency matrix file : " << filename
+				 << "\n should contain a total of " << totalNumAreas << " values." << endl;
+			exit(-1);
+		}
+		else {
+			cout << areaNames[lineCount] << "\t";
+			for (unsigned int j = 0; j < tokens.size(); j++) {
+				TrimSpaces(tokens[j]);
+				if (atoi(tokens[j].c_str()) == 0)
+					adjMatRow[j] = false;
+				cout << tokens[j] << "\t";
+			}
+			cout << endl;
+		}
+		adjMat.push_back(adjMatRow);
+		++lineCount;
+		if (lineCount == totalNumAreas)
+			break;
+	}
+	cout << endl;
+	ifs.close();
+
+	return adjMat;
 }
 
 vector<vector<vector<double> > > processRateMatrixConfigFile(string filename, int numareas, int nperiods){

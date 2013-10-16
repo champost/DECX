@@ -15,7 +15,7 @@ using namespace std;
 
 #include "vector_node_object.h"
 #include "superdouble.h"
-#ifdef BIGTREE
+#ifdef XYZ
 #include "gmpfrxx/gmpfrxx.h"
 #endif
 
@@ -40,7 +40,7 @@ class BranchSegment{
 		RateModel * getModel();
 		vector<int> getFossilAreas();
 		void setFossilArea(int area);
-#ifdef BIGTREE
+#ifdef XYZ
 		VectorNodeObject<mpfr_class> * distconds;
 		VectorNodeObject<mpfr_class> alphas;
 		VectorNodeObject<mpfr_class> * ancdistconds;//for ancestral state reconstructions

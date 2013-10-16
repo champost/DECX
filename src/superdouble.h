@@ -21,6 +21,8 @@
  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
  more development by Stephen A. Smith
+
+ more development by Champak Beeravolu Reddy (2013)
  */
 
 #ifndef SUPERDOUBLE_H
@@ -39,22 +41,22 @@ private:
 	double upperlimit;
 	double lowerlimit;
 	void adjustDecimal();
-	friend ostream& operator<<(ostream& os, const Superdouble& x);
+	friend ostream& operator << (ostream& os, const Superdouble& x);
 	
 public:
 	Superdouble(long double mantissa=1.0, int exponent=0);
 	~Superdouble();
-	Superdouble operator* ( Superdouble x);
-	Superdouble operator* ( double x);
-	Superdouble operator/ ( Superdouble x);
-	Superdouble operator+ ( Superdouble x);
-	Superdouble operator- ( Superdouble x);
-	void operator++ ();
+	Superdouble operator * ( Superdouble x);
+	Superdouble operator * ( double x);
+	Superdouble operator / ( Superdouble x);
+	Superdouble operator + ( Superdouble x);
+	Superdouble operator -  ( Superdouble x);
+	void operator ++ ();
 	void operator -- ();
-	void operator*= (const Superdouble &x);
-	void operator/= (const Superdouble &x);
-	void operator+= (const Superdouble &x);
-	void operator-= (const Superdouble &x);
+	void operator *= (const Superdouble &x);
+	void operator /= (const Superdouble &x);
+	void operator += (const Superdouble &x);
+	void operator -= (const Superdouble &x);
 	bool operator != (const Superdouble &x)const ;
 	bool operator == (const Superdouble &x)const ;
 	bool operator < (const Superdouble &x)const ;
