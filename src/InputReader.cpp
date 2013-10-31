@@ -68,9 +68,12 @@ map<string,vector<int> > InputReader::readStandardInputData(string filename){
 			cout << "Reading species: " << tokens[0] << " ";
 			vector<int> speciesdata(nareas,0);
 			for(int i=0;i<nareas;i++){
-//				char spot = tokens[1][i];
-				//		CBR (23.11.2012), in case the specified areas are tab/white spaced
-					char spot = tokens[1 + i][0];
+				char spot;
+				if (tokens.size() == nareas + 1)
+					//	CBR (23.11.2012), in case the specified areas are tab/white spaced
+					spot = tokens[1 + i][0];
+				else
+					spot = tokens[1][i];
 				if (spot == '1')
 					speciesdata[i] = 1;
 				cout << spot - '0';

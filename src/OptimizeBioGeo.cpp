@@ -17,8 +17,8 @@ using namespace std;
 #include <gsl/gsl_multimin.h>
 #include <gsl/gsl_vector.h>
 
-OptimizeBioGeo::OptimizeBioGeo(BioGeoTree * intree,RateModel * inrm, bool marg):
-	tree(intree), rm(inrm), maxiterations(100),stoppingprecision(0.0001),marginal(marg){}
+OptimizeBioGeo::OptimizeBioGeo(BioGeoTree * intree,RateModel * inrm, bool marg, int maxiter, double stopprec):
+	tree(intree), rm(inrm), maxiterations(maxiter),stoppingprecision(stopprec),marginal(marg){}
 
 double OptimizeBioGeo::GetLikelihoodWithOptimizedDispersalExtinction(const gsl_vector * variables)
 {
@@ -104,8 +104,12 @@ vector<double> OptimizeBioGeo::optimize_global_dispersal_extinction(){
 		//printf ("f() = %7.3f size = %.3f\n", s->fval, size);
 	}
 	while (status == GSL_CONTINUE && iter < maxiterations);
-	if (iter == maxiterations)
-		cout << "Attained the maximum number of iterations: " << maxiterations << endl;
+	if (iter == maxiterations) {
+		cout << "\nAttained the maximum number of iterations: " << maxiterations << endl
+			 << "Please rerun Lagrange having increased the maximum numeber of iterations"
+				"\nor reduce the \"stoppingprecision\" (currently at " << stoppingprecision << ") of the optimisation step." << endl;
+		exit(-1);
+	}
 	vector<double> results;
 	results.push_back(gsl_vector_get(s->x,0));
 	results.push_back(gsl_vector_get(s->x,1));

@@ -150,8 +150,6 @@ void RateModel::setup_dists(vector<vector<int> > indists, bool include){
 		}
 		cout << endl;
 	}
-	else
-		cout << "Found " << dists.size() - 1 << " compatible distributions." << endl;
 }
 
 

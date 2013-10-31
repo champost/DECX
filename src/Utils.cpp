@@ -14,6 +14,8 @@ using namespace std;
 
 #include "Utils.h"
 
+//#define CBR
+
 void Tokenize(const string& str, vector<string>& tokens,
                       const string& delimiters){
     // Skip delimiters at beginning.
@@ -226,37 +228,63 @@ vector< vector<int> >  iterate_all_from_num_max_areas(int m, int n){
 	return results;
 }
 
-map< int, vector<int> > iterate_all_bv_from_num_max_areas_with_adjacency(int m, int n, vector <vector<bool> > adjMat, bool defaultAdjMat, map<int,string> areanamemaprev){
+vector< vector<int> > generate_dists_from_num_max_areas_with_adjacency(int m, int n, int nperiods, vector<vector<vector<bool> > > adjMat, bool defAdj, vector<vector<vector<int> > > &exdists_per_period, map<int,string> areanamemaprev)
+{
 	vector< vector<int> > it = iterate_all_from_num_max_areas(m,n);
-	map<int,vector<int> > rangemap;
-	if (defaultAdjMat) {
-		for (unsigned int i = 0; i < it.size(); i++)
-			rangemap[i] =  idx2bitvect(it.at(i),m);
-	}
-	else {
-		unsigned int rangemapIndex = 0;
-		for (unsigned int i = 0; i < it.size(); i++) {
+	//global extinction
+	vector<int> empt(m,0);
+
+	vector< vector<int> > rangemap;
+	rangemap.push_back(empt);
+	for (unsigned int i = 0; i < it.size(); i++)
+		rangemap.push_back(idx2bitvect(it.at(i),m));
+
+	if (!defAdj) {
+		vector<vector<bool> > defAdjMat(m, vector<bool> (m,true));
+		for (unsigned int prd = 0; prd < nperiods; prd++) {
 
 #ifdef CBR
-			cout << i << " ";
-			for (unsigned int x=0;x<it.at(i).size();x++){
-				cout << areanamemaprev[it.at(i)[x]];
-				if (x < (it.at(i).size() - 1))
-					cout << "_";
-			}
-			if (adjacency_compliant(it.at(i), adjMat))
-				cout << " Pass";
-			else
-				cout << " Fail";
-			cout << endl;
+			cout << "\nPeriod : " << prd + 1 << endl;
 #endif
 
-			if (adjacency_compliant(it.at(i), adjMat)) {
-				rangemap[rangemapIndex] = idx2bitvect(it.at(i),m);
-				++rangemapIndex;
+			if (adjMat[prd] == defAdjMat)
+				exdists_per_period.push_back(vector<vector<int> > ());
+			else {
+				vector<vector<int> > period_exdists;
+				for (unsigned int i = 0; i < it.size(); i++) {
+
+#ifdef CBR
+					if (adjacency_compliant(it.at(i), adjMat[prd])) {
+						cout << i << " ";
+//						cout << idx2bitvect(it.at(i),m);
+						for (unsigned int x=0;x<it.at(i).size();x++){
+							cout << areanamemaprev[it.at(i)[x]];
+							if (x < (it.at(i).size() - 1))
+								cout << "_";
+						}
+						cout << endl;
+					}
+
+//					for (unsigned int x=0;x<it.at(i).size();x++){
+//						cout << areanamemaprev[it.at(i)[x]];
+//						if (x < (it.at(i).size() - 1))
+//							cout << "_";
+//					}
+//					if (adjacency_compliant(it.at(i), adjMat[prd]))
+//						cout << " Pass";
+//					else
+//						cout << " Fail";
+//					cout << endl;
+#endif
+
+					if (!adjacency_compliant(it.at(i), adjMat[prd]))
+						period_exdists.push_back(idx2bitvect(it.at(i),m));
+				}
+				exdists_per_period.push_back(period_exdists);
 			}
 		}
 	}
+
 	return rangemap;
 }
 

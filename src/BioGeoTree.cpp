@@ -190,25 +190,65 @@ void BioGeoTree::set_tip_conditionals(map<string,vector<int> > distrib_data){
 	}
 }
 
-
 void BioGeoTree::set_excluded_dist(vector<int> ind,Node * node){
 	node->getExclDistVector()->push_back(ind);
 }
 
-void BioGeoTree::remove_big_tips(map<string, vector<int> > distrib_data, int numareas) {
-	map<string, vector<int> >::iterator pos;
-	int numofnodes = tree->getInternalNodeCount();
+void BioGeoTree::set_node_constraints(vector<vector<vector<int> > > exdists_per_period, map<int,string> areanamemaprev)
+{
+	vector<double> cumulPeriod(periods.size(),0.0);
+	partial_sum(periods.begin(),periods.end(),cumulPeriod.begin());
+	for (int nodeNum = 0; nodeNum < tree->getNodeCount(); nodeNum++) {
+		Node * currNode = tree->getNode(nodeNum);
+		for (unsigned int ts = 0; ts < cumulPeriod.size() && currNode->isInternal(); ts++) {
+			if (currNode->getHeight() < cumulPeriod[ts]) {
 
-	for (pos = distrib_data.begin(); pos != distrib_data.end(); ++pos) {
-		string taxon = pos->first;
-		int taxon_numareas = accumulate(distrib_data[taxon].begin(),distrib_data[taxon].end(),0);
-		if (taxon_numareas > numareas) {
-			for (int i = 0; i < numofnodes; i++)
-				set_excluded_dist(distrib_data[taxon], tree->getInternalNode(i));
+#ifdef CBR
+				if (currNode->isRoot())
+					cout << "\nThese following dists will be unavailable for the ROOT (period : " << ts << ")" << endl;
+				else
+					cout << "\nThese following dists will be unavailable for the internal node : " << nodeNum << " (period : " << ts << ")" << endl;
+#endif
+
+				for (unsigned int dists = 0; dists < exdists_per_period[ts].size(); dists++) {
+					set_excluded_dist(exdists_per_period[ts][dists],currNode);
+
+#ifdef CBR
+					cout << dists << " ";
+					int dist_size = accumulate(exdists_per_period[ts][dists].begin(),exdists_per_period[ts][dists].end(),0);
+					for (unsigned int x=0;x<exdists_per_period[ts][dists].size();x++){
+						if (exdists_per_period[ts][dists][x]) {
+							cout << areanamemaprev[x];
+							if (dist_size > 1)
+								cout << "_";
+							--dist_size;
+						}
+
+					}
+						cout << endl;
+#endif
+
+				}
+
+				break;
+			}
 		}
 	}
 }
 
+//void BioGeoTree::remove_big_tips(map<string, vector<int> > distrib_data, int numareas) {
+//	map<string, vector<int> >::iterator pos;
+//	int numofnodes = tree->getInternalNodeCount();
+//
+//	for (pos = distrib_data.begin(); pos != distrib_data.end(); ++pos) {
+//		string taxon = pos->first;
+//		int taxon_numareas = accumulate(distrib_data[taxon].begin(),distrib_data[taxon].end(),0);
+//		if (taxon_numareas > numareas) {
+//			for (int i = 0; i < numofnodes; i++)
+//				set_excluded_dist(distrib_data[taxon], tree->getInternalNode(i));
+//		}
+//	}
+//}
 
 Superdouble BioGeoTree::eval_likelihood(bool marginal){
 	if( rootratemodel->sparse == true){
@@ -222,6 +262,19 @@ Superdouble BioGeoTree::eval_likelihood(bool marginal){
 	}
 //	return (-(log(calculate_vector_double_sum(*(vector<double>*) tree->getRoot()->getDoubleVector(dc)))));
 	return -(calculate_vector_Superdouble_sum(*(vector<Superdouble>*) tree->getRoot()->getDoubleVector(dc))).getLn();
+
+//	vector<vector<int> > * dists = rootratemodel->getDists();
+//	vector<Superdouble> rootDistLiks;
+//	for (unsigned int i=0;i<dists->size();i++){
+//		if(accumulate(dists->at(i).begin(),dists->at(i).end(),0) > 0){
+//			Superdouble lh = 0.0;
+//			vector<vector<int> >* exdist = tree->getRoot()->getExclDistVector();
+//			int cou = count(exdist->begin(),exdist->end(),dists->at(i));
+//			if(cou == 0)
+//				rootDistLiks.push_back(tree->getRoot()->getDoubleVector(dc)->at(i));
+//		}
+//	}
+//	return -(calculate_vector_Superdouble_sum(rootDistLiks).getLn());
 }
 
 
@@ -229,10 +282,6 @@ vector<Superdouble> BioGeoTree::conditionals(Node & node, bool marginal,bool spa
 	vector<Superdouble> distconds;
 	vector<BranchSegment> * tsegs = node.getSegVector();
 
-#ifdef CBR
-//	if (node.getNumber() == 142)
-//		cout << "Breakpointed here!" << endl;
-#endif
 	distconds = *tsegs->at(0).distconds;
 	for(unsigned int i=0;i<tsegs->size();i++){
 		for(unsigned int j=0;j<distconds.size();j++){
@@ -487,9 +536,6 @@ vector<BranchSegment> * tsegs = node.getSegVector();
 	}else{
 		for(unsigned int i=0;i<distconds.size();i++){
 			node.getDoubleVector(dc)->at(i) = distconds.at(i);
-#ifdef CBR
-//			exit(-1);
-#endif
 			//cout << distconds.at(i) << endl;
 		}
 	}

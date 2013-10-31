@@ -18,6 +18,7 @@
 #include <float.h>
 #include <iomanip>
 #include <time.h>
+#include <numeric>
 
 using namespace std;
 
@@ -39,6 +40,8 @@ using namespace std;
 #include "gmpfrxx/gmpfrxx.h"
 #endif
 
+//#define CBR
+
 int main(int argc, char* argv[]){
 	if(argc != 2){
 		cout << "you need more arguments." << endl;
@@ -58,7 +61,8 @@ int main(int argc, char* argv[]){
 		map<string,vector<int> > fixnodewithmrca;
 		vector<vector<int> > excludedists;
 		vector<vector<int> > includedists;
-		vector <vector<bool> > adjMat;
+		vector<vector<vector<int> > > exdists_per_period;
+		vector<vector<vector<bool> > > adjMat;
 		vector<string> areanames;
 		vector<string> isolatedAreas;
 		map<string,int> areanamemap;
@@ -85,6 +89,9 @@ int main(int argc, char* argv[]){
 		bool _stop_on_global_likelihood_ = false;
 		bool LHOODS = false;
 		bool NodeLHOODS = false;
+
+		int maxiterations = 1000;
+		double stoppingprecision = 0.0001;
 
 		double dispersal = 0.1;
 		double extinction = 0.1;
@@ -320,6 +327,12 @@ int main(int argc, char* argv[]){
 						extinction = atof(tokens[1].c_str());
 						cout << "setting extinction: " << extinction << endl;
 						estimate = false;
+					}else if(!strcmp(tokens[0].c_str(), "maxiterations")){
+						maxiterations = atoi(tokens[1].c_str());
+						cout << "setting maxiterations: " << maxiterations << endl;
+					}else if(!strcmp(tokens[0].c_str(), "stoppingprecision")){
+						stoppingprecision = atof(tokens[1].c_str());
+						cout << "setting stoppingprecision: " << stoppingprecision << endl;
 					}
 				}
 			}
@@ -403,25 +416,18 @@ int main(int argc, char* argv[]){
 		* if there is a adjacencymatrixfile then it will be processed
 		*/
 		if (adjacencyfile.size() > 0) {
-			adjMat = processAdjacencyMatrixConfigFile(adjacencyfile, ir.nareas, areanames);
 			default_adjacency_matrix = false;
+			adjMat = processAdjacencyMatrixConfigFile(adjacencyfile, ir.nareas, areanames,periods.size());
 		}
 		else {
-			vector<bool> cols(ir.nareas, true);
-			vector <vector<bool> > rows(ir.nareas, cols);
-			adjMat = rows;
-			cout << "\nUsing the default adjacency matrix..." << endl;
+			cout << "\nUsing the default adjacency matrix for all time slices..." << endl;
 			for (unsigned int j = 0; j < areanames.size(); j++)
 				cout << "\t" << areanames[j];
 			cout << endl << endl;
-			for (unsigned int i = 0; i < adjMat.size(); i++) {
+			for (unsigned int i = 0; i < areanames.size(); i++) {
 				cout << areanames[i] << "\t";
-				for (unsigned int j = 0; j < adjMat[i].size(); j++) {
-					if (adjMat[i][j])
-						cout << 1 << "\t";
-					else
-						cout << 0 << "\t";
-				}
+				for (unsigned int j = 0; j <= i; j++)
+					cout << 1 << "\t";
 				cout << endl;
 			}
 			cout << endl;
@@ -435,9 +441,8 @@ int main(int argc, char* argv[]){
 			}else{
 				if(maxareas >= 2)
 //					includedists = generate_dists_from_num_max_areas(ir.nareas,maxareas);
-					includedists = generate_dists_from_num_max_areas_with_adjacency(ir.nareas, maxareas, adjMat, default_adjacency_matrix, areanamemaprev);
-//#define CBR
-				includedists = include_tip_dists(data, includedists, maxareas, default_adjacency_matrix);
+					includedists = generate_dists_from_num_max_areas_with_adjacency(ir.nareas, maxareas, periods.size(), adjMat, default_adjacency_matrix, exdists_per_period, areanamemaprev);
+				include_tip_dists(data, includedists, maxareas, default_adjacency_matrix, periods.size(), exdists_per_period);
 				rm.setup_dists(includedists,true);
 			}
 		}else{
@@ -464,6 +469,11 @@ int main(int argc, char* argv[]){
 		 */
 		for(unsigned int i =0;i<intrees.size();i++){
 			BioGeoTree bgt(intrees[i],periods);
+			/*
+			 * set adjacency matrix constraints
+			 */
+			if (!default_adjacency_matrix)
+				bgt.set_node_constraints(exdists_per_period, areanamemaprev);
 			/*
 			 * record the mrcas
 			 */
@@ -500,16 +510,13 @@ int main(int argc, char* argv[]){
 				cout << "fixing " << (*fnit).first << " = ";print_vector_int((*fnit).second);
 			}
 
-			cout << "removing the big tip dists (i.e. bigger than maxareas) at each internal node..." << endl;
-			bgt.remove_big_tips(data, maxareas);
+//			cout << "removing the big tip dists (i.e. bigger than maxareas) at each internal node..." << endl;
+//			bgt.remove_big_tips(data, maxareas);
 			cout << "setting default model..." << endl;
 			bgt.set_default_model(&rm);
 			cout << "setting up tips..." << endl;
 			bgt.set_tip_conditionals(data);
 
-#ifdef CBR
-			bgt.print_segs();
-#endif
 			/*
 			 * setting up fossils
 			 */
@@ -549,7 +556,7 @@ int main(int argc, char* argv[]){
 			if (estimate == true){
 				if(estimate_dispersal_mask == false){
 					cout << "Optimizing (simplex) -ln likelihood." << endl;
-					OptimizeBioGeo opt(&bgt,&rm,marginal);
+					OptimizeBioGeo opt(&bgt,&rm,marginal,maxiterations,stoppingprecision);
 					vector<double> disext  = opt.optimize_global_dispersal_extinction();
 					cout << "dis: " << disext[0] << " ext: " << disext[1] << endl;
 					optDisp = disext[0];

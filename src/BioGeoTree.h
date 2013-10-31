@@ -60,14 +60,15 @@ private:
 	/*
 	 * benchmark variables
 	 */
-	clock_t cl1;
-	clock_t cl2;
-	clock_t c3;
-	clock_t c4;
-	clock_t c5;
-	clock_t c6;
+//	clock_t cl1;
+//	clock_t cl2;
+//	clock_t c3;
+//	clock_t c4;
+//	clock_t c5;
+//	clock_t c6;
 
 public:
+	BioGeoTree() {};
 	BioGeoTree(Tree * tr, vector<double> ps);
 	void set_store_p_matrices(bool);
 	void set_use_stored_matrices(bool);
@@ -77,7 +78,8 @@ public:
 	Superdouble eval_likelihood(bool marg);
 	void set_excluded_dist(vector<int> ind,Node * node);
 	void set_tip_conditionals(map<string,vector<int> > distrib_data);
-	void remove_big_tips(map<string, vector<int> > distrib_data, int numareas);
+	void set_node_constraints(vector<vector<vector<int> > > exdists_per_period, map<int,string> areanamemaprev);
+//	void remove_big_tips(map<string, vector<int> > distrib_data, int numareas);
 	vector<Superdouble> conditionals(Node & node, bool marg, bool sparse);
 	//void ancdist_conditional_lh(bpp::Node & node, bool marg);
 	void ancdist_conditional_lh(Node & node, bool marg);
@@ -99,8 +101,8 @@ public:
 	vector<Superdouble> calculate_ancstate_reverse(Node & node,bool marg);
 	~BioGeoTree();
 	//need to override these at some point
-	BioGeoTree(const BioGeoTree &L);             // copy constructor
-    BioGeoTree & operator=(const BioGeoTree &L);
+//	BioGeoTree(const BioGeoTree &L);             // copy constructor
+//    BioGeoTree & operator=(const BioGeoTree &L);
 
 /*
  * for calculating forward and reverse for expected values (stochastic mapping)

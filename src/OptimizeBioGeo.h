@@ -27,7 +27,7 @@ class OptimizeBioGeo{
 		static double GetLikelihoodWithOptimizedDispersalExtinction_gsl(const gsl_vector * variables, void *obj);
 
 	public:
-		OptimizeBioGeo(BioGeoTree * intree,RateModel * inrm, bool marg);
+		OptimizeBioGeo(BioGeoTree * intree,RateModel * inrm, bool marg, int maxiter, double stopprec);
 		vector<double> optimize_global_dispersal_extinction();
 
 
