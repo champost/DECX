@@ -29,6 +29,7 @@ vector< vector<int> >  iterate_all_from_num_max_areas(int m, int n);
   would be designated in the config file
  */
 vector< vector<int> > generate_dists_from_num_max_areas_with_adjacency(int m, int n, int nperiods, vector<vector<vector<bool> > > adjMat, bool defAdj, vector<vector<vector<int> > > &exdists_per_period, map<int,string> areanamemaprev);
-bool adjacency_compliant(vector <int> indices, vector <vector<bool> > adjMat);
+bool connected_dist(const vector <int> &indices, const vector <vector<bool> > &adjMat);
+bool connected_dist_BGL(const vector <int> &indices, const vector <vector<bool> > &adjMat);
 
 #endif /* UTILS_H_ */

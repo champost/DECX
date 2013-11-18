@@ -9,12 +9,20 @@
 #include <vector>
 #include <map>
 #include <string>
+//**************************************************************
+//	required only for connected_dist_BGL
+#include <boost/config.hpp>
+#include <algorithm>
+#include <utility>
+#include <boost/graph/adjacency_list.hpp>
+#include <boost/graph/connected_components.hpp>
+//**************************************************************
 
 using namespace std;
 
 #include "Utils.h"
 
-//#define CBR
+#define CBR
 
 void Tokenize(const string& str, vector<string>& tokens,
                       const string& delimiters){
@@ -254,8 +262,8 @@ vector< vector<int> > generate_dists_from_num_max_areas_with_adjacency(int m, in
 				for (unsigned int i = 0; i < it.size(); i++) {
 
 #ifdef CBR
-					if (adjacency_compliant(it.at(i), adjMat[prd])) {
-						cout << i << " ";
+					if (connected_dist_BGL(it.at(i), adjMat[prd])) {
+						cout << i + 1 << " ";
 //						cout << idx2bitvect(it.at(i),m);
 						for (unsigned int x=0;x<it.at(i).size();x++){
 							cout << areanamemaprev[it.at(i)[x]];
@@ -270,14 +278,14 @@ vector< vector<int> > generate_dists_from_num_max_areas_with_adjacency(int m, in
 //						if (x < (it.at(i).size() - 1))
 //							cout << "_";
 //					}
-//					if (adjacency_compliant(it.at(i), adjMat[prd]))
+//					if (connected_dist(it.at(i), adjMat[prd]))
 //						cout << " Pass";
 //					else
 //						cout << " Fail";
 //					cout << endl;
 #endif
 
-					if (!adjacency_compliant(it.at(i), adjMat[prd]))
+					else
 						period_exdists.push_back(idx2bitvect(it.at(i),m));
 				}
 				exdists_per_period.push_back(period_exdists);
@@ -288,16 +296,20 @@ vector< vector<int> > generate_dists_from_num_max_areas_with_adjacency(int m, in
 	return rangemap;
 }
 
-bool adjacency_compliant(vector <int> indices, vector <vector<bool> > adjMat) {
-	if (indices.size() == 1)
+bool connected_dist(const vector <int> &indices, const vector <vector<bool> > &adjMat)
+{
+	unsigned int dist_size = indices.size();
+
+	if (dist_size == 1)
 		return true;
 
-	if (indices.size() == 2)
+	if (dist_size == 2)
 		return adjMat[indices[0]][indices[1]];
-	else if (indices.size() > 2) {
-		int minimalAdjacency = indices.size() - 1, numAdjLinks = 0;
-		for (unsigned int i = 0; i < (indices.size() - 1); i++) {
-			for (unsigned int j = i+1; j < indices.size(); j++) {
+
+	if (dist_size > 2) {
+		int minimalAdjacency = dist_size - 1, numAdjLinks = 0;
+		for (unsigned int i = 0; i < (dist_size - 1); i++) {
+			for (unsigned int j = i+1; j < dist_size; j++) {
 				if (adjMat[indices[i]][indices[j]])
 					++numAdjLinks;
 			}
@@ -307,9 +319,9 @@ bool adjacency_compliant(vector <int> indices, vector <vector<bool> > adjMat) {
 			return false;
 		else {
 			bool foundDisjointArea = false;
-			for (unsigned int i = 0; i < indices.size(); i++) {
+			for (unsigned int i = 0; i < dist_size; i++) {
 				int adjacencyCount = 0;
-				for (unsigned int j = 0; j < indices.size(); j++) {
+				for (unsigned int j = 0; j < dist_size; j++) {
 					if ((j != i) && (adjMat[indices[i]][indices[j]]))
 						++adjacencyCount;
 				}
@@ -320,6 +332,60 @@ bool adjacency_compliant(vector <int> indices, vector <vector<bool> > adjMat) {
 			}
 
 			if (foundDisjointArea)
+				return false;
+			else
+				return true;
+		}
+	}
+
+	return false;
+}
+
+
+bool connected_dist_BGL(const vector <int> &indices, const vector <vector<bool> > &adjMat)
+{
+	unsigned int dist_size = indices.size();
+
+	if (dist_size == 1)
+		return true;
+
+	if (dist_size == 2)
+		return adjMat[indices[0]][indices[1]];
+
+	if (dist_size == 3) {
+		int minimalAdjacency = dist_size - 1, numAdjLinks = 0;
+		if (adjMat[indices[0]][indices[1]])
+			++numAdjLinks;
+		if (adjMat[indices[0]][indices[2]])
+			++numAdjLinks;
+		if (adjMat[indices[1]][indices[2]])
+			++numAdjLinks;
+
+		if (numAdjLinks < 2)
+			return false;
+		else
+			return true;
+	}
+
+	if (dist_size > 3) {
+		using namespace boost;
+		{
+			typedef adjacency_list <vecS, vecS, undirectedS> Graph;
+
+			Graph G;
+			for (unsigned int i = 0; i < (dist_size - 1); i++)
+				for (unsigned int j = i+1; j < dist_size; j++)
+					if (adjMat[indices[i]][indices[j]])
+						add_edge(i, j, G);
+
+			//	in case of isolated areas
+			for (unsigned int i = 0; i < dist_size; i++)
+				add_edge(i, i, G);
+
+			vector<int> component(num_vertices(G));
+			int num = connected_components(G, &component[0]);
+
+			if (num > 1)
 				return false;
 			else
 				return true;
