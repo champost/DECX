@@ -261,8 +261,8 @@ vector< vector<int> > generate_dists_from_num_max_areas_with_adjacency(int m, in
 				vector<vector<int> > period_exdists;
 				for (unsigned int i = 0; i < it.size(); i++) {
 
-#ifdef CBR
 					if (connected_dist_BGL(it.at(i), adjMat[prd])) {
+#ifdef CBR
 						cout << i + 1 << " ";
 //						cout << idx2bitvect(it.at(i),m);
 						for (unsigned int x=0;x<it.at(i).size();x++){
@@ -271,20 +271,8 @@ vector< vector<int> > generate_dists_from_num_max_areas_with_adjacency(int m, in
 								cout << "_";
 						}
 						cout << endl;
-					}
-
-//					for (unsigned int x=0;x<it.at(i).size();x++){
-//						cout << areanamemaprev[it.at(i)[x]];
-//						if (x < (it.at(i).size() - 1))
-//							cout << "_";
-//					}
-//					if (connected_dist(it.at(i), adjMat[prd]))
-//						cout << " Pass";
-//					else
-//						cout << " Fail";
-//					cout << endl;
 #endif
-
+					}
 					else
 						period_exdists.push_back(idx2bitvect(it.at(i),m));
 				}
@@ -295,52 +283,6 @@ vector< vector<int> > generate_dists_from_num_max_areas_with_adjacency(int m, in
 
 	return rangemap;
 }
-
-bool connected_dist(const vector <int> &indices, const vector <vector<bool> > &adjMat)
-{
-	unsigned int dist_size = indices.size();
-
-	if (dist_size == 1)
-		return true;
-
-	if (dist_size == 2)
-		return adjMat[indices[0]][indices[1]];
-
-	if (dist_size > 2) {
-		int minimalAdjacency = dist_size - 1, numAdjLinks = 0;
-		for (unsigned int i = 0; i < (dist_size - 1); i++) {
-			for (unsigned int j = i+1; j < dist_size; j++) {
-				if (adjMat[indices[i]][indices[j]])
-					++numAdjLinks;
-			}
-		}
-
-		if (numAdjLinks < minimalAdjacency)
-			return false;
-		else {
-			bool foundDisjointArea = false;
-			for (unsigned int i = 0; i < dist_size; i++) {
-				int adjacencyCount = 0;
-				for (unsigned int j = 0; j < dist_size; j++) {
-					if ((j != i) && (adjMat[indices[i]][indices[j]]))
-						++adjacencyCount;
-				}
-				if (adjacencyCount == 0) {
-					foundDisjointArea = true;
-					break;
-				}
-			}
-
-			if (foundDisjointArea)
-				return false;
-			else
-				return true;
-		}
-	}
-
-	return false;
-}
-
 
 bool connected_dist_BGL(const vector <int> &indices, const vector <vector<bool> > &adjMat)
 {
