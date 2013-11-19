@@ -23,17 +23,17 @@ using namespace std;
 
 Node::Node():BL(0.0),height(0.0),number(0), name(""),
 		parent(NULL),children(vector<Node *> ()),assoc(map<string,NodeObject *>()),
-		assocDV(map<string,vector<Superdouble> >()),comment(""){
+		assocDV(map<string,vector<Superdouble> >()),comment(""),period(0){
 		}
 
 Node::Node(Node * inparent):BL(0.0),height(0.0),number(0), name(""),
 		parent(inparent),children(vector<Node *> ()),assoc(map<string,NodeObject *>()),
-		assocDV(map<string,vector<Superdouble> >()),comment(""){
+		assocDV(map<string,vector<Superdouble> >()),comment(""),period(0){
 		}
 
 Node::Node(double bl,int innumber,string inname, Node * inparent) :BL(bl),height(0.0),
 		number(innumber), name(inname),parent(inparent),children(vector<Node *> ()),
-		assoc(map<string,NodeObject *>()),assocDV(map<string,vector<Superdouble> >()),comment(""){
+		assoc(map<string,NodeObject *>()),assocDV(map<string,vector<Superdouble> >()),comment(""),period(0){
 		}
 
 vector<Node*> Node::getChildren(){
@@ -79,6 +79,14 @@ int Node::getNumber(){
 
 void Node::setNumber(int n){
 	number = n;
+}
+
+int Node::getPeriod(){
+	return period;
+}
+
+void Node::setPeriod(int n){
+	period = n;
 }
 
 double Node::getBL(){

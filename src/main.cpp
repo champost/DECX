@@ -55,7 +55,7 @@ int main(int argc, char* argv[]){
 		string ratematrixfile;
 		string logfile;
 		string treefileSuffix;
-		int maxareas=0;
+		int maxareas=1;
 		vector<double> periods;
 		map<string,vector<string> > mrcas;
 		map<string,vector<int> > fixnodewithmrca;
@@ -415,10 +415,8 @@ int main(int argc, char* argv[]){
 	    /*
 		* if there is a adjacencymatrixfile then it will be processed
 		*/
-		if (adjacencyfile.size() > 0) {
-			default_adjacency_matrix = false;
-			adjMat = processAdjacencyMatrixConfigFile(adjacencyfile, ir.nareas, areanames,periods.size());
-		}
+		if (adjacencyfile.size() > 0)
+			rm.setup_adjacency(adjacencyfile, areanames);
 		else {
 			cout << "\nUsing the default adjacency matrix for all time slices..." << endl;
 			for (unsigned int j = 0; j < areanames.size(); j++)
@@ -435,22 +433,24 @@ int main(int argc, char* argv[]){
 		/*
 	  need to add check to make sure that the tips are included in possible distributions
 		 */
-		if(includedists.size() > 0 || excludedists.size() > 0 || maxareas >= 2){
-			if(excludedists.size() > 0){
-				rm.setup_dists(excludedists,false);
-			}else{
-				if(maxareas >= 2)
+//		if(includedists.size() > 0 || excludedists.size() > 0 || maxareas >= 2){
+//			if(excludedists.size() > 0){
+//				rm.setup_dists(excludedists,false);
+//			}else{
+//				if(maxareas >= 2)
 //					includedists = generate_dists_from_num_max_areas(ir.nareas,maxareas);
-					includedists = generate_dists_from_num_max_areas_with_adjacency(ir.nareas, maxareas, periods.size(), adjMat, default_adjacency_matrix, exdists_per_period, areanamemaprev);
-				include_tip_dists(data, includedists, maxareas, default_adjacency_matrix, periods.size(), exdists_per_period);
-				rm.setup_dists(includedists,true);
-			}
-		}else{
-			rm.setup_dists();
-		}
+//				rm.setup_dists(includedists,true);
+//			}
+//		}else{
+//			rm.setup_dists();
+//		}
+		includedists = rm.generate_adjacent_dists(maxareas, areanamemaprev);
+		rm.include_tip_dists(data, includedists, maxareas);
+		rm.setup_dists(includedists,true);
 		rm.setup_D(0.01);
 		rm.setup_E(0.01);
-		rm.setup_Q();
+//		rm.setup_Q();
+		rm.setup_Q_with_adjacency();
 
 		/*
 		 * outfile for tree reconstructed states
@@ -472,8 +472,8 @@ int main(int argc, char* argv[]){
 			/*
 			 * set adjacency matrix constraints
 			 */
-			if (!default_adjacency_matrix)
-				bgt.set_node_constraints(exdists_per_period, areanamemaprev);
+//			if (!default_adjacency_matrix)
+//				bgt.set_node_constraints(exdists_per_period, areanamemaprev);
 			/*
 			 * record the mrcas
 			 */
@@ -510,8 +510,6 @@ int main(int argc, char* argv[]){
 				cout << "fixing " << (*fnit).first << " = ";print_vector_int((*fnit).second);
 			}
 
-//			cout << "removing the big tip dists (i.e. bigger than maxareas) at each internal node..." << endl;
-//			bgt.remove_big_tips(data, maxareas);
 			cout << "setting default model..." << endl;
 			bgt.set_default_model(&rm);
 			cout << "setting up tips..." << endl;
@@ -563,14 +561,17 @@ int main(int argc, char* argv[]){
 					optExt = disext[1];
 					rm.setup_D(disext[0]);
 					rm.setup_E(disext[1]);
-					rm.setup_Q();
+//					rm.setup_Q();
+					rm.setup_Q_with_adjacency();
 					bgt.update_default_model(&rm);
 					bgt.set_store_p_matrices(true);
 //					cout << "final -ln likelihood: "<< double(bgt.eval_likelihood(marginal)) <<endl;
 					optLik = double(bgt.eval_likelihood(marginal));
 					cout << "final -ln likelihood: "<< optLik << endl;
 					bgt.set_store_p_matrices(false);
-				}else{//optimize all the dispersal matrix
+				}
+				/*
+				else{//optimize all the dispersal matrix
 					cout << "Optimizing (simplex) -ln likelihood with all dispersal parameters free." << endl;
 					//OptimizeBioGeoAllDispersal opt(&bgt,&rm,marginal);
 					//vector<double> disextrm  = opt.optimize_globa//l_dispersal_extinction();
@@ -617,10 +618,12 @@ int main(int argc, char* argv[]){
 					cout << "final -ln likelihood: "<< double(nlnlike) <<endl;
 					bgt.set_store_p_matrices(false);
 				}
+				*/
 			}else{
 				rm.setup_D(dispersal);
 				rm.setup_E(extinction);
-				rm.setup_Q();
+//				rm.setup_Q();
+				rm.setup_Q_with_adjacency();
 				bgt.update_default_model(&rm);
 				bgt.set_store_p_matrices(true);
 				cout << "final -ln likelihood: "<< double(bgt.eval_likelihood(marginal)) <<endl;
@@ -660,12 +663,12 @@ int main(int argc, char* argv[]){
 			/*
 			 * testing BAYESIAN
 			 */
-			if (bayesian == true){
-				//BayesianBioGeo bayes(&bgt,&rm,marginal,numreps);
-				//bayes.run_global_dispersal_extinction();
-				BayesianBioGeoAllDispersal bayes(&bgt,&rm,marginal,numreps);
-				bayes.run_global_dispersal_extinction();
-			}
+//			if (bayesian == true){
+//				//BayesianBioGeo bayes(&bgt,&rm,marginal,numreps);
+//				//bayes.run_global_dispersal_extinction();
+//				BayesianBioGeoAllDispersal bayes(&bgt,&rm,marginal,numreps);
+//				bayes.run_global_dispersal_extinction();
+//			}
 
 			/*
 			 * ancestral splits calculation
@@ -775,11 +778,14 @@ int main(int argc, char* argv[]){
 							delete intrees[i]->getInternalNode(j)->getObject("state");
 					}
 				}
+
+
+/*
 				//cout << bgt.ti/CLOCKS_PER_SEC << " secs for anc" << endl;
-				/*
-				 * stochastic mapping calculations
-				 * REQUIRES that ancestral calculation be done
-				 */
+
+//				stochastic mapping calculations
+//				REQUIRES that ancestral calculation be done
+
 				if(stochastic_time_dists.size() > 0){
 					cout << "calculating stochastic mapping time spent" << endl;
 					for(unsigned int k=0;k<stochastic_time_dists.size();k++){
@@ -836,9 +842,10 @@ int main(int argc, char* argv[]){
 						}
 					}
 				}
-				/*
-				 * end stochastic mapping
-				 */
+//				 end stochastic mapping
+
+*/
+
 			}
 			//need to delete the biogeostuff
 

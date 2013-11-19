@@ -30,9 +30,10 @@ using namespace arma;
 //octave usage
 //#include <octave/oct.h>
 
+//#define CBR
 
 RateModel::RateModel(int na, bool ge, vector<double> pers, bool sp):
-	globalext(ge),nareas(na),numthreads(0),periods(pers),sparse(sp){}
+	globalext(ge),nareas(na),numthreads(0),periods(pers),sparse(sp),default_adjacency(true){}
 
 void RateModel::set_nthreads(int nthreads){
 	numthreads = nthreads;
@@ -152,6 +153,58 @@ void RateModel::setup_dists(vector<vector<int> > indists, bool include){
 	}
 }
 
+void RateModel::setup_adjacency(string filename, vector<string> areaNames)
+{
+	vector<bool> adjMatCol(nareas,true);
+	vector<vector<bool> > adjMatRow(nareas,adjMatCol);
+	adjMat = vector<vector<vector<bool> > > (periods.size(),adjMatRow);
+	default_adjacency = false;
+
+	//read file
+	ifstream ifs(filename.c_str());
+	string line;
+	int period = 0;int fromarea = 0;
+	cout << "\nReading adjacency matrix file..." << endl;
+	while(getline(ifs,line)) {
+		//	CBR (18.10.2013), in case empty lines greater than 3 chars in size have been specified
+		TrimSpaces(line);
+		if (line.size() > 0) {
+			if (fromarea == 0) {
+				for (unsigned int j = 0; j < areaNames.size(); j++)
+					cout << "\t" << areaNames[j];
+				cout << endl << endl;
+			}
+			vector<string> tokens;
+			string del(" ,\t");
+			tokens.clear();
+			Tokenize(line, tokens, del);
+			for (unsigned int j = 0; j < tokens.size(); j++) {
+				TrimSpaces(tokens[j]);
+			}
+			cout << areaNames[fromarea] << "\t";
+			for (unsigned int j = 0; j < (fromarea + 1); j++) {
+				if (atoi(tokens[j].c_str()) == 0)
+					adjMat[period][fromarea][j] = adjMat[period][j][fromarea] = false;
+				cout << tokens[j] << "\t";
+			}
+			cout << endl;
+			if (fromarea < nareas - 1) {
+				++fromarea;
+			}
+			else {
+				fromarea = 0;
+				++period;
+				cout << endl;
+			}
+		}
+	}
+	ifs.close();
+}
+
+void RateModel::set_adj_bool(bool adjBool)
+{
+	default_adjacency = adjBool;
+}
 
 /*
 void RateModel::remove_dist(vector<int> dist);*/
@@ -306,6 +359,65 @@ void RateModel::setup_Q(){
 			ja_s.push_back(ja);
 			a_s.push_back(a);
 		}
+	}
+	if(VERBOSE){
+	cout << "Q" <<endl;
+		for (unsigned int i=0;i<Q.size();i++){
+			for (unsigned int j=0;j<Q[i].size();j++){
+				for (unsigned int k=0;k<Q[i][j].size();k++){
+					cout << Q[i][j][k] << " ";
+				}
+				cout << endl;
+			}
+			cout << endl;
+		}
+	}
+}
+
+void RateModel::set_Qdiag_with_adjacency(int period){
+	for (unsigned int i=0;i<incldists_per_period[period].size();i++){
+		double sum =(calculate_vector_double_sum(Q[period][i]) - Q[period][i][i]) * -1.0;
+		Q[period][i][i] = sum;
+	}
+}
+
+void RateModel::setup_Q_with_adjacency(){
+	for(unsigned int p=0; p < periods.size(); p++){//periods
+		vector<double> cols(incldists_per_period[p].size(), 0);
+		vector< vector<double> > rows(incldists_per_period[p].size(), cols);
+		Q.push_back(rows);
+		for(unsigned int i=0;i<incldists_per_period[p].size();i++){//incldists_per_period[p]
+			int s1 = accumulate(incldists_per_period[p][i].begin(),incldists_per_period[p][i].end(),0);
+			if(s1 > 0){
+				for(unsigned int j=0;j<incldists_per_period[p].size();j++){//incldists_per_period[p]
+					int sxor = calculate_vector_int_sum_xor(incldists_per_period[p][i], incldists_per_period[p][j]);
+					if (sxor == 1){
+						int s2 = accumulate(incldists_per_period[p][j].begin(),incldists_per_period[p][j].end(),0);
+						int dest = locate_vector_int_single_xor(incldists_per_period[p][i],incldists_per_period[p][j]);
+						double rate = 0.0;
+						if (s1 < s2){
+							for (unsigned int src=0;src<incldists_per_period[p][i].size();src++){
+								if(incldists_per_period[p][i][src] != 0){
+									rate += D[p][src][dest] ;//* Dmask[p][src][dest];
+								}
+							}
+						}else{
+							rate = E[p][dest];
+						}
+						Q[p][i][j] = rate;
+					}
+				}
+			}
+		}
+		set_Qdiag_with_adjacency(p);
+	}
+	/*
+	 * sparse matrices will be handled later
+	 */
+	if(sparse == true) {
+		cerr << "Sparse Q matrices are not yet supported with this version of Lagrange"
+				"\nPlease contact Champak Reddy (champak.br@gmail.com) if this functionality is needed" << endl;
+		exit(-1);
 	}
 	if(VERBOSE){
 	cout << "Q" <<endl;
@@ -682,6 +794,187 @@ void RateModel::iter_all_dist_splits(){
 }
 
 
+vector<vector<vector<int> > > RateModel::iter_dist_splits_per_period(vector<int> & dist, int period){
+	vector< vector <vector<int> > > ret;
+	vector< vector<int> > left;
+	vector< vector<int> > right;
+	if(accumulate(dist.begin(),dist.end(),0) == 1){
+		left.push_back(dist);
+		right.push_back(dist);
+	}
+	else{
+		for(unsigned int i=0;i<dist.size();i++){
+			if (dist[i]==1){
+				vector<int> x(dist.size(),0);
+				x[i] = 1;
+				int cou = count(dists.begin(),dists.end(),x);
+				if(cou > 0){
+					left.push_back(x);right.push_back(dist);
+					left.push_back(dist);right.push_back(x);
+					vector<int> y;
+					for(unsigned int j=0;j<dist.size();j++){
+						if(dist[j]==x[j]){
+							y.push_back(0);
+						}else{
+							y.push_back(1);
+						}
+					}
+					int cou2 = count(dists.begin(),dists.end(),y);
+					if(cou2 > 0){
+						left.push_back(x);right.push_back(y);
+						if(accumulate(y.begin(),y.end(),0) > 1){
+							left.push_back(y);right.push_back(x);
+						}
+					}
+				}
+			}
+		}
+	}
+	if(VERBOSE){
+		cout << "LEFT" << endl;
+		for(unsigned int i = 0; i< left.size() ; i++ ){
+			print_vector_int(left[i]);
+		}
+		cout << "RIGHT" << endl;
+		for(unsigned int i = 0; i< right.size() ; i++ ){
+			print_vector_int(right[i]);
+		}
+	}
+	ret.push_back(left);
+	ret.push_back(right);
+	return ret;
+}
+
+void RateModel::iter_all_dist_splits_per_period() {
+	for (unsigned int j = 0; j < dists.size(); j++)
+		for (unsigned int i = 0; i < dists.size(); i++)
+			iter_dists_per_period[j][dists[i]] = iter_dist_splits_per_period(dists[i],j);
+}
+
+
+vector< vector<int> > RateModel::generate_adjacent_dists(int maxareas, map<int,string> areanamemaprev)
+{
+
+	vector< vector<int> > it = iterate_all_from_num_max_areas(nareas,maxareas);
+	//global extinction
+	vector<int> empt(nareas,0);
+
+	vector< vector<int> > rangemap;
+	vector<int> alldistsint;
+	rangemap.push_back(empt);
+	alldistsint.push_back(0);
+	for (unsigned int i = 0; i < it.size(); i++) {
+		rangemap.push_back(idx2bitvect(it.at(i),nareas));
+		alldistsint.push_back(i+1);
+	}
+
+	if (!default_adjacency) {
+		vector<vector<bool> > defAdjMat(nareas, vector<bool> (nareas,true));
+		for (unsigned int prd = 0; prd < periods.size(); prd++) {
+
+#ifdef CBR
+			cout << "\nPeriod : " << prd + 1 << endl;
+#endif
+
+			if (adjMat[prd] == defAdjMat) {
+				incldists_per_period.push_back(rangemap);
+				incldistsint_per_period.push_back(alldistsint);
+				excldists_per_period.push_back(vector<vector<int> > ());
+			}
+			else {
+				vector<vector<int> > period_exdists;
+				vector<vector<int> > period_incdists;
+				vector<int> somedistsint;
+				period_incdists.push_back(rangemap[0]);
+				somedistsint.push_back(0);
+				for (unsigned int i = 0; i < it.size(); i++) {
+
+					if (connected_dist_BGL(it.at(i), adjMat[prd])) {
+#ifdef CBR
+						cout << i + 1 << " ";
+//						cout << idx2bitvect(it.at(i),nareas);
+						for (unsigned int x=0;x<it.at(i).size();x++){
+							cout << areanamemaprev[it.at(i)[x]];
+							if (x < (it.at(i).size() - 1))
+								cout << "_";
+						}
+						cout << endl;
+#endif
+						period_incdists.push_back(idx2bitvect(it.at(i),nareas));
+						somedistsint.push_back(i+1);
+					}
+					else
+						period_exdists.push_back(idx2bitvect(it.at(i),nareas));
+				}
+				incldists_per_period.push_back(period_incdists);
+				incldistsint_per_period.push_back(somedistsint);
+				excldists_per_period.push_back(period_exdists);
+			}
+		}
+	}
+	else {
+		excldists_per_period = vector<vector<vector<int> > > ();
+		for (unsigned int prd = 0; prd < periods.size(); prd++) {
+			incldists_per_period.push_back(rangemap);
+			incldistsint_per_period.push_back(alldistsint);
+		}
+	}
+
+	return rangemap;
+}
+
+
+void RateModel::include_tip_dists(map<string,vector<int> > distrib_data, vector<vector<int> > &includedists, int maxareas)
+{
+	map<string, vector<int> >::iterator pos;
+	bool bigTipMsg = false, adjacentTipMsg = false;
+
+	//	including the adjacency-conflicting tip distributions (only) for the most recent period
+	if (!default_adjacency) {
+		for (pos = distrib_data.begin(); pos != distrib_data.end(); ++pos) {
+			string taxon = pos->first;
+			int taxon_numareas = accumulate(distrib_data[taxon].begin(),distrib_data[taxon].end(),0);
+			if ((taxon_numareas > 1) && (taxon_numareas <= maxareas)) {
+				bool tipIncluded = false;
+				vector<vector<int> >::iterator it = find(excldists_per_period[0].begin(),excldists_per_period[0].end(),distrib_data[taxon]);
+				if (it != excldists_per_period[0].end()) {
+					if (!adjacentTipMsg) {
+						cout << "\nIncluding those tips whose range conflicts with the specified adjacency matrix..." << endl;
+						adjacentTipMsg = true;
+					}
+					incldists_per_period[0].push_back(*it);
+					incldistsint_per_period[0].push_back(distance(includedists.begin(),find(includedists.begin(),includedists.end(),distrib_data[taxon])));
+					excldists_per_period[0].erase(it);
+					cout << "For an example of the missing taxon distribution cf. " << taxon << endl;
+				}
+			}
+		}
+	}
+
+	//	"big" tip distributions are included here and excluded for all periods except the most recent one
+	for (pos = distrib_data.begin(); pos != distrib_data.end(); ++pos){
+		string taxon = pos->first;
+		int taxon_numareas = accumulate(distrib_data[taxon].begin(),distrib_data[taxon].end(),0);
+		if (taxon_numareas > maxareas) {
+			if (!bigTipMsg)
+				cout << "\nIncluding those tips whose range size is bigger than maxareas(= " << maxareas << ")..." << endl;
+
+			includedists.push_back(distrib_data[taxon]);
+			incldists_per_period[0].push_back(distrib_data[taxon]);
+			incldistsint_per_period[0].push_back(includedists.size()-1);
+			if (!default_adjacency)
+				for (int i = 1; i < periods.size(); i++)
+					excldists_per_period[i].push_back(distrib_data[taxon]);
+
+			cout << taxon << " : " << taxon_numareas << endl;
+			bigTipMsg = true;
+		}
+	}
+	if (bigTipMsg)
+		cout << endl;
+}
+
+
 vector<vector<int> > * RateModel::getDists(){
 	return &dists;
 }
@@ -696,6 +989,21 @@ map<int,vector<int> > * RateModel::get_int_dists_map(){
 
 vector<vector<vector<int> > > * RateModel::get_iter_dist_splits(vector<int> & dist){
 	return &iter_dists[dist];
+}
+
+vector<vector<int> > * RateModel::get_incldists_per_period(int period)
+{
+	return &incldists_per_period[period];
+}
+
+vector<int> * RateModel::get_incldistsint_per_period(int period)
+{
+	return &incldistsint_per_period[period];
+}
+
+vector<vector<int> > * RateModel::get_excldists_per_period(int period)
+{
+	return &excldists_per_period[period];
 }
 
 int RateModel::get_num_areas(){return nareas;}

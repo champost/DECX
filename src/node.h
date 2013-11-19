@@ -24,6 +24,7 @@ private:
 	double BL;//branch lengths
 	double height; // could be from tip or from root
 	int number;
+	int period;
 	string name;
 	Node * parent;
 	vector<Node *> children;
@@ -46,6 +47,8 @@ public:
 	void setParent(Node & p);
 	int getNumber();
 	void setNumber(int n);
+	int getPeriod();
+	void setPeriod(int n);
 	double getBL();
 	void setBL(double bl);
 	double getHeight();

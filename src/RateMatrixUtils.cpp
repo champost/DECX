@@ -141,52 +141,6 @@ vector<vector<int> > generate_dists_from_num_max_areas(int totalnumareas, int nu
 	return dists;
 }
 
-void include_tip_dists(map<string,vector<int> > distrib_data, vector<vector<int> > &includedists, int numareas, bool defaultAdjMat, int nperiods, vector<vector<vector<int> > > &exdists_per_period)
-{
-	map<string, vector<int> >::iterator pos;
-	bool bigTipMsg = false, adjacentTipMsg = false;
-
-	//	including the adjacency-conflicting tip distributions (only) for the most recent period
-	if (!defaultAdjMat) {
-		for (pos = distrib_data.begin(); pos != distrib_data.end(); ++pos) {
-			string taxon = pos->first;
-			int taxon_numareas = accumulate(distrib_data[taxon].begin(),distrib_data[taxon].end(),0);
-			if ((taxon_numareas > 1) && (taxon_numareas <= numareas)) {
-				bool tipIncluded = false;
-				vector<vector<int> >::iterator it = find(exdists_per_period[0].begin(),exdists_per_period[0].end(),distrib_data[taxon]);
-				if (it != exdists_per_period[0].end()) {
-					if (!adjacentTipMsg) {
-						cout << "\nIncluding those tips whose range conflicts with the specified adjacency matrix..." << endl;
-						adjacentTipMsg = true;
-					}
-					exdists_per_period[0].erase(it);
-					cout << "For an example of the missing taxon distribution cf. " << taxon << endl;
-				}
-			}
-		}
-	}
-
-	//	"big" tip distributions are included here and excluded for all periods except the most recent one
-	for (pos = distrib_data.begin(); pos != distrib_data.end(); ++pos){
-		string taxon = pos->first;
-		int taxon_numareas = accumulate(distrib_data[taxon].begin(),distrib_data[taxon].end(),0);
-		if (taxon_numareas > numareas) {
-			if (!bigTipMsg)
-				cout << "\nIncluding those tips whose range size is bigger than maxareas(= " << numareas << ")..." << endl;
-
-			includedists.push_back(distrib_data[taxon]);
-			if (!defaultAdjMat)
-				for (int i = 1; i < nperiods; i++)
-					exdists_per_period[i].push_back(distrib_data[taxon]);
-
-			cout << taxon << " : " << taxon_numareas << endl;
-			bigTipMsg = true;
-		}
-	}
-	if (bigTipMsg)
-		cout << endl;
-}
-
 /*
  TODO: change this to store to memory instead of creating them
  */
@@ -287,52 +241,6 @@ void convert_matrix_to_single_row_for_fortran(vector<vector<double> > & inmatrix
 			count += 1;
 		}
 	}
-}
-
-vector<vector<vector<bool> > > processAdjacencyMatrixConfigFile(string filename, int totalNumAreas, vector<string> areaNames, int nperiods) {
-	vector<bool> adjMatCol(totalNumAreas,true);
-	vector<vector<bool> > adjMatRow(totalNumAreas,adjMatCol);
-	vector<vector<vector<bool> > > adjMat(nperiods,adjMatRow);
-	//read file
-	ifstream ifs(filename.c_str());
-	string line;
-	int period = 0;int fromarea = 0;
-	cout << "\nReading adjacency matrix file..." << endl;
-	while(getline(ifs,line)) {
-		//	CBR (18.10.2013), in case empty lines greater than 3 chars in size have been specified
-		TrimSpaces(line);
-		if (line.size() > 0) {
-			if (fromarea == 0) {
-				for (unsigned int j = 0; j < areaNames.size(); j++)
-					cout << "\t" << areaNames[j];
-				cout << endl << endl;
-			}
-			vector<string> tokens;
-			string del(" ,\t");
-			tokens.clear();
-			Tokenize(line, tokens, del);
-			for (unsigned int j = 0; j < tokens.size(); j++) {
-				TrimSpaces(tokens[j]);
-			}
-			cout << areaNames[fromarea] << "\t";
-			for (unsigned int j = 0; j < (fromarea + 1); j++) {
-				if (atoi(tokens[j].c_str()) == 0)
-					adjMat[period][fromarea][j] = adjMat[period][j][fromarea] = false;
-				cout << tokens[j] << "\t";
-			}
-			cout << endl;
-			if (fromarea < totalNumAreas - 1) {
-				++fromarea;
-			}
-			else {
-				fromarea = 0;
-				++period;
-				cout << endl;
-			}
-		}
-	}
-	ifs.close();
-	return adjMat;
 }
 
 vector<vector<vector<double> > > processRateMatrixConfigFile(string filename, int numareas, int nperiods){

@@ -30,7 +30,16 @@ private:
 	vector<string> labels;
 	vector<double> periods;
 	vector<vector<int> > dists;
+
+	//	adjacency conditioned data types
+	bool default_adjacency;
+	vector<vector<vector<bool> > > adjMat;
+	vector<vector<vector<int> > > incldists_per_period;
+	vector<vector<int> > incldistsint_per_period;
+	vector<vector<vector<int> > > excldists_per_period;
+
 	map<vector<int>,vector<vector<vector<int> > > > iter_dists;
+	map<int, map<vector<int>,vector<vector<vector<int> > > > > iter_dists_per_period;
 	map<vector<int>,string> distsmap;
 	map<vector<int>, int> distsintmap;
 	map<int,vector<int> > intdistsmap;
@@ -45,6 +54,7 @@ private:
 	vector<vector<int> > ja_s;
 	vector<vector<double> > a_s;
 	void iter_all_dist_splits();
+	void iter_all_dist_splits_per_period();
 
 public:
 	RateModel(int na, bool ge, vector<double> pers,bool);
@@ -52,6 +62,10 @@ public:
 	int get_nthreads();
 	void setup_dists();
 	void setup_dists(vector<vector<int> >, bool);
+	void setup_adjacency(string filename, vector<string> areaNames);
+	void set_adj_bool(bool adjBool);
+	vector< vector<int> > generate_adjacent_dists(int maxareas, map<int,string> areanamemaprev);
+	void include_tip_dists(map<string,vector<int> > distrib_data, vector<vector<int> > &includedists, int maxareas);
 	void setup_Dmask();
 	void setup_D_provided(double d, vector< vector< vector<double> > > & D_mask_in);
 	void set_Dmask_cell(int period, int area, int area2, double prob, bool sym);
@@ -59,6 +73,8 @@ public:
 	void setup_E(double e);
 	void set_Qdiag(int period);
 	void setup_Q();
+	void set_Qdiag_with_adjacency(int period);
+	void setup_Q_with_adjacency();
 	vector<vector<double > > setup_fortran_P(int period, double t, bool store_p_matrices);
 	vector<vector<double > > setup_sparse_full_P(int period, double t);
 	vector<double > setup_sparse_single_column_P(int period, double t, int column);
@@ -67,11 +83,15 @@ public:
 	string P_repr(int period);
 	vector<vector<int> > enumerate_dists();
 	vector<vector<vector<int> > > iter_dist_splits(vector<int> & dist);
+	vector<vector<vector<int> > > iter_dist_splits_per_period(vector<int> & dist, int period);
 	//vector<AncSplit> iter_ancsplits(vector<int> dist);
 	vector<vector<int> > * getDists();
 	map<vector<int>,int> * get_dists_int_map();
 	map<int,vector<int> > * get_int_dists_map();
 	vector<vector<vector<int> > > * get_iter_dist_splits(vector<int> & dist);
+	vector<vector<int> > * get_incldists_per_period(int period);
+	vector<int> * get_incldistsint_per_period(int period);
+	vector<vector<int> > * get_excldists_per_period(int period);
 	void remove_dist(vector<int> dist);
 	bool sparse;
 	int get_num_areas();

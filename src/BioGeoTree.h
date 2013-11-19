@@ -79,7 +79,6 @@ public:
 	void set_excluded_dist(vector<int> ind,Node * node);
 	void set_tip_conditionals(map<string,vector<int> > distrib_data);
 	void set_node_constraints(vector<vector<vector<int> > > exdists_per_period, map<int,string> areanamemaprev);
-//	void remove_big_tips(map<string, vector<int> > distrib_data, int numareas);
 	vector<Superdouble> conditionals(Node & node, bool marg, bool sparse);
 	//void ancdist_conditional_lh(bpp::Node & node, bool marg);
 	void ancdist_conditional_lh(Node & node, bool marg);

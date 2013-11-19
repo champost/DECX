@@ -71,16 +71,6 @@ void print_vector_double(vector<double> & in);
 vector<vector<int> > generate_dists_from_num_max_areas(int totalnum,int numareas);
 
 /*
-  concatenates the tree tip ranges to the list of possible distributions
- */
-void include_tip_dists(map<string,vector<int> > distrib_data, vector<vector<int> > &includedists, int numareas, bool defaultAdjMat, int nperiods, vector<vector<vector<int> > > &exdists_per_period);
-
-/*
-  used for processing custom adjacency matrix config file designated in the main config file
- */
-vector<vector<vector<bool> > > processAdjacencyMatrixConfigFile(string filename, int totalNumAreas, vector<string> areaNames, int nperiods);
-
-/*
   used for processing custom rate matrix config files designated in the main config file
  */
 vector<vector<vector<double> > > processRateMatrixConfigFile(string filename, int numareas, int nperiods);

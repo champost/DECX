@@ -98,6 +98,17 @@ BioGeoTree::BioGeoTree(Tree * tr, vector<double> ps):tree(tr),periods(ps),
 			}
 		}
 	}
+	/*
+	 * initialize the periods for each node
+	 */
+	vector<double> cumulPeriod(periods.size(),0.0);
+	partial_sum(periods.begin(),periods.end(),cumulPeriod.begin());
+	for (int nodeNum = 0; nodeNum < tree->getNodeCount(); nodeNum++) {
+		Node * currNode = tree->getNode(nodeNum);
+		for (unsigned int ts = 0; ts < cumulPeriod.size(); ts++)
+			if (currNode->getHeight() <= cumulPeriod[ts])
+				currNode->setPeriod(ts);
+	}
 }
 
 void BioGeoTree::set_store_p_matrices(bool i){
@@ -236,20 +247,6 @@ void BioGeoTree::set_node_constraints(vector<vector<vector<int> > > exdists_per_
 	}
 }
 
-//void BioGeoTree::remove_big_tips(map<string, vector<int> > distrib_data, int numareas) {
-//	map<string, vector<int> >::iterator pos;
-//	int numofnodes = tree->getInternalNodeCount();
-//
-//	for (pos = distrib_data.begin(); pos != distrib_data.end(); ++pos) {
-//		string taxon = pos->first;
-//		int taxon_numareas = accumulate(distrib_data[taxon].begin(),distrib_data[taxon].end(),0);
-//		if (taxon_numareas > numareas) {
-//			for (int i = 0; i < numofnodes; i++)
-//				set_excluded_dist(distrib_data[taxon], tree->getInternalNode(i));
-//		}
-//	}
-//}
-
 Superdouble BioGeoTree::eval_likelihood(bool marginal){
 	if( rootratemodel->sparse == true){
 		columns = new vector<int>(rootratemodel->getDists()->size());
@@ -289,30 +286,31 @@ vector<Superdouble> BioGeoTree::conditionals(Node & node, bool marginal,bool spa
 		}
 		RateModel * rm = tsegs->at(i).getModel();
 		vector<Superdouble> * v = new vector<Superdouble> (rootratemodel->getDists()->size(), 0);
-		vector<int> distrange;
-		if(tsegs->at(i).get_start_dist_int() != -666){
-			int ind1 = tsegs->at(i).get_start_dist_int();
-			distrange.push_back(ind1);
-		}else if(tsegs->at(i).getFossilAreas().size()>0){
-			for(unsigned int j=0;j<rootratemodel->getDists()->size();j++){
-				distrange.push_back(j);
-			}
-			for(unsigned int k=0;k<distrange.size();k++){
-				bool flag = true;
-				for(unsigned int x = 0;x<tsegs->at(i).getFossilAreas().size();x++){
-					if (tsegs->at(i).getFossilAreas()[x] == 1 && distrange.at(x) == 0){
-						flag = false;
-					}
-				}
-				if(flag == true){
-					distrange.erase(distrange.begin()+k);
-				}
-			}
-		}else{
-			for(unsigned int j=0;j<rootratemodel->getDists()->size();j++){
-				distrange.push_back(j);
-			}
-		}
+//		vector<int> distrange;
+//		if(tsegs->at(i).get_start_dist_int() != -666){
+//			int ind1 = tsegs->at(i).get_start_dist_int();
+//			distrange.push_back(ind1);
+//		}else if(tsegs->at(i).getFossilAreas().size()>0){
+//			for(unsigned int j=0;j<rootratemodel->getDists()->size();j++){
+//				distrange.push_back(j);
+//			}
+//			for(unsigned int k=0;k<distrange.size();k++){
+//				bool flag = true;
+//				for(unsigned int x = 0;x<tsegs->at(i).getFossilAreas().size();x++){
+//					if (tsegs->at(i).getFossilAreas()[x] == 1 && distrange.at(x) == 0){
+//						flag = false;
+//					}
+//				}
+//				if(flag == true){
+//					distrange.erase(distrange.begin()+k);
+//				}
+//			}
+//		}else{
+//			for(unsigned int j=0;j<rootratemodel->getDists()->size();j++){
+//				distrange.push_back(j);
+//			}
+//		}
+		vector<int> * distrange = rootratemodel->get_incldistsint_per_period(tsegs->at(i).getPeriod());
 		/*
 		 * marginal
 		 */
@@ -324,59 +322,65 @@ vector<Superdouble> BioGeoTree::conditionals(Node & node, bool marginal,bool spa
 				}else{
 					p = rm->stored_p_matrices[tsegs->at(i).getPeriod()][tsegs->at(i).getDuration()];
 				}
-				for(unsigned int j=0;j<distrange.size();j++){
-					for(unsigned int k=0;k<distconds.size();k++){
-						v->at(distrange[j]) += (distconds.at(k)*p[distrange[j]][k]);
-					}
-				}
-			}else{//sparse
-				/*
-		  testing pthread version
-				 */
-				if(rm->get_nthreads() > 0){
-					vector<vector<double > > p = rm->setup_pthread_sparse_P(tsegs->at(i).getPeriod(),tsegs->at(i).getDuration(),*whichcolumns);
-					for(unsigned int j=0;j<distrange.size();j++){
-						for(unsigned int k=0;k<distconds.size();k++){
-							v->at(distrange[j]) += (distconds.at(k)*p[distrange[j]][k]);
-						}
-					}
-				}else{
-					for(unsigned int j=0;j<distrange.size();j++){
-						bool inthere = false;
-						if(columns->at(distrange[j]) == 1)
-							inthere = true;
-						vector<double > p;
-						if(inthere == true){
-							p = rm->setup_sparse_single_column_P(tsegs->at(i).getPeriod(),tsegs->at(i).getDuration(),distrange[j]);
-						}else{
-							p = vector<double>(distconds.size(),0);
-						}
-						for(unsigned int k=0;k<distconds.size();k++){
-							v->at(distrange[j]) += (distconds.at(k)*p[k]);
-						}
+//				for(unsigned int j=0;j<distrange.size();j++){
+//					for(unsigned int k=0;k<distconds.size();k++){
+//						v->at(distrange[j]) += (distconds.at(k)*p[distrange[j]][k]);
+//					}
+//				}
+				for(unsigned int j=0;j<distrange->size();j++){
+					for(unsigned int k=0;k<distrange->size();k++){
+						v->at(distrange->at(j)) += (distconds.at(distrange->at(k))*p[j][k]);
 					}
 				}
 			}
+//			else{//sparse
+//				/*
+//		  testing pthread version
+//				 */
+//				if(rm->get_nthreads() > 0){
+//					vector<vector<double > > p = rm->setup_pthread_sparse_P(tsegs->at(i).getPeriod(),tsegs->at(i).getDuration(),*whichcolumns);
+//					for(unsigned int j=0;j<distrange.size();j++){
+//						for(unsigned int k=0;k<distconds.size();k++){
+//							v->at(distrange[j]) += (distconds.at(k)*p[distrange[j]][k]);
+//						}
+//					}
+//				}else{
+//					for(unsigned int j=0;j<distrange.size();j++){
+//						bool inthere = false;
+//						if(columns->at(distrange[j]) == 1)
+//							inthere = true;
+//						vector<double > p;
+//						if(inthere == true){
+//							p = rm->setup_sparse_single_column_P(tsegs->at(i).getPeriod(),tsegs->at(i).getDuration(),distrange[j]);
+//						}else{
+//							p = vector<double>(distconds.size(),0);
+//						}
+//						for(unsigned int k=0;k<distconds.size();k++){
+//							v->at(distrange[j]) += (distconds.at(k)*p[k]);
+//						}
+//					}
+//				}
+//			}
 		}
 		/*
 		 * joint reconstruction
 		 * NOT FINISHED YET -- DONT USE
 		 */
-		else{
-			if(sparse == false){
-				vector<vector<double > > p = rm->setup_fortran_P(tsegs->at(i).getPeriod(),tsegs->at(i).getDuration(),store_p_matrices);
-				for(unsigned int j=0;j<distrange.size();j++){
-					Superdouble maxnum = 0;
-					for(unsigned int k=0;k<distconds.size();k++){
-						Superdouble tx = (distconds.at(k)*p[distrange[j]][k]);
-						maxnum = MAX(tx,maxnum);
-					}
-					v->at(distrange[j]) = maxnum;
-				}
-			}else{//sparse
-
-			}
-		}
+//		else{
+//			if(sparse == false){
+//				vector<vector<double > > p = rm->setup_fortran_P(tsegs->at(i).getPeriod(),tsegs->at(i).getDuration(),store_p_matrices);
+//				for(unsigned int j=0;j<distrange.size();j++){
+//					Superdouble maxnum = 0;
+//					for(unsigned int k=0;k<distconds.size();k++){
+//						Superdouble tx = (distconds.at(k)*p[distrange[j]][k]);
+//						maxnum = MAX(tx,maxnum);
+//					}
+//					v->at(distrange[j]) = maxnum;
+//				}
+//			}else{//sparse
+//
+//			}
+//		}
 		for(unsigned int j=0;j<distconds.size();j++){
 			distconds[j] = v->at(j);
 		}
@@ -680,21 +684,29 @@ void BioGeoTree::reverse(Node & node){
 				//cout << (*EN_CX) << endl;
 				//exit(0);
 			}
-			for(unsigned int j=0;j < dists->size();j++){
-				if(accumulate(dists->at(j).begin(), dists->at(j).end(), 0) > 0){
-					for (unsigned int i = 0; i < dists->size(); i++) {
-						if (accumulate(dists->at(i).begin(), dists->at(i).end(), 0) > 0) {
-							//cout << "here " << j << " " << i<< " " << node.getBL() << " " << ts <<" " << tsegs->size() << endl;
-							revconds->at(j) += tempmoveA[i]*((*p)[i][j]);//tempA needs to change each time
-							//cout << "and" << endl;
-							if(stochastic == true){
-								tempmoveAer[j] += tempmoveA[i]*(((*ER)(i,j)));
-								tempmoveAen[j] += tempmoveA[i]*(((*EN)(i,j)));
-							}
-						}
-					}
-				}
-			}
+//			for(unsigned int j=0;j < dists->size();j++){
+//				if(accumulate(dists->at(j).begin(), dists->at(j).end(), 0) > 0){
+//					for (unsigned int i = 0; i < dists->size(); i++) {
+//						if (accumulate(dists->at(i).begin(), dists->at(i).end(), 0) > 0) {
+//							//cout << "here " << j << " " << i<< " " << node.getBL() << " " << ts <<" " << tsegs->size() << endl;
+//							revconds->at(j) += tempmoveA[i]*((*p)[i][j]);//tempA needs to change each time
+//							//cout << "and" << endl;
+//							if(stochastic == true){
+//								tempmoveAer[j] += tempmoveA[i]*(((*ER)(i,j)));
+//								tempmoveAen[j] += tempmoveA[i]*(((*EN)(i,j)));
+//							}
+//						}
+//					}
+//				}
+//			}
+			//	the adjacency per time period version below
+			vector<int> * validists = rootratemodel->get_incldistsint_per_period(tsegs->at(ts).getPeriod());
+			for(unsigned int j=0;j < validists->size();j++)
+				if(accumulate(dists->at(validists->at(j)).begin(), dists->at(validists->at(j)).end(), 0) > 0)
+					for (unsigned int i = 0; i < validists->size(); i++)
+						if (accumulate(dists->at(validists->at(i)).begin(), dists->at(validists->at(i)).end(), 0) > 0)
+							revconds->at(validists->at(j)) += tempmoveA[i]*((*p)[i][j]);//tempA needs to change each time
+
 			for(unsigned int j=0;j<dists->size();j++){tempmoveA[j] = revconds->at(j);}
 			if(stochastic == true){
 				tsegs->at(ts).seg_sp_stoch_map_revB_time = tempmoveAer;
