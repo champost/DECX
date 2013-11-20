@@ -236,54 +236,6 @@ vector< vector<int> >  iterate_all_from_num_max_areas(int m, int n){
 	return results;
 }
 
-vector< vector<int> > generate_dists_from_num_max_areas_with_adjacency(int m, int n, int nperiods, vector<vector<vector<bool> > > adjMat, bool defAdj, vector<vector<vector<int> > > &exdists_per_period, map<int,string> areanamemaprev)
-{
-	vector< vector<int> > it = iterate_all_from_num_max_areas(m,n);
-	//global extinction
-	vector<int> empt(m,0);
-
-	vector< vector<int> > rangemap;
-	rangemap.push_back(empt);
-	for (unsigned int i = 0; i < it.size(); i++)
-		rangemap.push_back(idx2bitvect(it.at(i),m));
-
-	if (!defAdj) {
-		vector<vector<bool> > defAdjMat(m, vector<bool> (m,true));
-		for (unsigned int prd = 0; prd < nperiods; prd++) {
-
-#ifdef CBR
-			cout << "\nPeriod : " << prd + 1 << endl;
-#endif
-
-			if (adjMat[prd] == defAdjMat)
-				exdists_per_period.push_back(vector<vector<int> > ());
-			else {
-				vector<vector<int> > period_exdists;
-				for (unsigned int i = 0; i < it.size(); i++) {
-
-					if (connected_dist_BGL(it.at(i), adjMat[prd])) {
-#ifdef CBR
-						cout << i + 1 << " ";
-//						cout << idx2bitvect(it.at(i),m);
-						for (unsigned int x=0;x<it.at(i).size();x++){
-							cout << areanamemaprev[it.at(i)[x]];
-							if (x < (it.at(i).size() - 1))
-								cout << "_";
-						}
-						cout << endl;
-#endif
-					}
-					else
-						period_exdists.push_back(idx2bitvect(it.at(i),m));
-				}
-				exdists_per_period.push_back(period_exdists);
-			}
-		}
-	}
-
-	return rangemap;
-}
-
 bool connected_dist_BGL(const vector <int> &indices, const vector <vector<bool> > &adjMat)
 {
 	unsigned int dist_size = indices.size();

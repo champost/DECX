@@ -144,9 +144,10 @@ vector<vector<int> > generate_dists_from_num_max_areas(int totalnumareas, int nu
 /*
  TODO: change this to store to memory instead of creating them
  */
-vector<AncSplit> iter_ancsplits(RateModel *rm, vector<int> & dist){
+vector<AncSplit> iter_ancsplits(RateModel *rm, vector<int> & dist, int period){
 	vector<AncSplit> ans;
-	vector<vector<vector<int> > > * splits = rm->get_iter_dist_splits(dist);
+//	vector<vector<vector<int> > > * splits = rm->get_iter_dist_splits(dist);
+	vector<vector<vector<int> > > * splits = rm->get_iter_dist_splits_per_period(dist, period);
 	map<vector<int>,int> * distsmap = rm->get_dists_int_map();
 	if(splits->at(0).size()>0){
 		int nsplits = splits->at(0).size();
@@ -160,9 +161,10 @@ vector<AncSplit> iter_ancsplits(RateModel *rm, vector<int> & dist){
 	return ans;
 }
 
-void iter_ancsplits_just_int(RateModel *rm, vector<int> & dist,vector<int> & leftdists, vector<int> & rightdists, double & weight){
+void iter_ancsplits_just_int(RateModel *rm, vector<int> & dist,vector<int> & leftdists, vector<int> & rightdists, double & weight, int period){
 	leftdists.clear();rightdists.clear();
-	vector<vector<vector<int> > > * splits = rm->get_iter_dist_splits(dist);
+	//	vector<vector<vector<int> > > * splits = rm->get_iter_dist_splits(dist);
+		vector<vector<vector<int> > > * splits = rm->get_iter_dist_splits_per_period(dist, period);
 	map<vector<int>,int> * distsmap = rm->get_dists_int_map();
 	if(splits->at(0).size()>0){
 		int nsplits = splits->at(0).size();

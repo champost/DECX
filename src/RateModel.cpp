@@ -134,7 +134,8 @@ void RateModel::setup_dists(vector<vector<int> > indists, bool include){
 	/*
 	precalculate the iterdists
 	 */
-	iter_all_dist_splits();
+//	iter_all_dist_splits();
+	iter_all_dist_splits_per_period();
 
 	/*
 	 print out a visual representation of the matrix
@@ -798,46 +799,50 @@ vector<vector<vector<int> > > RateModel::iter_dist_splits_per_period(vector<int>
 	vector< vector <vector<int> > > ret;
 	vector< vector<int> > left;
 	vector< vector<int> > right;
-	if(accumulate(dist.begin(),dist.end(),0) == 1){
-		left.push_back(dist);
-		right.push_back(dist);
-	}
-	else{
-		for(unsigned int i=0;i<dist.size();i++){
-			if (dist[i]==1){
-				vector<int> x(dist.size(),0);
-				x[i] = 1;
-				int cou = count(dists.begin(),dists.end(),x);
-				if(cou > 0){
-					left.push_back(x);right.push_back(dist);
-					left.push_back(dist);right.push_back(x);
-					vector<int> y;
-					for(unsigned int j=0;j<dist.size();j++){
-						if(dist[j]==x[j]){
-							y.push_back(0);
-						}else{
-							y.push_back(1);
+
+	//	if this dist is connected during the specified time period
+	if (find(incldists_per_period[period].begin(),incldists_per_period[period].end(),dist) != incldists_per_period[period].end()) {
+		if(accumulate(dist.begin(),dist.end(),0) == 1){
+			left.push_back(dist);
+			right.push_back(dist);
+		}
+		else{
+			for(unsigned int i=0;i<dist.size();i++){
+				if (dist[i]==1){
+					vector<int> x(dist.size(),0);
+					x[i] = 1;
+					int cou = count(incldists_per_period[period].begin(),incldists_per_period[period].end(),x);
+					if(cou > 0){
+						left.push_back(x);right.push_back(dist);
+						left.push_back(dist);right.push_back(x);
+						vector<int> y;
+						for(unsigned int j=0;j<dist.size();j++){
+							if(dist[j]==x[j]){
+								y.push_back(0);
+							}else{
+								y.push_back(1);
+							}
 						}
-					}
-					int cou2 = count(dists.begin(),dists.end(),y);
-					if(cou2 > 0){
-						left.push_back(x);right.push_back(y);
-						if(accumulate(y.begin(),y.end(),0) > 1){
-							left.push_back(y);right.push_back(x);
+						int cou2 = count(incldists_per_period[period].begin(),incldists_per_period[period].end(),y);
+						if(cou2 > 0){
+							left.push_back(x);right.push_back(y);
+							if(accumulate(y.begin(),y.end(),0) > 1){
+								left.push_back(y);right.push_back(x);
+							}
 						}
 					}
 				}
 			}
 		}
-	}
-	if(VERBOSE){
-		cout << "LEFT" << endl;
-		for(unsigned int i = 0; i< left.size() ; i++ ){
-			print_vector_int(left[i]);
-		}
-		cout << "RIGHT" << endl;
-		for(unsigned int i = 0; i< right.size() ; i++ ){
-			print_vector_int(right[i]);
+		if(VERBOSE){
+			cout << "LEFT" << endl;
+			for(unsigned int i = 0; i< left.size() ; i++ ){
+				print_vector_int(left[i]);
+			}
+			cout << "RIGHT" << endl;
+			for(unsigned int i = 0; i< right.size() ; i++ ){
+				print_vector_int(right[i]);
+			}
 		}
 	}
 	ret.push_back(left);
@@ -846,7 +851,7 @@ vector<vector<vector<int> > > RateModel::iter_dist_splits_per_period(vector<int>
 }
 
 void RateModel::iter_all_dist_splits_per_period() {
-	for (unsigned int j = 0; j < dists.size(); j++)
+	for (unsigned int j = 0; j < periods.size(); j++)
 		for (unsigned int i = 0; i < dists.size(); i++)
 			iter_dists_per_period[j][dists[i]] = iter_dist_splits_per_period(dists[i],j);
 }
@@ -989,6 +994,10 @@ map<int,vector<int> > * RateModel::get_int_dists_map(){
 
 vector<vector<vector<int> > > * RateModel::get_iter_dist_splits(vector<int> & dist){
 	return &iter_dists[dist];
+}
+
+vector<vector<vector<int> > > * RateModel::get_iter_dist_splits_per_period(vector<int> & dist, int period){
+	return &iter_dists_per_period[period][dist];
 }
 
 vector<vector<int> > * RateModel::get_incldists_per_period(int period)

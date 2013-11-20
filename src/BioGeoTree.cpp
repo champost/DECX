@@ -496,7 +496,7 @@ void BioGeoTree::ancdist_conditional_lh(Node & node, bool marginal){
 				vector<vector<int> >* exdist = node.getExclDistVector();
 				int cou = count(exdist->begin(),exdist->end(),dists->at(i));
 				if(cou == 0){
-					iter_ancsplits_just_int(rootratemodel,dists->at(i),leftdists,rightdists,weight);
+					iter_ancsplits_just_int(rootratemodel,dists->at(i),leftdists,rightdists,weight,node.getPeriod());
 					for (unsigned int j=0;j<leftdists.size();j++){
 						int ind1 = leftdists[j];
 						int ind2 = rightdists[j];
@@ -649,7 +649,7 @@ void BioGeoTree::reverse(Node & node){
 				vector<vector<int> > * exdist = node.getExclDistVector();
 				int cou = count(exdist->begin(), exdist->end(), dists->at(i));
 				if (cou == 0) {
-					iter_ancsplits_just_int(rootratemodel, dists->at(i), leftdists, rightdists, weight);
+					iter_ancsplits_just_int(rootratemodel, dists->at(i), leftdists, rightdists, weight, node.getPeriod());
 					//root has i, curnode has left, sister of cur has right
 					for (unsigned int j = 0; j < leftdists.size(); j++) {
 						int ind1 = leftdists[j];
@@ -730,7 +730,7 @@ map<vector<int>,vector<AncSplit> > BioGeoTree::calculate_ancsplit_reverse(Node &
 	map<vector<int>,vector<AncSplit> > ret;
 	for(unsigned int j=0;j<rootratemodel->getDists()->size();j++){
 		vector<int> dist = rootratemodel->getDists()->at(j);
-		vector<AncSplit> ans = iter_ancsplits(rootratemodel,dist);
+		vector<AncSplit> ans = iter_ancsplits(rootratemodel,dist,node.getPeriod());
 		if (node.isExternal()==false){//is not a tip
 			Node * c1 = &node.getChild(0);
 			Node * c2 = &node.getChild(1);
@@ -775,7 +775,7 @@ vector<Superdouble> BioGeoTree::calculate_ancstate_reverse(Node & node,bool marg
 				vector<vector<int> > * exdist = node.getExclDistVector();
 				int cou = count(exdist->begin(), exdist->end(), dists->at(i));
 				if (cou == 0) {
-					iter_ancsplits_just_int(rootratemodel, dists->at(i),leftdists, rightdists, weight);
+					iter_ancsplits_just_int(rootratemodel, dists->at(i),leftdists, rightdists, weight, node.getPeriod());
 					for (unsigned int j=0;j<leftdists.size();j++){
 						int ind1 = leftdists[j];
 						int ind2 = rightdists[j];
@@ -897,7 +897,7 @@ vector<Superdouble> BioGeoTree::calculate_reverse_stochmap(Node & node,bool time
 						vector<vector<int> > * exdist = node.getExclDistVector();
 						int cou = count(exdist->begin(), exdist->end(), dists->at(i));
 						if (cou == 0) {
-							iter_ancsplits_just_int(rootratemodel, dists->at(i),leftdists, rightdists, weight);
+							iter_ancsplits_just_int(rootratemodel, dists->at(i),leftdists, rightdists, weight, node.getPeriod());
 							for (unsigned int j=0;j<leftdists.size();j++){
 								int ind1 = leftdists[j];
 								int ind2 = rightdists[j];

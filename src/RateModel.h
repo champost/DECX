@@ -89,6 +89,7 @@ public:
 	map<vector<int>,int> * get_dists_int_map();
 	map<int,vector<int> > * get_int_dists_map();
 	vector<vector<vector<int> > > * get_iter_dist_splits(vector<int> & dist);
+	vector<vector<vector<int> > > * get_iter_dist_splits_per_period(vector<int> & dist, int period);
 	vector<vector<int> > * get_incldists_per_period(int period);
 	vector<int> * get_incldistsint_per_period(int period);
 	vector<vector<int> > * get_excldists_per_period(int period);
