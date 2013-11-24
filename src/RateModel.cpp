@@ -33,7 +33,8 @@ using namespace arma;
 //#define CBR
 
 RateModel::RateModel(int na, bool ge, vector<double> pers, bool sp):
-	globalext(ge),nareas(na),numthreads(0),periods(pers),sparse(sp),default_adjacency(true){}
+	globalext(ge),nareas(na),numthreads(0),periods(pers),sparse(sp),
+	default_adjacency(true),maxareas(1){}
 
 void RateModel::set_nthreads(int nthreads){
 	numthreads = nthreads;
@@ -795,72 +796,99 @@ void RateModel::iter_all_dist_splits(){
 }
 
 
-vector<vector<vector<int> > > RateModel::iter_dist_splits_per_period(vector<int> & dist, int period){
-	vector< vector <vector<int> > > ret;
-	vector< vector<int> > left;
-	vector< vector<int> > right;
+map<int,vector<vector<vector<int> > > > RateModel::iter_dist_splits_per_period(vector<int> & dist, int distSize){
+	map<int, vector<vector<vector<int> > > > ret;
 
-	//	if this dist is connected during the specified time period
-	if (find(incldists_per_period[period].begin(),incldists_per_period[period].end(),dist) != incldists_per_period[period].end()) {
-		if(accumulate(dist.begin(),dist.end(),0) == 1){
-			left.push_back(dist);
-			right.push_back(dist);
-		}
-		else{
-			for(unsigned int i=0;i<dist.size();i++){
-				if (dist[i]==1){
-					vector<int> x(dist.size(),0);
-					x[i] = 1;
-					int cou = count(incldists_per_period[period].begin(),incldists_per_period[period].end(),x);
-					if(cou > 0){
-						left.push_back(x);right.push_back(dist);
-						left.push_back(dist);right.push_back(x);
-						vector<int> y;
-						for(unsigned int j=0;j<dist.size();j++){
-							if(dist[j]==x[j]){
-								y.push_back(0);
-							}else{
-								y.push_back(1);
+	for (unsigned int per = 0; per < periods.size(); per++) {
+		vector<vector<int> > left;
+		vector<vector<int> > right;
+		//	if this dist is connected during the specified time period
+		if ((distSize <= maxareas) && (count(incldists_per_period[per].begin(),incldists_per_period[per].end(), dist) > 0)) {
+			if (distSize == 1) {
+				left.push_back(dist);
+				right.push_back(dist);
+			} else {
+				for (unsigned int i = 0; i < nareas; i++) {
+					if (dist[i] == 1) {
+						vector<int> x(dist.size(), 0);
+						x[i] = 1;
+						int cou = count(incldists_per_period[per].begin(),incldists_per_period[per].end(), x);
+						if (cou > 0) {
+							left.push_back(x);
+							right.push_back(dist);
+							left.push_back(dist);
+							right.push_back(x);
+							vector<int> y;
+							for (unsigned int j = 0; j < nareas; j++) {
+								if (dist[j] == x[j]) {
+									y.push_back(0);
+								} else {
+									y.push_back(1);
+								}
 							}
-						}
-						int cou2 = count(incldists_per_period[period].begin(),incldists_per_period[period].end(),y);
-						if(cou2 > 0){
-							left.push_back(x);right.push_back(y);
-							if(accumulate(y.begin(),y.end(),0) > 1){
-								left.push_back(y);right.push_back(x);
+							int cou2 = count(incldists_per_period[per].begin(),incldists_per_period[per].end(), y);
+							if (cou2 > 0) {
+								left.push_back(x);
+								right.push_back(y);
+								if (accumulate(y.begin(), y.end(), 0) > 1) {
+									left.push_back(y);
+									right.push_back(x);
+								}
 							}
 						}
 					}
 				}
+				//	allows for DIVA style splits for ranges of size 4 and above
+				//	ONLY if they remain connected during the respective time period
+				if (distSize >= 4) {
+					map<int,int> combidx2distidxmap;
+					int counter = 0;
+					for (unsigned int i = 0; i < nareas; i++) {
+						if (dist[i] == 1) {
+							combidx2distidxmap[counter] = i;
+							++counter;
+						}
+					}
+
+					//	keeps track of the split range sizes that have been considered for this dist
+					vector<bool> split_comb_sizes(distSize + 1, true);
+					split_comb_sizes[0] = split_comb_sizes[1] = split_comb_sizes[distSize - 1] = split_comb_sizes[distSize] = false;
+					//	start with a left split of size 2
+					for (unsigned int i = 2; split_comb_sizes[i] != false; i++) {
+						vector<vector<int> > range_comb_idxs = iterate(distSize, i);
+						for (unsigned int j = 0; j < range_comb_idxs.size(); j++) {
+							vector<int> split1 = comb_idx2bit_vect(range_comb_idxs[j], nareas, combidx2distidxmap);
+							vector<int> split2 = calculate_vector_int_xor_vector(dist, split1);
+							if ((count(incldists_per_period[per].begin(),incldists_per_period[per].end(), split1) > 0)
+									&& (count(incldists_per_period[per].begin(),incldists_per_period[per].end(), split2) > 0)) {
+									left.push_back(split1); right.push_back(split2);
+									left.push_back(split2); right.push_back(split1);
+							}
+						}
+						split_comb_sizes[i] = split_comb_sizes[distSize - i] = false;
+					}
+				}
 			}
 		}
-		if(VERBOSE){
-			cout << "LEFT" << endl;
-			for(unsigned int i = 0; i< left.size() ; i++ ){
-				print_vector_int(left[i]);
-			}
-			cout << "RIGHT" << endl;
-			for(unsigned int i = 0; i< right.size() ; i++ ){
-				print_vector_int(right[i]);
-			}
-		}
+		ret[per].push_back(left);
+		ret[per].push_back(right);
 	}
-	ret.push_back(left);
-	ret.push_back(right);
 	return ret;
 }
 
 void RateModel::iter_all_dist_splits_per_period() {
-	for (unsigned int j = 0; j < periods.size(); j++)
-		for (unsigned int i = 0; i < dists.size(); i++)
-			iter_dists_per_period[j][dists[i]] = iter_dist_splits_per_period(dists[i],j);
+	for (unsigned int i = 0; i < dists.size(); i++) {
+		int distSize = accumulate(dists[i].begin(),dists[i].end(),0);
+		iter_dists_per_period[dists[i]] = iter_dist_splits_per_period(dists[i],distSize);
+	}
 }
 
 
 vector< vector<int> > RateModel::generate_adjacent_dists(int maxareas, map<int,string> areanamemaprev)
 {
-
-	vector< vector<int> > it = iterate_all_from_num_max_areas(nareas,maxareas);
+	RateModel::maxareas = maxareas;
+	RateModel::areanamemaprev = areanamemaprev;
+	vector< vector<int> > it = iterate_all_from_num_max_areas(nareas, maxareas);
 	//global extinction
 	vector<int> empt(nareas,0);
 
@@ -929,7 +957,18 @@ vector< vector<int> > RateModel::generate_adjacent_dists(int maxareas, map<int,s
 }
 
 
-void RateModel::include_tip_dists(map<string,vector<int> > distrib_data, vector<vector<int> > &includedists, int maxareas)
+vector< vector<int> >  RateModel::iterate_all_from_num_max_areas(int m, int n){
+	vector< vector<int> > results;
+	for (int areaSize = 1; areaSize <= n; areaSize++){
+		vector< vector<int> > it = iterate(m, areaSize);
+		for (unsigned int i = 0; i < it.size(); i++)
+			results.push_back(it[i]);
+	}
+	return results;
+}
+
+
+void RateModel::include_tip_dists(map<string,vector<int> > distrib_data, vector<vector<int> > &includedists)
 {
 	map<string, vector<int> >::iterator pos;
 	bool bigTipMsg = false, adjacentTipMsg = false;
@@ -997,7 +1036,7 @@ vector<vector<vector<int> > > * RateModel::get_iter_dist_splits(vector<int> & di
 }
 
 vector<vector<vector<int> > > * RateModel::get_iter_dist_splits_per_period(vector<int> & dist, int period){
-	return &iter_dists_per_period[period][dist];
+	return &iter_dists_per_period[dist][period];
 }
 
 vector<vector<int> > * RateModel::get_incldists_per_period(int period)

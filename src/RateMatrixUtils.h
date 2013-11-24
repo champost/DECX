@@ -41,6 +41,7 @@ int get_vector_int_index_from_multi_vector_int(vector<int> * in, vector<vector<i
   used for creating and enumerate distributions
  */
 int calculate_vector_int_sum_xor(vector<int> & in,vector<int> & in2);
+vector<int> calculate_vector_int_xor_vector(vector<int> orig, vector<int> subset);
 int locate_vector_int_single_xor(vector<int> & in, vector<int> & in2);
 
 /*
@@ -64,6 +65,7 @@ void iter_ancsplits_just_int(RateModel *rm, vector<int> & dist,vector<int> & lef
   simple printing functions
  */
 void print_vector_int(vector<int> & in);
+string print_area_vector(vector<int> & in, map<int,string> & areamap, bool ret);
 void print_vector_double(vector<double> & in);
 
 /*

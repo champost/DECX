@@ -99,15 +99,18 @@ BioGeoTree::BioGeoTree(Tree * tr, vector<double> ps):tree(tr),periods(ps),
 		}
 	}
 	/*
-	 * initialize the periods for each node
+	 * initialize the periods for each internal node
 	 */
 	vector<double> cumulPeriod(periods.size(),0.0);
 	partial_sum(periods.begin(),periods.end(),cumulPeriod.begin());
-	for (int nodeNum = 0; nodeNum < tree->getNodeCount(); nodeNum++) {
-		Node * currNode = tree->getNode(nodeNum);
-		for (unsigned int ts = 0; ts < cumulPeriod.size(); ts++)
-			if (currNode->getHeight() <= cumulPeriod[ts])
+	for (int nodeNum = 0; nodeNum < tree->getInternalNodeCount(); nodeNum++) {
+		Node * currNode = tree->getInternalNode(nodeNum);
+		for (unsigned int ts = 0; ts < cumulPeriod.size(); ts++) {
+			if (currNode->getHeight() <= cumulPeriod[ts]) {
 				currNode->setPeriod(ts);
+				break;
+			}
+		}
 	}
 }
 
@@ -624,8 +627,8 @@ void BioGeoTree::reverse(Node & node){
 		for(int i = 0;i<node.getChildCount();i++){
 			reverse(node.getChild(i));
 		}
-	}else{
-		//else if(node.isExternal() == false){
+	}
+	else if(node.isExternal() == false){
 		//calculate A i
 		//sum over all alpha k of sister node of the parent times the priors of the speciations
 		//(weights) times B of parent j
@@ -787,6 +790,7 @@ vector<Superdouble> BioGeoTree::calculate_ancstate_reverse(Node & node,bool marg
 		}
 		return LHOODS;
 	}
+	return vector<Superdouble> ();
 }
 
 /**********************************************************

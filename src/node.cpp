@@ -216,6 +216,11 @@ string Node::getNewick(bool bl,string obj){
 	}else{//EXTERNAL
 		if(name.size()>0)
 			ret = ret + name;
+		if ((obj == "state") || (obj == "split")) {
+			std::ostringstream o;
+			o << (*((StringNodeObject*) (this->getObject(obj))));
+			ret = ret + "[" + o.str() + "]";
+		}
 	}
 	return ret;
 }

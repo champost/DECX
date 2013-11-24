@@ -77,6 +77,15 @@ int calculate_vector_int_sum_xor(vector<int> & in,vector<int> & in2){
 	return sum;
 }
 
+vector<int> calculate_vector_int_xor_vector(vector<int> orig, vector<int> subset) {
+	vector<int> xor_subset(orig.size(), 0);
+	for (unsigned int i = 0; i < orig.size(); i++)
+		if (orig[i] != subset[i])
+			xor_subset[i] = 1;
+
+	return xor_subset;
+}
+
 int locate_vector_int_single_xor(vector<int> & in, vector<int> & in2){
 	int location = 0;
 	for(unsigned int i=0;i<in.size();i++){
@@ -180,6 +189,23 @@ void print_vector_int(vector<int> & in){
 	for(unsigned int i=0;i<in.size();i++){
 		cout << in[i] << " ";
 	}cout << endl;
+}
+
+string print_area_vector(vector<int> & in, map<int,string> & areamap, bool ret) {
+	int size = accumulate(in.begin(),in.end(),0), output = 0;
+	stringstream area_sstr;
+	for (unsigned int i = 0; i < in.size(); i++) {
+		if (in[i] == 1) {
+			area_sstr << areamap[i];
+			++output;
+			if (output < size)
+				area_sstr << "_";
+		}
+	}
+	if (ret)
+		return area_sstr.str();
+	else
+		cout << area_sstr.str() << endl;
 }
 
 void print_vector_double(vector<double> & in){

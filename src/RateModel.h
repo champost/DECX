@@ -26,6 +26,7 @@ class RateModel{
 private:
 	bool globalext;
 	int nareas;
+	int maxareas;
 	int numthreads;
 	vector<string> labels;
 	vector<double> periods;
@@ -37,9 +38,10 @@ private:
 	vector<vector<vector<int> > > incldists_per_period;
 	vector<vector<int> > incldistsint_per_period;
 	vector<vector<vector<int> > > excldists_per_period;
+	map<vector<int>, map<int,vector<vector<vector<int> > > > > iter_dists_per_period;
 
+	map<int,string> areanamemaprev;
 	map<vector<int>,vector<vector<vector<int> > > > iter_dists;
-	map<int, map<vector<int>,vector<vector<vector<int> > > > > iter_dists_per_period;
 	map<vector<int>,string> distsmap;
 	map<vector<int>, int> distsintmap;
 	map<int,vector<int> > intdistsmap;
@@ -65,7 +67,8 @@ public:
 	void setup_adjacency(string filename, vector<string> areaNames);
 	void set_adj_bool(bool adjBool);
 	vector< vector<int> > generate_adjacent_dists(int maxareas, map<int,string> areanamemaprev);
-	void include_tip_dists(map<string,vector<int> > distrib_data, vector<vector<int> > &includedists, int maxareas);
+	vector< vector<int> >  iterate_all_from_num_max_areas(int m, int n);
+	void include_tip_dists(map<string,vector<int> > distrib_data, vector<vector<int> > &includedists);
 	void setup_Dmask();
 	void setup_D_provided(double d, vector< vector< vector<double> > > & D_mask_in);
 	void set_Dmask_cell(int period, int area, int area2, double prob, bool sym);
@@ -83,7 +86,7 @@ public:
 	string P_repr(int period);
 	vector<vector<int> > enumerate_dists();
 	vector<vector<vector<int> > > iter_dist_splits(vector<int> & dist);
-	vector<vector<vector<int> > > iter_dist_splits_per_period(vector<int> & dist, int period);
+	map<int,vector<vector<vector<int> > > > iter_dist_splits_per_period(vector<int> & dist, int distSize);
 	//vector<AncSplit> iter_ancsplits(vector<int> dist);
 	vector<vector<int> > * getDists();
 	map<vector<int>,int> * get_dists_int_map();

@@ -195,6 +195,14 @@ vector<int> idx2bitvect(vector <int> indices, int M){
 	return v;
 }
 
+vector<int> comb_idx2bit_vect(vector<int> indices, int M, map<int, int> combidx2distidxmap) {
+	vector<int> v(M, 0);
+	for (unsigned int i = 0; i < indices.size(); i++) {
+		v[combidx2distidxmap[indices[i]]] = 1;
+	}
+	return v;
+}
+
 vector< vector<int> >  iterate_all(int m){
 	vector< vector<int> > results;
 	for (int n = 1; n < m+1; n++){
@@ -224,16 +232,6 @@ map< int, vector<int> > iterate_all_bv2(int m){
 		rangemap[i+1] =  idx2bitvect(it.at(i),m);
 	}
 	return rangemap;
-}
-
-vector< vector<int> >  iterate_all_from_num_max_areas(int m, int n){
-	vector< vector<int> > results;
-	for (int areaSize = 1; areaSize <= n; areaSize++){
-		vector< vector<int> > it = iterate(m, areaSize);
-		for (unsigned int i = 0; i < it.size(); i++)
-			results.push_back(it[i]);
-	}
-	return results;
 }
 
 bool connected_dist_BGL(const vector <int> &indices, const vector <vector<bool> > &adjMat)

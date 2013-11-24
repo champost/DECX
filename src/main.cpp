@@ -35,6 +35,7 @@ using namespace std;
 #include "BayesianBioGeoAllDispersal.h"
 #include "vector_node_object.h"
 #include "superdouble.h"
+#include "string_node_object.h"
 
 #ifdef XYZ
 #include "gmpfrxx/gmpfrxx.h"
@@ -445,7 +446,7 @@ int main(int argc, char* argv[]){
 //			rm.setup_dists();
 //		}
 		includedists = rm.generate_adjacent_dists(maxareas, areanamemaprev);
-		rm.include_tip_dists(data, includedists, maxareas);
+		rm.include_tip_dists(data, includedists);
 		rm.setup_dists(includedists,true);
 		rm.setup_D(0.01);
 		rm.setup_E(0.01);
@@ -761,21 +762,39 @@ int main(int argc, char* argv[]){
 				if(splits){
 					outTreeFile.open((treefile+treefileSuffix+".bgsplits.tre").c_str(),ios::app );
 					//need to output object "split"
+					for(int j=0;j<intrees[i]->getExternalNodeCount();j++){
+						Node * currNode = intrees[i]->getExternalNode(j);
+						StringNodeObject str(print_area_vector(data[currNode->getName()],areanamemaprev,true));
+						currNode->assocObject("split",str);
+					}
 					outTreeFile << intrees[i]->getRoot()->getNewick(true,"split") << ";"<< endl;
 					outTreeFile.close();
 					for(int j=0;j<intrees[i]->getInternalNodeCount();j++){
 						if (intrees[i]->getInternalNode(j)->getObject("split")!= NULL)
 							delete intrees[i]->getInternalNode(j)->getObject("split");
 					}
+					for(int j=0;j<intrees[i]->getExternalNodeCount();j++){
+						if (intrees[i]->getExternalNode(j)->getObject("split")!= NULL)
+							delete intrees[i]->getExternalNode(j)->getObject("split");
+					}
 				}
 				if(states){
 					outTreeFile.open((treefile+treefileSuffix+".bgstates.tre").c_str(),ios::app );
 					//need to output object "state"
+					for(int j=0;j<intrees[i]->getExternalNodeCount();j++){
+						Node * currNode = intrees[i]->getExternalNode(j);
+						StringNodeObject str(print_area_vector(data[currNode->getName()],areanamemaprev,true));
+						currNode->assocObject("state",str);
+					}
 					outTreeFile << intrees[i]->getRoot()->getNewick(true,"state") << ";"<< endl;
 					outTreeFile.close();
 					for(int j=0;j<intrees[i]->getInternalNodeCount();j++){
 						if (intrees[i]->getInternalNode(j)->getObject("state")!= NULL)
 							delete intrees[i]->getInternalNode(j)->getObject("state");
+					}
+					for(int j=0;j<intrees[i]->getExternalNodeCount();j++){
+						if (intrees[i]->getExternalNode(j)->getObject("state")!= NULL)
+							delete intrees[i]->getExternalNode(j)->getObject("state");
 					}
 				}
 
