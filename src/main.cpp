@@ -523,9 +523,15 @@ int main(int argc, char* argv[]){
 				if(fossiltype[k] == "n" || fossiltype[k] == "N"){
 					bgt.setFossilatNodeByMRCA_id(mrcanodeint[fossilmrca[k]],areanamemap[fossilarea[k]]);
 					cout << "Setting node fossil at mrca: " << fossilmrca[k] << " at area: " << fossilarea[k] << endl;
-				}else{
-					bgt.setFossilatBranchByMRCA_id(mrcanodeint[fossilmrca[k]],areanamemap[fossilarea[k]],fossilage[k]);
-					cout << "Setting branch fossil at mrca: " << fossilmrca[k] << " at area: " << fossilarea[k] << " at age: " << fossilage[k] << endl;
+				}else if(fossiltype[k] == "b" || fossiltype[k] == "B"){
+					if (mrcanodeint[fossilmrca[k]]->isInternal()) {
+						bgt.setFossilatInternalBranchByMRCA_id(mrcanodeint[fossilmrca[k]],areanamemap[fossilarea[k]],fossilage[k]);
+						cout << "Setting INTERNAL branch fossil at mrca: " << fossilmrca[k] << " at area: " << fossilarea[k] << " at age: " << fossilage[k] << endl;
+					}
+					else {
+						bgt.setFossilatExternalBranchByMRCA_id(mrcanodeint[fossilmrca[k]],areanamemap[fossilarea[k]],fossilage[k]);
+						cout << "Setting EXTERNAL branch fossil at mrca: " << fossilmrca[k] << " at area: " << fossilarea[k] << " at age: " << fossilage[k] << endl;
+					}
 				}
 			}
 
@@ -543,7 +549,7 @@ int main(int argc, char* argv[]){
 			time(&likeEndTime);
 			cout << "Time taken for initial -ln likelihood: " <<  float(likeEndTime - likStartTime) << " s." << endl << endl;
 #ifdef CBR
-//			exit(-1);
+			goto quick_n_dirty;
 #endif
 
 			time(&likStartTime);
@@ -869,6 +875,7 @@ int main(int argc, char* argv[]){
 			//need to delete the biogeostuff
 
 		}
+		quick_n_dirty: ;
 		for(unsigned int i=0;i<intrees.size();i++){
 			delete intrees[i];
 		}

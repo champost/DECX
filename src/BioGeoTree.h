@@ -89,7 +89,8 @@ public:
 	void setFossilatNodeByMRCA(vector<string> nodeNames, int fossilarea);
 	void setFossilatNodeByMRCA_id(Node * id, int fossilarea);
 	void setFossilatBranchByMRCA(vector<string> nodeNames, int fossilarea, double age);
-	void setFossilatBranchByMRCA_id(Node * id, int fossilarea, double age);
+	void setFossilatInternalBranchByMRCA_id(Node * id, int fossilarea, double age);
+	void setFossilatExternalBranchByMRCA_id(Node * id, int fossilarea, double age);
 
 /*
 	for calculating forward and reverse

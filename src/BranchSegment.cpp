@@ -14,7 +14,7 @@ using namespace std;
 
 BranchSegment::BranchSegment(double dur,int per):duration(dur),period(per),
 		model(NULL),fossilareaindices(vector<int>()),startdistint(-666),
-		distconds(NULL),ancdistconds(NULL){}
+		distconds(NULL),ancdistconds(NULL),isFossil(false),isTipFossil(false){}
 
 void BranchSegment::setModel(RateModel * mod){
 	model = mod;
@@ -59,4 +59,5 @@ vector<int> BranchSegment::getFossilAreas(){
 
 void BranchSegment::setFossilArea(int area){
 	fossilareaindices.push_back(area);
+	isFossil = true;
 }

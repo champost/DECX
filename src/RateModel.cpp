@@ -906,6 +906,7 @@ vector< vector<int> > RateModel::generate_adjacent_dists(int maxareas, map<int,s
 		for (unsigned int prd = 0; prd < periods.size(); prd++) {
 
 #ifdef CBR
+			int adjDistCounter = 0;
 			cout << "\nPeriod : " << prd + 1 << endl;
 #endif
 
@@ -913,6 +914,9 @@ vector< vector<int> > RateModel::generate_adjacent_dists(int maxareas, map<int,s
 				incldists_per_period.push_back(rangemap);
 				incldistsint_per_period.push_back(alldistsint);
 				excldists_per_period.push_back(vector<vector<int> > ());
+#ifdef CBR
+				cout << "Total dists (default adjacency) : " << alldistsint.size() << endl;
+#endif
 			}
 			else {
 				vector<vector<int> > period_exdists;
@@ -932,6 +936,7 @@ vector< vector<int> > RateModel::generate_adjacent_dists(int maxareas, map<int,s
 								cout << "_";
 						}
 						cout << endl;
+						++adjDistCounter;
 #endif
 						period_incdists.push_back(idx2bitvect(it.at(i),nareas));
 						somedistsint.push_back(i+1);
@@ -942,6 +947,9 @@ vector< vector<int> > RateModel::generate_adjacent_dists(int maxareas, map<int,s
 				incldists_per_period.push_back(period_incdists);
 				incldistsint_per_period.push_back(somedistsint);
 				excldists_per_period.push_back(period_exdists);
+#ifdef CBR
+				cout << "Total dists : " << adjDistCounter << endl;
+#endif
 			}
 		}
 	}

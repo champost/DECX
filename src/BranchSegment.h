@@ -26,6 +26,8 @@ class BranchSegment{
 		RateModel * model;
 		vector<int> fossilareaindices;
 		int startdistint;
+		bool isFossil;
+		bool isTipFossil;
 
 	public:
 		BranchSegment(double dur,int per);

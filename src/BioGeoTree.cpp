@@ -262,19 +262,6 @@ Superdouble BioGeoTree::eval_likelihood(bool marginal){
 	}
 //	return (-(log(calculate_vector_double_sum(*(vector<double>*) tree->getRoot()->getDoubleVector(dc)))));
 	return -(calculate_vector_Superdouble_sum(*(vector<Superdouble>*) tree->getRoot()->getDoubleVector(dc))).getLn();
-
-//	vector<vector<int> > * dists = rootratemodel->getDists();
-//	vector<Superdouble> rootDistLiks;
-//	for (unsigned int i=0;i<dists->size();i++){
-//		if(accumulate(dists->at(i).begin(),dists->at(i).end(),0) > 0){
-//			Superdouble lh = 0.0;
-//			vector<vector<int> >* exdist = tree->getRoot()->getExclDistVector();
-//			int cou = count(exdist->begin(),exdist->end(),dists->at(i));
-//			if(cou == 0)
-//				rootDistLiks.push_back(tree->getRoot()->getDoubleVector(dc)->at(i));
-//		}
-//	}
-//	return -(calculate_vector_Superdouble_sum(rootDistLiks).getLn());
 }
 
 
@@ -585,12 +572,25 @@ void BioGeoTree::setFossilatBranchByMRCA(vector<string> nodeNames, int fossilare
 		startage += tsegs->at(i).getDuration();
 	}
 }
-void BioGeoTree::setFossilatBranchByMRCA_id(Node * id, int fossilarea, double age){
+void BioGeoTree::setFossilatInternalBranchByMRCA_id(Node * id, int fossilarea, double age){
 	vector<BranchSegment> * tsegs = id->getSegVector();
 	double startage = id->getHeight();
 
 	for(unsigned int i=0;i<tsegs->size();i++){
-		if(age > startage && age < (startage+tsegs->at(i).getDuration())){
+		//	CBR (23.02.2014) accounting for fossil age = start/end of time period
+		if(age > startage && age <= (startage+tsegs->at(i).getDuration())){
+			tsegs->at(i).setFossilArea(fossilarea);
+		}
+		startage += tsegs->at(i).getDuration();
+	}
+}
+void BioGeoTree::setFossilatExternalBranchByMRCA_id(Node * id, int fossilarea, double age){
+	vector<BranchSegment> * tsegs = id->getSegVector();
+	double startage = id->getHeight();
+
+	for(unsigned int i=0;i<tsegs->size();i++){
+		//	CBR (23.02.2014) accounting for fossil age = start/end of time period
+		if(age > startage && age <= (startage+tsegs->at(i).getDuration())){
 			tsegs->at(i).setFossilArea(fossilarea);
 		}
 		startage += tsegs->at(i).getDuration();
@@ -809,13 +809,13 @@ void BioGeoTree::prepare_stochmap_reverse_all_nodes(int from , int to){
 		for (unsigned int l = 0;l<tsegs->size();l++){
 			int per = (*tsegs)[l].getPeriod();
 			double dur =  (*tsegs)[l].getDuration();
-			cx_mat eigvec(ndists,ndists);eigvec.fill(0);
-			cx_mat eigval(ndists,ndists);eigval.fill(0);
+			cx_mat eigvec(ndists,ndists);eigvec.fill(cx_double(0.0, 0.0));
+			cx_mat eigval(ndists,ndists);eigval.fill(cx_double(0.0, 0.0));
 			bool isImag = rootratemodel->get_eigenvec_eigenval_from_Q(&eigval, &eigvec,per);
 			mat Ql(ndists,ndists);Ql.fill(0);Ql(from,to) = rootratemodel->get_Q()[per][from][to];
 			mat W(ndists,ndists);W.fill(0);W(from,from) = 1;
-			cx_mat summed(ndists,ndists);summed.fill(0);
-			cx_mat summedR(ndists,ndists);summedR.fill(0);
+			cx_mat summed(ndists,ndists);summed.fill(cx_double(0.0, 0.0));
+			cx_mat summedR(ndists,ndists);summedR.fill(cx_double(0.0, 0.0));
 			for(int i=0;i<ndists;i++){
 				mat Ei(ndists,ndists);Ei.fill(0);Ei(i,i)=1;
 				cx_mat Si(ndists,ndists);
