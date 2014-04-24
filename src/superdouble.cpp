@@ -164,47 +164,79 @@ void Superdouble::operator -= (const Superdouble  &x){
 }
 
 bool Superdouble::operator > (const Superdouble & x)const{
-	if (exponent > x.exponent)
-		return true;
-	else if(exponent == x.exponent && mantissa > x.mantissa)
-		return true;
-	else
-		return false;
+	if (x.mantissa == 0) {	// (CBR 24.04.2014)
+		if (mantissa > 0)
+			return true;
+		else
+			return false;
+	}
+	else {
+		if (exponent > x.exponent)
+			return true;
+		else if(exponent == x.exponent && mantissa > x.mantissa)
+			return true;
+		else
+			return false;
+	}
 }
 
 bool Superdouble::operator >= (const Superdouble & x)const{
-	if (exponent > x.exponent)
-		return true;
-	else if(exponent == x.exponent && mantissa >= x.mantissa)
-		return true;
-	else
-		return false;
+	if (x.mantissa == 0) {	// (CBR 24.04.2014)
+		if (mantissa >= 0)
+			return true;
+		else
+			return false;
+	}
+	else {
+		if (exponent > x.exponent)
+			return true;
+		else if(exponent == x.exponent && mantissa >= x.mantissa)
+			return true;
+		else
+			return false;
+	}
 }
 
 bool Superdouble::operator < (const Superdouble & x)const{
-	if (exponent < x.exponent)
-		return true;
-	else if(exponent == x.exponent && mantissa < x.mantissa)
-		return true;
-	else
-		return false;
+	if (x.mantissa == 0) {	// (CBR 24.04.2014)
+		if (mantissa < 0)
+			return true;
+		else
+			return false;
+	}
+	else {
+		if (exponent < x.exponent)
+			return true;
+		else if(exponent == x.exponent && mantissa < x.mantissa)
+			return true;
+		else
+			return false;
+	}
 }
 
 bool Superdouble::operator <= (const Superdouble & x)const{
-	if (exponent < x.exponent)
-		return true;
-	else if(exponent == x.exponent && mantissa <= x.mantissa)
-		return true;
-	else
-		return false;
+	if (x.mantissa == 0) {	// (CBR 24.04.2014)
+		if (mantissa <= 0)
+			return true;
+		else
+			return false;
+	}
+	else {
+		if (exponent < x.exponent)
+			return true;
+		else if(exponent == x.exponent && mantissa <= x.mantissa)
+			return true;
+		else
+			return false;
+	}
 }
 
 bool Superdouble::operator == (const Superdouble & x)const{
 	if (exponent == x.exponent)
 	    if (mantissa == x.mantissa)
-		return true;
+	    	return true;
 	    else
-		return false;
+	    	return false;
 	else
 		return false;
 }
@@ -214,9 +246,9 @@ bool Superdouble::operator != (const Superdouble & x)const{
 	    return true;
 	else
 	    if (mantissa != x.mantissa)
-		return true;
+	    	return true;
 	    else
-		return false;
+	    	return false;
 }
 
 //this just switches the sign of the superdouble

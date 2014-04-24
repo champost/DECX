@@ -36,6 +36,7 @@ private:
 public:
 	BayesianBioGeo(BioGeoTree * intree,RateModel * inrm, bool marg, int gen);
 	void run_global_dispersal_extinction();
+	~BayesianBioGeo() {gsl_rng_free (r);}
 	
 	
 };
