@@ -171,7 +171,7 @@ vector<AncSplit> iter_ancsplits(RateModel *rm, vector<int> & dist, int period){
 }
 
 void iter_ancsplits_just_int(RateModel *rm, vector<int> & dist,vector<int> & leftdists, vector<int> & rightdists, double & weight, int period){
-	leftdists.clear();rightdists.clear();
+	leftdists.clear();rightdists.clear();weight=0;
 	//	vector<vector<vector<int> > > * splits = rm->get_iter_dist_splits(dist);
 		vector<vector<vector<int> > > * splits = rm->get_iter_dist_splits_per_period(dist, period);
 	map<vector<int>,int> * distsmap = rm->get_dists_int_map();
@@ -191,7 +191,7 @@ void print_vector_int(vector<int> & in){
 	}cout << endl;
 }
 
-string print_area_vector(vector<int> & in, map<int,string> & areamap, bool ret) {
+string print_area_vector(vector<int> & in, map<int,string> & areamap) {
 	int size = accumulate(in.begin(),in.end(),0), output = 0;
 	stringstream area_sstr;
 	for (unsigned int i = 0; i < in.size(); i++) {
@@ -202,10 +202,7 @@ string print_area_vector(vector<int> & in, map<int,string> & areamap, bool ret) 
 				area_sstr << "_";
 		}
 	}
-	if (ret)
-		return area_sstr.str();
-	else
-		cout << area_sstr.str() << endl;
+	return area_sstr.str();
 }
 
 void print_vector_double(vector<double> & in){

@@ -97,6 +97,7 @@ int main(int argc, char* argv[]){
 		double dispersal = 0.1;
 		double extinction = 0.1;
 		bool estimate = true;
+		bool ultrametric = true;	//	is false when at least one of the input trees is non-ultrametric
 
 		/*
 		 * for stochastic mapping
@@ -334,6 +335,8 @@ int main(int argc, char* argv[]){
 					}else if(!strcmp(tokens[0].c_str(), "stoppingprecision")){
 						stoppingprecision = atof(tokens[1].c_str());
 						cout << "setting stoppingprecision: " << stoppingprecision << endl;
+					}else if(!strcmp(tokens[0].c_str(),  "not_ultrametric")){
+						ultrametric = false;
 					}
 				}
 			}
@@ -446,10 +449,10 @@ int main(int argc, char* argv[]){
 //			rm.setup_dists();
 //		}
 		includedists = rm.generate_adjacent_dists(maxareas, areanamemaprev);
-		rm.include_tip_dists(data, includedists);
+		rm.include_tip_dists(data, includedists, areanamemaprev);
 		rm.setup_dists(includedists,true);
-		rm.setup_D(0.01);
-		rm.setup_E(0.01);
+		rm.setup_D(dispersal);
+		rm.setup_E(extinction);
 //		rm.setup_Q();
 		rm.setup_Q_with_adjacency();
 
@@ -469,7 +472,7 @@ int main(int argc, char* argv[]){
 		 * start calculating on all trees
 		 */
 		for(unsigned int i =0;i<intrees.size();i++){
-			BioGeoTree bgt(intrees[i],periods);
+			BioGeoTree bgt(intrees[i],periods,ultrametric);
 			/*
 			 * set adjacency matrix constraints
 			 */
@@ -641,25 +644,21 @@ int main(int argc, char* argv[]){
 			time(&likeEndTime);
 			cout << "Time taken for final -ln likelihood: " <<  float(likeEndTime - likStartTime) << " s." << endl << endl;
 
-			ofstream LHOODFile;
-			string fixedarea = "";
-			if (LHOODS) {
-				LHOODFile.open("LHOODS.txt",ios::out | ios::app);
-				LHOODFile << optDisp << "\t" << optExt << "\t" << optLik << "\t";
-				if (fixnodewithmrca.find("ROOT") != fixnodewithmrca.end()) {
-					vector<int> in = fixnodewithmrca["ROOT"];
-					for (unsigned int i = 0; i < in.size(); i++)
-						LHOODFile << in[i];
+			if (intrees.size() == 1) {
+				ofstream LHOODFile;
+				if (LHOODS) {
+					LHOODFile.open("LHOODS.txt",ios::out | ios::app);
+					LHOODFile << optDisp << "\t" << optExt << "\t" << optLik << "\t";
+					if (fixnodewithmrca.find("ROOT") != fixnodewithmrca.end()) {
+						vector<int> in = fixnodewithmrca["ROOT"];
+						for (unsigned int i = 0; i < in.size(); i++)
+							LHOODFile << in[i];
 
-					LHOODFile << "\t";
-					for (unsigned int i = 0; i < in.size(); i++)
-						if (in[i] == 1)
-							fixedarea += areanames[i] + "_";
-					fixedarea.erase(fixedarea.end() - 1);
-					LHOODFile << fixedarea << "\t";
+						LHOODFile << "\t" << print_area_vector(in,areanamemaprev) << "\t";
+					}
+					LHOODFile << float(likeEndTime - likStartTime) << "s"  << endl;
+					LHOODFile.close();
 				}
-				LHOODFile << float(likeEndTime - likStartTime) << "s"  << endl;
-				LHOODFile.close();
 			}
 
 			if (_stop_on_global_likelihood_) {
@@ -701,7 +700,7 @@ int main(int argc, char* argv[]){
 							totlike = calculate_vector_Superdouble_sum(rast);
 
 							ofstream NodeLHOODFile;
-							if (NodeLHOODS) {
+							if (NodeLHOODS && (intrees.size() == 1)) {
 								stringstream fname, stst;
 								fname << "Node_" << intrees[i]->getInternalNode(j)->getNumber() << ".txt";
 
@@ -713,7 +712,7 @@ int main(int argc, char* argv[]){
 									for (unsigned int areabit = 0; areabit < in.size(); areabit++)
 										NodeLHOODFile << in[areabit];
 
-									NodeLHOODFile << " (" << fixedarea << ")\t";
+									NodeLHOODFile << " (" << print_area_vector(in,areanamemaprev) << ")\t";
 									tt.summarizeAncState(intrees[i]->getInternalNode(j),rast,areanamemaprev,&rm, NodeLHOODS, NodeLHOODFile);
 								}
 							}
@@ -726,10 +725,22 @@ int main(int argc, char* argv[]){
 					/*
 					 * key file output
 					 */
-					outTreeKeyFile.open((treefile+treefileSuffix+".bgkey.tre").c_str(),ios::app );
-					//need to output numbers
+					if (intrees.size() > 1)
+						outTreeKeyFile.open((treefile+treefileSuffix+".bgkey.tre").c_str(),ios::app);
+					else
+						outTreeKeyFile.open((treefile+treefileSuffix+".bgkey.tre").c_str(),ios::out);
+					//need to output numbers for internal nodes and states for the tips
+					for(int j=0;j<intrees[i]->getExternalNodeCount();j++){
+						Node * currNode = intrees[i]->getExternalNode(j);
+						StringNodeObject str(print_area_vector(data[currNode->getName()],areanamemaprev));
+						currNode->assocObject("state",str);
+					}
 					outTreeKeyFile << intrees[i]->getRoot()->getNewick(true,"number") << ";"<< endl;
 					outTreeKeyFile.close();
+					for(int j=0;j<intrees[i]->getExternalNodeCount();j++){
+						if (intrees[i]->getExternalNode(j)->getObject("state")!= NULL)
+							delete intrees[i]->getExternalNode(j)->getObject("state");
+					}
 				}else{
 					for(unsigned int j=0;j<ancstates.size();j++){
 						if(splits){
@@ -742,7 +753,7 @@ int main(int argc, char* argv[]){
 							vector<Superdouble> rast = bgt.calculate_ancstate_reverse(*mrcanodeint[ancstates[j]],marginal);
 
 							ofstream NodeLHOODFile;
-							if (NodeLHOODS) {
+							if (NodeLHOODS && (intrees.size() == 1)) {
 								stringstream fname, stst;
 								fname << "Node_" << intrees[i]->getInternalNode(j)->getNumber() << ".txt";
 
@@ -754,7 +765,7 @@ int main(int argc, char* argv[]){
 									for (unsigned int areabit = 0; areabit < in.size(); areabit++)
 										NodeLHOODFile << in[areabit];
 
-									NodeLHOODFile << " (" << fixedarea << ")\t";
+									NodeLHOODFile << " (" << print_area_vector(in,areanamemaprev) << ")\t";
 									tt.summarizeAncState(mrcanodeint[ancstates[j]],rast,areanamemaprev,&rm, NodeLHOODS, NodeLHOODFile);
 								}
 							}
@@ -766,11 +777,14 @@ int main(int argc, char* argv[]){
 					}
 				}
 				if(splits){
-					outTreeFile.open((treefile+treefileSuffix+".bgsplits.tre").c_str(),ios::app );
+					if (intrees.size() > 1)
+						outTreeFile.open((treefile+treefileSuffix+".bgsplits.tre").c_str(),ios::app);
+					else
+						outTreeFile.open((treefile+treefileSuffix+".bgsplits.tre").c_str(),ios::out);
 					//need to output object "split"
 					for(int j=0;j<intrees[i]->getExternalNodeCount();j++){
 						Node * currNode = intrees[i]->getExternalNode(j);
-						StringNodeObject str(print_area_vector(data[currNode->getName()],areanamemaprev,true));
+						StringNodeObject str(print_area_vector(data[currNode->getName()],areanamemaprev));
 						currNode->assocObject("split",str);
 					}
 					outTreeFile << intrees[i]->getRoot()->getNewick(true,"split") << ";"<< endl;
@@ -785,11 +799,14 @@ int main(int argc, char* argv[]){
 					}
 				}
 				if(states){
-					outTreeFile.open((treefile+treefileSuffix+".bgstates.tre").c_str(),ios::app );
+					if (intrees.size() > 1)
+						outTreeFile.open((treefile+treefileSuffix+".bgstates.tre").c_str(),ios::app);
+					else
+						outTreeFile.open((treefile+treefileSuffix+".bgstates.tre").c_str(),ios::out);
 					//need to output object "state"
 					for(int j=0;j<intrees[i]->getExternalNodeCount();j++){
 						Node * currNode = intrees[i]->getExternalNode(j);
-						StringNodeObject str(print_area_vector(data[currNode->getName()],areanamemaprev,true));
+						StringNodeObject str(print_area_vector(data[currNode->getName()],areanamemaprev));
 						currNode->assocObject("state",str);
 					}
 					outTreeFile << intrees[i]->getRoot()->getNewick(true,"state") << ";"<< endl;

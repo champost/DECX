@@ -65,7 +65,7 @@ void iter_ancsplits_just_int(RateModel *rm, vector<int> & dist,vector<int> & lef
   simple printing functions
  */
 void print_vector_int(vector<int> & in);
-string print_area_vector(vector<int> & in, map<int,string> & areamap, bool ret);
+string print_area_vector(vector<int> & in, map<int,string> & areamap);
 void print_vector_double(vector<double> & in);
 
 /*

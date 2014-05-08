@@ -141,18 +141,23 @@ void RateModel::setup_dists(vector<vector<int> > indists, bool include){
 	/*
 	 print out a visual representation of the matrix
 	 */
-//	if (VERBOSE){
-	if (true){
+	if (VERBOSE){
 		cout << "dists" <<endl;
 		for (unsigned int j=0; j< dists.size(); j++){
 			cout << j << " ";
 			for (unsigned int i=0;i<dists[j].size();i++){
 				cout << dists[j][i];
 			}
-			cout << endl;
+			cout << " " << print_area_vector(dists[j],areanamemaprev) << endl;
 		}
 		cout << endl;
 	}
+
+	cout << "Total number of considered ranges : " << dists.size() << endl;
+	for (unsigned int prd = 0; prd < periods.size(); prd++)
+		cout << "\nPeriod : " << prd + 1 << endl
+			 << "Number of considered ranges during this period : " << incldists_per_period[prd].size() << endl;
+	cout << endl;
 }
 
 void RateModel::setup_adjacency(string filename, vector<string> areaNames)
@@ -390,7 +395,7 @@ void RateModel::setup_Q_with_adjacency(){
 		Q.push_back(rows);
 		for(unsigned int i=0;i<incldists_per_period[p].size();i++){//incldists_per_period[p]
 			int s1 = accumulate(incldists_per_period[p][i].begin(),incldists_per_period[p][i].end(),0);
-			if(s1 > 0){
+			if ((s1 > 0) && s1 <= maxareas){
 				for(unsigned int j=0;j<incldists_per_period[p].size();j++){//incldists_per_period[p]
 					int sxor = calculate_vector_int_sum_xor(incldists_per_period[p][i], incldists_per_period[p][j]);
 					if (sxor == 1){
@@ -410,6 +415,48 @@ void RateModel::setup_Q_with_adjacency(){
 					}
 				}
 			}
+			//	special case of "big tip" distributions which are added only during the most recent time period
+			else if ((p == 0) && (s1 > maxareas)) {
+				int tip_anc_size = 1;
+				//	looping through all the "left" dist splits of this big tip distribution
+				for (size_t k = 0; k < iter_dists_per_period[incldists_per_period[p][i]][p][0].size();k++) {
+					int split_dist_size = calculate_vector_int_sum(&iter_dists_per_period[incldists_per_period[p][i]][p][0][k]);
+					//	searching for the smallest possible contraction of the range size of this big tip
+					if ((split_dist_size > tip_anc_size) && (split_dist_size < s1))
+						tip_anc_size = split_dist_size;
+				}
+
+				// 	search for tip_anc_size'd contiguous sub-ranges/splits for the big tip
+				map<int,int> combidx2distidxmap;
+				int counter = 0;
+				for (unsigned int area = 0; area < nareas; area++) {
+					if (incldists_per_period[p][i][area] == 1) {
+						combidx2distidxmap[counter] = area;
+						++counter;
+					}
+				}
+
+				// 	generate tip_anc_size'd splits
+				vector<vector<int> > range_comb_idxs = iterate(s1, tip_anc_size);
+
+				for (unsigned int k = 0; k < range_comb_idxs.size(); k++) {
+					vector<int> split_dist = comb_idx2bit_vect(range_comb_idxs[k], nareas, combidx2distidxmap);
+					//	keep only contiguous splits
+					if (count(incldists_per_period[p].begin(),incldists_per_period[p].end(), split_dist) > 0) {
+						int split_dist_index = distance(incldists_per_period[p].begin(),find(incldists_per_period[p].begin(),incldists_per_period[p].end(),split_dist));
+						vector<int> xor_dist = calculate_vector_int_xor_vector(incldists_per_period[p][i],split_dist);
+						//	consider dispersal from these splits towards the big tip
+						double rate = 0.0;
+						for (size_t dest = 0; dest < xor_dist.size(); dest++)
+							if (xor_dist[dest] == 1)
+								for (size_t src = 0; src < split_dist.size(); src++)
+									if(split_dist[src] != 0)
+										rate += D[p][src][dest];
+
+						Q[p][split_dist_index][i] = rate;
+					}
+				}
+			}
 		}
 		set_Qdiag_with_adjacency(p);
 	}
@@ -422,7 +469,7 @@ void RateModel::setup_Q_with_adjacency(){
 		exit(-1);
 	}
 	if(VERBOSE){
-	cout << "Q" <<endl;
+		cout << "Q" <<endl;
 		for (unsigned int i=0;i<Q.size();i++){
 			for (unsigned int j=0;j<Q[i].size();j++){
 				for (unsigned int k=0;k<Q[i][j].size();k++){
@@ -803,7 +850,8 @@ map<int,vector<vector<vector<int> > > > RateModel::iter_dist_splits_per_period(v
 		vector<vector<int> > left;
 		vector<vector<int> > right;
 		//	if this dist is connected during the specified time period
-		if ((distSize <= maxareas) && (count(incldists_per_period[per].begin(),incldists_per_period[per].end(), dist) > 0)) {
+//		if ((distSize <= maxareas) && (count(incldists_per_period[per].begin(),incldists_per_period[per].end(), dist) > 0)) {
+		if (count(incldists_per_period[per].begin(),incldists_per_period[per].end(), dist) > 0) {
 			if (distSize == 1) {
 				left.push_back(dist);
 				right.push_back(dist);
@@ -860,7 +908,8 @@ map<int,vector<vector<vector<int> > > > RateModel::iter_dist_splits_per_period(v
 							vector<int> split1 = comb_idx2bit_vect(range_comb_idxs[j], nareas, combidx2distidxmap);
 							vector<int> split2 = calculate_vector_int_xor_vector(dist, split1);
 							if ((count(incldists_per_period[per].begin(),incldists_per_period[per].end(), split1) > 0)
-									&& (count(incldists_per_period[per].begin(),incldists_per_period[per].end(), split2) > 0)) {
+									&& (count(incldists_per_period[per].begin(),incldists_per_period[per].end(), split2) > 0)
+									&& (find(left.begin(),left.end(),split1) == left.end())) {
 									left.push_back(split1); right.push_back(split2);
 									left.push_back(split2); right.push_back(split1);
 							}
@@ -976,7 +1025,7 @@ vector< vector<int> >  RateModel::iterate_all_from_num_max_areas(int m, int n){
 }
 
 
-void RateModel::include_tip_dists(map<string,vector<int> > distrib_data, vector<vector<int> > &includedists)
+void RateModel::include_tip_dists(map<string,vector<int> > distrib_data, vector<vector<int> > &includedists, map<int,string> areanamemaprev)
 {
 	map<string, vector<int> >::iterator pos;
 	bool bigTipMsg = false, adjacentTipMsg = false;
@@ -997,7 +1046,8 @@ void RateModel::include_tip_dists(map<string,vector<int> > distrib_data, vector<
 					incldists_per_period[0].push_back(*it);
 					incldistsint_per_period[0].push_back(distance(includedists.begin(),find(includedists.begin(),includedists.end(),distrib_data[taxon])));
 					excldists_per_period[0].erase(it);
-					cout << "For an example of the missing taxon distribution cf. " << taxon << endl;
+					cout << "For an example of the missing taxon distribution cf. " << taxon
+						 << " (" << print_area_vector(distrib_data[taxon],areanamemaprev) << ")" << endl;
 				}
 			}
 		}
@@ -1018,11 +1068,11 @@ void RateModel::include_tip_dists(map<string,vector<int> > distrib_data, vector<
 				for (int i = 1; i < periods.size(); i++)
 					excldists_per_period[i].push_back(distrib_data[taxon]);
 
-			cout << taxon << " : " << taxon_numareas << endl;
+			cout << taxon << " : " << taxon_numareas << " (" << print_area_vector(distrib_data[taxon],areanamemaprev) << ")" << endl;
 			bigTipMsg = true;
 		}
 	}
-	if (bigTipMsg)
+	if (adjacentTipMsg || bigTipMsg)
 		cout << endl;
 }
 
@@ -1060,6 +1110,11 @@ vector<int> * RateModel::get_incldistsint_per_period(int period)
 vector<vector<int> > * RateModel::get_excldists_per_period(int period)
 {
 	return &excldists_per_period[period];
+}
+
+map<int,string> * RateModel::get_areanamemaprev()
+{
+	return &areanamemaprev;
 }
 
 int RateModel::get_num_areas(){return nareas;}

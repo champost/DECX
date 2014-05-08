@@ -41,6 +41,7 @@ private:
 	map<int, vector<int> > * distmap; // a map of int and dist
 	bool store_p_matrices;
 	bool use_stored_matrices;
+	bool ultMet;	//	is false when at least one of the input trees is non-ultrametric
 
 	//reverse bits
 	string revB;
@@ -69,7 +70,7 @@ private:
 
 public:
 	BioGeoTree() {};
-	BioGeoTree(Tree * tr, vector<double> ps);
+	BioGeoTree(Tree * tr, vector<double> ps, bool ultrametric);
 	void set_store_p_matrices(bool);
 	void set_use_stored_matrices(bool);
 	void print_segs();

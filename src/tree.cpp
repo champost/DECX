@@ -16,12 +16,12 @@ using namespace std;
 #include "tree.h"
 
 Tree::Tree():root(NULL),nodes(vector<Node *>()), internalNodes(vector<Node *>()),
-		externalNodes(vector<Node *>()),internalNodeCount(0),externalNodeCount(0){
+		externalNodes(vector<Node *>()),internalNodeCount(0),externalNodeCount(0),maxHeight(0.0){
 	processRoot();
 }
 
 Tree::Tree(Node * inroot):root(inroot),nodes(vector<Node *>()), internalNodes(vector<Node *>()),
-		externalNodes(vector<Node *>()),internalNodeCount(0),externalNodeCount(0){
+		externalNodes(vector<Node *>()),internalNodeCount(0),externalNodeCount(0),maxHeight(0.0){
 	root = inroot;
 	processRoot();
 }
@@ -227,11 +227,22 @@ void Tree::setHeightFromRootToNodes(){
 	setHeightFromRootToNode(*this->root,this->root->getBL());
 }
 
+void Tree::setHeightForChronograms()
+{
+	setHeightFromRootToNode(*this->root,0.0);
+	for(int i=0;i<internalNodeCount;i++)
+		this->getInternalNode(i)->recalcHeight(maxHeight);
+	for(int i=0;i<externalNodeCount;i++)
+		this->getExternalNode(i)->recalcHeight(maxHeight);
+
+}
 
 void Tree::setHeightFromRootToNode(Node & inNode, double newHeight) {
 	if (inNode.isRoot() == false) {
 		newHeight += inNode.getBL();
 		inNode.setHeight(newHeight);
+		if (inNode.isExternal() && (newHeight > maxHeight))
+			maxHeight = newHeight;
 	} else {
 		inNode.setHeight(newHeight);
 	}

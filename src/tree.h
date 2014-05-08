@@ -23,6 +23,7 @@ private:
 	vector<Node *> externalNodes;
 	int internalNodeCount;
 	int externalNodeCount;
+	double maxHeight;
 
 	void processReRoot(Node * node);
 	void exchangeInfo(Node * node1, Node * node2);
@@ -56,6 +57,7 @@ public:
 	void processRoot();
 
 	void setHeightFromRootToNodes();
+	void setHeightForChronograms();
 	void setHeightFromTipToNodes();
 
 	~Tree();

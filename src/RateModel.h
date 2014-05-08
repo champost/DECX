@@ -68,7 +68,7 @@ public:
 	void set_adj_bool(bool adjBool);
 	vector< vector<int> > generate_adjacent_dists(int maxareas, map<int,string> areanamemaprev);
 	vector< vector<int> >  iterate_all_from_num_max_areas(int m, int n);
-	void include_tip_dists(map<string,vector<int> > distrib_data, vector<vector<int> > &includedists);
+	void include_tip_dists(map<string,vector<int> > distrib_data, vector<vector<int> > &includedists, map<int,string> areanamemaprev);
 	void setup_Dmask();
 	void setup_D_provided(double d, vector< vector< vector<double> > > & D_mask_in);
 	void set_Dmask_cell(int period, int area, int area2, double prob, bool sym);
@@ -96,6 +96,7 @@ public:
 	vector<vector<int> > * get_incldists_per_period(int period);
 	vector<int> * get_incldistsint_per_period(int period);
 	vector<vector<int> > * get_excldists_per_period(int period);
+	map<int,string> * get_areanamemaprev();
 	void remove_dist(vector<int> dist);
 	bool sparse;
 	int get_num_areas();

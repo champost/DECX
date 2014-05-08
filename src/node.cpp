@@ -105,6 +105,11 @@ void Node::setHeight(double he){
 	height = he;
 }
 
+void Node::recalcHeight(double maxH)
+{
+	height = maxH - height;
+}
+
 bool Node::hasChild(Node & test){
 	bool ret = false;
 	for(unsigned int i=0;i<children.size();i++){
@@ -219,6 +224,11 @@ string Node::getNewick(bool bl,string obj){
 		if ((obj == "state") || (obj == "split")) {
 			std::ostringstream o;
 			o << (*((StringNodeObject*) (this->getObject(obj))));
+			ret = ret + "[" + o.str() + "]";
+		}
+		else if (obj == "number") {
+			std::ostringstream o;
+			o << (*((StringNodeObject*) (this->getObject("state"))));
 			ret = ret + "[" + o.str() + "]";
 		}
 	}

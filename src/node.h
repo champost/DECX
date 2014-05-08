@@ -52,7 +52,8 @@ public:
 	double getBL();
 	void setBL(double bl);
 	double getHeight();
-	void setHeight(double he);
+	void setHeight(double maxH);	//	used for calculating the node heights for phylograms/chronograms
+	void recalcHeight(double he);
 	bool hasChild(Node & test);
 	bool addChild(Node & c);
 	bool removeChild(Node & c);
