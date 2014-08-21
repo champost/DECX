@@ -30,7 +30,7 @@ using namespace arma;
 //octave usage
 //#include <octave/oct.h>
 
-//#define CBR
+//#define DEBUG
 
 RateModel::RateModel(int na, bool ge, vector<double> pers, bool sp):
 	globalext(ge),nareas(na),numthreads(0),periods(pers),sparse(sp),
@@ -954,7 +954,7 @@ vector< vector<int> > RateModel::generate_adjacent_dists(int maxareas, map<int,s
 		vector<vector<bool> > defAdjMat(nareas, vector<bool> (nareas,true));
 		for (unsigned int prd = 0; prd < periods.size(); prd++) {
 
-#ifdef CBR
+#ifdef DEBUG
 			int adjDistCounter = 0;
 			cout << "\nPeriod : " << prd + 1 << endl;
 #endif
@@ -963,7 +963,7 @@ vector< vector<int> > RateModel::generate_adjacent_dists(int maxareas, map<int,s
 				incldists_per_period.push_back(rangemap);
 				incldistsint_per_period.push_back(alldistsint);
 				excldists_per_period.push_back(vector<vector<int> > ());
-#ifdef CBR
+#ifdef DEBUG
 				cout << "Total dists (default adjacency) : " << alldistsint.size() << endl;
 #endif
 			}
@@ -976,7 +976,7 @@ vector< vector<int> > RateModel::generate_adjacent_dists(int maxareas, map<int,s
 				for (unsigned int i = 0; i < it.size(); i++) {
 
 					if (connected_dist_BGL(it.at(i), adjMat[prd])) {
-#ifdef CBR
+#ifdef DEBUG
 						cout << i + 1 << " ";
 //						cout << idx2bitvect(it.at(i),nareas);
 						for (unsigned int x=0;x<it.at(i).size();x++){
@@ -996,7 +996,7 @@ vector< vector<int> > RateModel::generate_adjacent_dists(int maxareas, map<int,s
 				incldists_per_period.push_back(period_incdists);
 				incldistsint_per_period.push_back(somedistsint);
 				excldists_per_period.push_back(period_exdists);
-#ifdef CBR
+#ifdef DEBUG
 				cout << "Total dists : " << adjDistCounter << endl;
 #endif
 			}

@@ -28,7 +28,7 @@ class OptimizeBioGeo{
 
 	public:
 		OptimizeBioGeo(BioGeoTree * intree,RateModel * inrm, bool marg, int maxiter, double stopprec);
-		vector<double> optimize_global_dispersal_extinction();
+		vector<double> optimize_global_dispersal_extinction(double startDisp, double startExt);
 
 
 };

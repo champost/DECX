@@ -53,7 +53,7 @@ double OptimizeBioGeo::GetLikelihoodWithOptimizedDispersalExtinction_gsl(const g
  * USES THE SIMPLEX ALGORITHM
  *
  */
-vector<double> OptimizeBioGeo::optimize_global_dispersal_extinction(){
+vector<double> OptimizeBioGeo::optimize_global_dispersal_extinction(double startDisp, double startExt){
 	const gsl_multimin_fminimizer_type *T = gsl_multimin_fminimizer_nmsimplex2;
 	gsl_multimin_fminimizer *s = NULL;
 	gsl_vector *ss, *x;
@@ -68,8 +68,8 @@ vector<double> OptimizeBioGeo::optimize_global_dispersal_extinction(){
 	/* Starting point */
 	//cout<<"Now in OPtimizaRateWithGivenTipVariance in OptimizationFn"<<endl;
 	x = gsl_vector_alloc (np);
-	gsl_vector_set (x,0,0.01);
-	gsl_vector_set (x,1,0.01);
+	gsl_vector_set (x,0,startDisp);
+	gsl_vector_set (x,1,startExt);
 	OptimizeBioGeo *pt;
 	pt=(this);
 	double (*F)(const gsl_vector *, void *);
@@ -107,7 +107,7 @@ vector<double> OptimizeBioGeo::optimize_global_dispersal_extinction(){
 	while (status == GSL_CONTINUE && iter < maxiterations);
 	if (iter == maxiterations) {
 		cout << "\nAttained the maximum number of iterations: " << maxiterations << endl
-			 << "Please rerun Lagrange having increased the maximum numeber of iterations"
+			 << "Please rerun Lagrange having increased the maximum number of iterations"
 				"\nor reduce the \"stoppingprecision\" (currently at " << stoppingprecision << ") of the optimisation step." << endl;
 		exit(-1);
 	}
