@@ -30,6 +30,7 @@ private:
 	vector<Node *> children;
 	map<string,NodeObject *> assoc;
 	map<string, vector<Superdouble> > assocDV;
+	map<string,int> intObject;
 	string comment;
 	vector<BranchSegment> * segs;
 	vector< vector<int> > * excluded_dists;
@@ -69,7 +70,9 @@ public:
 	int getChildCount();
 	void assocObject(string name,NodeObject & obj);
 	void assocDoubleVector(string name, vector<Superdouble> & obj);
+	void setIntObject(string name, int & obj);
 	vector<Superdouble> * getDoubleVector(string name);
+	int * getIntObject(string name);
 	void deleteDoubleVector(string name);
 	void initSegVector();
 	vector<BranchSegment> * getSegVector();

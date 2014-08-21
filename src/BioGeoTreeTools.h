@@ -30,6 +30,9 @@ public :
 	void summarizeSplits(Node * node,map<vector<int>,vector<AncSplit> > & ans,map<int,string> &areanamemaprev, RateModel * rm);
 	void summarizeAncState(Node * node,vector<Superdouble> & ans,map<int,string> &areanamemaprev, RateModel * rm, bool NodeLHOODS, ofstream &NodeLHOODFile);
 	string get_string_from_dist_int(int dist,map<int,string> &areanamemaprev, RateModel * rm);
+	void summarizeSimState(Node & node,vector<Superdouble> & ans,RateModel * rm);
+
+	friend class BioGeoTree;
 };
 
 #endif /* PHYLOTREE_H_ */

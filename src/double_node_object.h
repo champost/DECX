@@ -13,7 +13,7 @@ using namespace std;
 
 class DoubleNodeObject: public NodeObject{
 public:
-	DoubleNodeObject(const double * value): double(value) {}
+	DoubleNodeObject(const double * value): double(*value) {}
 	DoubleNodeObject(const double & value): double(value) {}
 
 	virtual ~DoubleNodeObject() {}

@@ -19,6 +19,9 @@ using namespace std;
 #include "tree.h"
 #include "node.h"
 #include "vector_node_object.h"
+#include "BioGeoTreeTools.h"
+#include <gsl/gsl_rng.h>
+#include <gsl/gsl_randist.h>
 
 #include <armadillo>
 using namespace arma;
@@ -41,12 +44,30 @@ private:
 	map<int, vector<int> > * distmap; // a map of int and dist
 	bool store_p_matrices;
 	bool use_stored_matrices;
-	bool ultMet;	//	is false when at least one of the input trees is non-ultrametric
+	bool ultrametric;	//	is false when at least one of the input trees is non-ultrametric
+	BioGeoTreeTools tt;
 
 	//reverse bits
 	string revB;
 	bool rev;
 	//end reverse bits
+
+	//simulate bits
+	bool sim;
+	double sim_D;
+	double sim_E;
+
+	const gsl_rng_type * T;
+	gsl_rng * r;
+	unsigned long int ran_seed;
+	//end simulate bits
+
+	//estimate bits
+	bool readSimStates;
+	map<int, vector<int> > trueStates;
+	double true_D;
+	double true_E;
+	//end estimate bits
 
 	//stochastic mapping bits
 	string rev_exp_number;
@@ -69,8 +90,8 @@ private:
 //	clock_t c6;
 
 public:
-	BioGeoTree() {};
-	BioGeoTree(Tree * tr, vector<double> ps, bool ultrametric);
+//	BioGeoTree() {};
+	BioGeoTree(Tree * tr, vector<double> ps);
 	void set_store_p_matrices(bool);
 	void set_use_stored_matrices(bool);
 	void print_segs();
@@ -83,6 +104,7 @@ public:
 	vector<Superdouble> conditionals(Node & node, bool marg, bool sparse);
 	//void ancdist_conditional_lh(bpp::Node & node, bool marg);
 	void ancdist_conditional_lh(Node & node, bool marg);
+	void set_ultrametric(bool ultMet);
 
 /*
 	fossil data
@@ -100,6 +122,21 @@ public:
 	void reverse(Node &);
 	map<vector<int>,vector<AncSplit> > calculate_ancsplit_reverse(Node & node,bool marg);
 	vector<Superdouble> calculate_ancstate_reverse(Node & node,bool marg);
+/*
+	for forward simulations
+ */
+	void prepare_simulation(unsigned long int seed, bool ranPar);
+	void simulate(Node & node);
+	double getSim_D();
+	double getSim_E();
+	void setSim_D(double & disp);
+	void setSim_E(double & ext);
+
+	void read_true_states(string truestatesfile);
+	vector<int> * get_true_state(int num);
+	double getTrue_D();
+	double getTrue_E();
+
 	~BioGeoTree();
 	//need to override these at some point
 //	BioGeoTree(const BioGeoTree &L);             // copy constructor

@@ -23,6 +23,7 @@ using namespace arma;
 #include "RateMatrixUtils.h"
 #include "RateModel.h"
 #include "AncSplit.h"
+#include "Utils.h"
 
 #include "tree.h"
 #include "node.h"
@@ -32,7 +33,7 @@ using namespace arma;
 //octave usage
 //#include <octave/oct.h>
 
-//#define CBR
+//#define DEBUG
 
 Superdouble MAX(const Superdouble &a, const Superdouble &b){
 	return b > a ? b:a;
@@ -42,13 +43,14 @@ Superdouble MAX(const Superdouble &a, const Superdouble &b){
  * sloppy beginning but best for now because of the complicated bits
  */
 
-BioGeoTree::BioGeoTree(Tree * tr, vector<double> ps, bool ultrametric):tree(tr),periods(ps),
+BioGeoTree::BioGeoTree(Tree * tr, vector<double> ps):tree(tr),periods(ps),
 		age("age"),dc("dist_conditionals"),en("excluded_dists"),
 		andc("anc_dist_conditionals"),columns(NULL),whichcolumns(NULL),rootratemodel(NULL),
 		distmap(NULL),store_p_matrices(false),use_stored_matrices(false),revB("revB"),
 		rev(false),rev_exp_number("rev_exp_number"),rev_exp_time("rev_exp_time"),
 		stochastic(false),stored_EN_matrices(map<int,map<double, mat > >()),stored_EN_CX_matrices(map<int,map<double, cx_mat > >()),
-		stored_ER_matrices(map<int,map<double, mat > >()), ultMet(ultrametric){
+		stored_ER_matrices(map<int,map<double, mat > >()),ultrametric(false),sim(false),ran_seed(314159265),sim_D(0.1),sim_E(0.1),
+		readSimStates(false),true_D(0),true_E(0){
 
 	/*
 	 * initialize each node with segments
@@ -63,7 +65,7 @@ BioGeoTree::BioGeoTree(Tree * tr, vector<double> ps, bool ultrametric):tree(tr),
 	/*
 	 * initialize the actual branch segments for each node
 	 */
-	if (ultMet)
+	if (ultrametric)
 		tree->setHeightFromTipToNodes();
 	else
 		tree->setHeightForChronograms();
@@ -115,6 +117,17 @@ BioGeoTree::BioGeoTree(Tree * tr, vector<double> ps, bool ultrametric):tree(tr),
 			}
 		}
 	}
+	/*
+	 * Initialise the period for the ROOT node
+	 * (needed for some simulated topologies using independent software)
+	 */
+	tree->getRoot()->setPeriod(periods.size() - 1);
+	/*
+	 * Initialise the GSL RNG's
+	 */
+	gsl_rng_env_setup();
+	T = gsl_rng_default;
+	r = gsl_rng_alloc (T);
 }
 
 void BioGeoTree::set_store_p_matrices(bool i){
@@ -125,7 +138,7 @@ void BioGeoTree::set_use_stored_matrices(bool i){
 	use_stored_matrices = i;
 }
 
-#ifdef CBR
+#ifdef DEBUG
 void BioGeoTree::print_segs(){
 	for(int i = 0; i < tree->getNodeCount(); i++) {
 		Node * tmpNode = tree->getNode(i);
@@ -220,7 +233,7 @@ void BioGeoTree::set_node_constraints(vector<vector<vector<int> > > exdists_per_
 		for (unsigned int ts = 0; ts < cumulPeriod.size() && currNode->isInternal(); ts++) {
 			if (currNode->getHeight() < cumulPeriod[ts]) {
 
-#ifdef CBR
+#ifdef DEBUG
 				if (currNode->isRoot())
 					cout << "\nThese following dists will be unavailable for the ROOT (period : " << ts << ")" << endl;
 				else
@@ -230,23 +243,10 @@ void BioGeoTree::set_node_constraints(vector<vector<vector<int> > > exdists_per_
 				for (unsigned int dists = 0; dists < exdists_per_period[ts].size(); dists++) {
 					set_excluded_dist(exdists_per_period[ts][dists],currNode);
 
-#ifdef CBR
-					cout << dists << " ";
-					int dist_size = accumulate(exdists_per_period[ts][dists].begin(),exdists_per_period[ts][dists].end(),0);
-					for (unsigned int x=0;x<exdists_per_period[ts][dists].size();x++){
-						if (exdists_per_period[ts][dists][x]) {
-							cout << areanamemaprev[x];
-							if (dist_size > 1)
-								cout << "_";
-							--dist_size;
-						}
-
-					}
-						cout << endl;
+#ifdef DEBUG
+//					cout << dists << " " << print_area_vector(exdists_per_period[ts][dists],areanamemaprev) << endl;
 #endif
-
 				}
-
 				break;
 			}
 		}
@@ -392,17 +392,17 @@ vector<Superdouble> BioGeoTree::conditionals(Node & node, bool marginal,bool spa
 	return distconds;
 }
 
-#ifdef CBR
-void LR_print(vector<int> leftdists, vector<int> rightdists) {
-	cout << "leftdists: ";
-	for (unsigned int j = 0; j < leftdists.size(); j++)
-		cout << leftdists[j] << " ";
-	cout << endl;
-	cout << "rightdists: ";
-	for (unsigned int j = 0; j < rightdists.size(); j++)
-		cout << rightdists[j] << " ";
-	cout << endl;
-}
+#ifdef DEBUG
+//void LR_print(vector<int> leftdists, vector<int> rightdists) {
+//	cout << "leftdists: ";
+//	for (unsigned int j = 0; j < leftdists.size(); j++)
+//		cout << leftdists[j] << " ";
+//	cout << endl;
+//	cout << "rightdists: ";
+//	for (unsigned int j = 0; j < rightdists.size(); j++)
+//		cout << rightdists[j] << " ";
+//	cout << endl;
+//}
 #endif
 
 void BioGeoTree::ancdist_conditional_lh(Node & node, bool marginal){
@@ -420,7 +420,7 @@ void BioGeoTree::ancdist_conditional_lh(Node & node, bool marginal){
 		ancdist_conditional_lh(*c1,marginal);
 		ancdist_conditional_lh(*c2,marginal);
 
-#ifdef CBR
+#ifdef DEBUG
 		if (node.isRoot())
 			cout << "ROOT : ";
 		cout << "Analyzing internal node #" << node.getNumber() << endl;
@@ -456,10 +456,10 @@ void BioGeoTree::ancdist_conditional_lh(Node & node, bool marginal){
 		v1 =conditionals(*c1,marginal,sparse);
 		v2 =conditionals(*c2,marginal,sparse);
 
-#ifdef CBR
-		cout << "At internal node #" << node.getNumber() << endl
-			 << "sum(v1) = " << calculate_vector_Superdouble_sum(v1) << endl
-			 << "sum(v2) = " << calculate_vector_Superdouble_sum(v2) << endl << endl;
+#ifdef DEBUG
+//		cout << "At internal node #" << node.getNumber() << endl
+//			 << "sum(v1) = " << calculate_vector_Superdouble_sum(v1) << endl
+//			 << "sum(v2) = " << calculate_vector_Superdouble_sum(v2) << endl << endl;
 
 //		if (((sumV1 == 0) || (sumV2 == 0)) && !node.isRoot()) {
 //			cout << endl;
@@ -499,7 +499,7 @@ void BioGeoTree::ancdist_conditional_lh(Node & node, bool marginal){
 				}
 				distconds.at(i)= lh;
 			}
-#ifdef CBR
+#ifdef DEBUG
 //			if (node.isRoot()) {
 //				cout << "i: " << i << "; dist[i]: ";
 //				for (unsigned int j = 0; j < (*dists)[i].size(); j++)
@@ -514,7 +514,7 @@ void BioGeoTree::ancdist_conditional_lh(Node & node, bool marginal){
 		///cl2 = clock();
 		//ti += cl2-cl1;
 	}else{
-#ifdef CBR
+#ifdef DEBUG
 		cout << "Analyzing external node : " << node.getName() << endl;
 #endif
 		vector<BranchSegment> * tsegs = node.getSegVector();
@@ -530,7 +530,7 @@ void BioGeoTree::ancdist_conditional_lh(Node & node, bool marginal){
 		for(unsigned int i=0;i<distconds.size();i++){
 			tsegs->at(0).distconds->at(i) = distconds.at(i);
 		}
-#ifdef CBR
+#ifdef DEBUG
 		cout << "Fractional likelihood sum at this node : "
 			 << calculate_vector_Superdouble_sum(*(tsegs->at(0).distconds)) << endl << endl;
 #endif
@@ -540,11 +540,16 @@ void BioGeoTree::ancdist_conditional_lh(Node & node, bool marginal){
 			node.getDoubleVector(dc)->at(i) = distconds.at(i);
 			//cout << distconds.at(i) << endl;
 		}
-#ifdef CBR
+#ifdef DEBUG
 		cout << "Global likelihood at the ROOT : "
 			 << calculate_vector_Superdouble_sum(*(node.getDoubleVector(dc))) << endl << endl;
 #endif
 	}
+}
+
+void BioGeoTree::set_ultrametric(bool ultMet)
+{
+	ultrametric = ultMet;
 }
 
 /*
@@ -721,8 +726,10 @@ void BioGeoTree::reverse(Node & node){
 			for(unsigned int j=0;j < validists->size();j++)
 				if(accumulate(dists->at(validists->at(j)).begin(), dists->at(validists->at(j)).end(), 0) > 0)
 					for (unsigned int i = 0; i < validists->size(); i++)
-						if (accumulate(dists->at(validists->at(i)).begin(), dists->at(validists->at(i)).end(), 0) > 0)
-							revconds->at(validists->at(j)) += tempmoveA[i]*((*p)[i][j]);//tempA needs to change each time
+						if (accumulate(dists->at(validists->at(i)).begin(), dists->at(validists->at(i)).end(), 0) > 0) {
+//							revconds->at(validists->at(j)) += tempmoveA[i]*((*p)[i][j]);//tempA needs to change each time
+							revconds->at(validists->at(j)) += tempmoveA[validists->at(i)]*((*p)[i][j]);//tempA needs to change each time
+						}
 
 			for(unsigned int j=0;j<dists->size();j++)
 				tempmoveA[j] = revconds->at(j);
@@ -807,6 +814,219 @@ vector<Superdouble> BioGeoTree::calculate_ancstate_reverse(Node & node,bool marg
 		return LHOODS;
 	}
 	return vector<Superdouble> ();
+}
+
+
+/************************************************************************
+ simulate ancestral states on BioGeoTree following a pre-order traversal
+ ************************************************************************/
+void BioGeoTree::prepare_simulation(unsigned long int seed, bool ranPar)
+{
+	sim = true;
+
+	ran_seed = seed;
+	gsl_rng_set(r, ran_seed);
+	if (ranPar) {
+		do {
+			sim_D = gsl_ran_flat(r, 0, 1) * 0.2;
+			sim_E = gsl_ran_flat(r, 0, 1) * 0.2;
+		} while ((sim_D != 0) && (sim_E != 0) && (sim_D <= sim_E));
+	}
+	else {
+		if (sim_D < sim_E)
+			cout << "\nNote that manually setting the rate of geographic dispersal to be less than that of extinction"
+					"\nwill lead to highly trivial biogeographic histories. Continuing anyway..." << endl;
+	}
+
+	rootratemodel->setup_D(sim_D);
+	rootratemodel->setup_E(sim_E);
+	rootratemodel->setup_Q_with_adjacency();
+	update_default_model(rootratemodel);
+
+	cout << "dispersal : " << sim_D << "\textinction : " << sim_E << "\tseed : " << ran_seed;
+	simulate(*tree->getRoot());
+}
+
+/*
+ * called from prepare_simulation and that is all
+ */
+void BioGeoTree::simulate(Node & node)
+{
+	if (&node == tree->getRoot()) {
+		vector<Superdouble> simconds = vector<Superdouble> (rootratemodel->getDists()->size(), 0);
+		vector<vector<int> > * inc_dists = rootratemodel->get_incldists_per_period(node.getPeriod());
+		map<vector<int>,int> * distsintmap = rootratemodel->get_dists_int_map();
+		vector<vector<int> > * exdist = node.getExclDistVector();
+
+		//	randomly choose the ROOT dist
+		size_t root_dist;
+		do {
+			root_dist = size_t(floor(gsl_ran_flat(r, 1, inc_dists->size())));
+		} while (count(exdist->begin(), exdist->end(), inc_dists->at(root_dist)) != 0);
+
+		//	set the ROOT prior for the forward simulation
+		simconds.at((*distsintmap)[inc_dists->at(root_dist)]) = 1.0;
+		tt.summarizeSimState(node,simconds,rootratemodel);
+
+		//	randomly choose the speciation model (i.e. the dist split)
+		vector<vector<vector<int> > > * splits = rootratemodel->get_iter_dist_splits_per_period(inc_dists->at(root_dist),node.getPeriod());
+		int splitIdx = int(floor(gsl_ran_flat(r, 0, splits->at(0).size())));
+		node.setIntObject("simsplit",splitIdx);
+
+#ifdef DEBUG
+		cout << "considered dist : " << print_area_vector(inc_dists->at(root_dist),*rootratemodel->get_areanamemaprev())
+			 << "\tno. of splits : " << splits->at(0).size()
+			 << "\tchosen split : " << splitIdx << " (" << print_area_vector(splits->at(0)[splitIdx],*rootratemodel->get_areanamemaprev()) << ")" << endl;
+		cout << "Left split\tRight split" << endl;
+		for (size_t spl = 0; spl < splits->at(0).size(); spl++)
+			cout << print_area_vector(splits->at(0)[spl],*rootratemodel->get_areanamemaprev())
+				 << "\t" << print_area_vector(splits->at(1)[spl],*rootratemodel->get_areanamemaprev()) << endl;
+#endif
+
+	}
+	else {
+		vector<vector<int> > * dists = rootratemodel->getDists();
+		map<vector<int>,int> * distsintmap = rootratemodel->get_dists_int_map();
+		map<int,vector<int> > * intdistsmap = rootratemodel->get_int_dists_map();
+		vector<vector<vector<int> > > * ancSplits = rootratemodel->get_iter_dist_splits_per_period((*intdistsmap)[*(node.getParent()->getIntObject("simdistidx"))],node.getParent()->getPeriod());
+		vector<Superdouble> simconds = vector<Superdouble> (dists->size(), 0);
+
+		//	the rule here for assigning the randomly chosen parent dist split
+		//	child(0) gets the corresponding "left" split
+		//	child(1) gets the corresponding "right" split
+		int ancSplitIdx = (*node.getParent()->getIntObject("simsplit"));
+
+#ifdef DEBUG
+		cout << "\nStart dist : " << print_area_vector(ancSplits->at(0)[ancSplitIdx],*rootratemodel->get_areanamemaprev()) << endl;
+#endif
+
+		//	set the node prior for the forward simulation
+		if(&node.getParent()->getChild(0) == &node)
+			simconds.at((*distsintmap)[ancSplits->at(0)[ancSplitIdx]]) = 1.0;
+		else
+			simconds.at((*distsintmap)[ancSplits->at(1)[ancSplitIdx]]) = 1.0;
+
+		vector<BranchSegment>* tsegs = node.getSegVector();
+#ifdef DEBUG
+		cout << "Seg size : " << tsegs->size() << endl;
+		cout << "Prior sum : " << calculate_vector_Superdouble_sum(simconds) << endl;
+#endif
+
+		for(int ts = tsegs->size() - 1; ts != -1; ts--) {
+			vector<Superdouble> * segconds = new vector<Superdouble> (dists->size(), 0);
+			RateModel * rm = tsegs->at(ts).getModel();
+			vector<vector<double > > p = rm->setup_fortran_P(tsegs->at(ts).getPeriod(),tsegs->at(ts).getDuration(),false);
+			vector<int> * validists = rm->get_incldistsint_per_period(tsegs->at(ts).getPeriod());
+
+			for(unsigned int j=0;j < validists->size();j++)
+				for (unsigned int i = 0; i < validists->size(); i++)
+					segconds->at(validists->at(j)) += simconds[validists->at(i)] * p[i][j];
+
+			for(unsigned int j=0;j<dists->size();j++)
+				simconds[j] = segconds->at(j);
+
+			delete segconds;
+		}
+
+		tt.summarizeSimState(node,simconds,rootratemodel);
+
+		//	randomly choose the speciation model (i.e. the dist split)
+		if (node.isInternal()) {
+			vector<vector<vector<int> > > * nodeSplits = rootratemodel->get_iter_dist_splits_per_period((*intdistsmap)[*(node.getIntObject("simdistidx"))],node.getPeriod());
+			int splitIdx = int(floor(gsl_ran_flat(r, 0, nodeSplits->at(0).size())));
+			node.setIntObject("simsplit",splitIdx);
+
+#ifdef DEBUG
+			cout << "considered dist : " << print_area_vector((*intdistsmap)[*(node.getIntObject("simdistidx"))],*rootratemodel->get_areanamemaprev())
+				 << "\tno. of splits : " << nodeSplits->at(0).size()
+				 << "\tchosen split : " << splitIdx << " (" << print_area_vector(nodeSplits->at(0)[splitIdx],*rootratemodel->get_areanamemaprev()) << ")" << endl;
+			cout << "Left split\tRight split" << endl;
+			for (size_t spl = 0; spl < nodeSplits->at(0).size(); spl++)
+				cout << print_area_vector(nodeSplits->at(0)[spl],*rootratemodel->get_areanamemaprev())
+					 << "\t" << print_area_vector(nodeSplits->at(1)[spl],*rootratemodel->get_areanamemaprev()) << endl;
+#endif
+
+		}
+	}
+
+	for(int i = 0;i<node.getChildCount();i++)
+		simulate(node.getChild(i));
+}
+
+double BioGeoTree::getSim_D()
+{
+	return sim_D;
+}
+
+double BioGeoTree::getSim_E()
+{
+	return sim_E;
+}
+
+void BioGeoTree::setSim_D(double & disp)
+{
+	sim_D = disp;
+}
+
+void BioGeoTree::setSim_E(double & ext)
+{
+	sim_E = ext;
+}
+
+void BioGeoTree::read_true_states(string truestatesfile)
+{
+	ifstream ifs(truestatesfile.c_str());
+	bool first = false, second = false;
+	int nareas = rootratemodel->get_num_areas();
+	map<string,vector<int> > data;
+	string line;
+	vector<string> tokens;
+	string del("\t ");
+	while(getline(ifs,line)){
+		tokens.clear();
+		Tokenize(line, tokens, del);
+		for(unsigned int j=0;j<tokens.size();j++){
+			TrimSpaces(tokens[j]);
+		}
+		if (first == false){
+			first = true;
+			true_D = atof(tokens[0].c_str());
+			cout << "True dispersal rate : " << tokens[0] << endl;
+		}
+		else if (second == false){
+			second = true;
+			true_E = atof(tokens[0].c_str());
+			cout << "True extinction rate : " << tokens[0] << endl;
+		}else{
+			cout << "True state for node: " << tokens[0] << " ";
+			vector<int> speciesdata(nareas,0);
+			for(int i=0;i<nareas;i++){
+				char spot;
+				spot = tokens[1][i];
+				if (spot == '1')
+					speciesdata[i] = 1;
+				cout << spot - '0';
+			}
+			cout << " (" << print_area_vector(speciesdata,*rootratemodel->get_areanamemaprev()) << ")" << endl;
+			trueStates[atoi(tokens[0].c_str())] = speciesdata;
+		}
+	}
+	ifs.close();
+}
+
+vector<int> * BioGeoTree::get_true_state(int num)
+{
+	return &trueStates[num];
+}
+
+double BioGeoTree::getTrue_D()
+{
+	return true_D;
+}
+
+double BioGeoTree::getTrue_E()
+{
+	return true_E;
 }
 
 /**********************************************************
@@ -1018,10 +1238,15 @@ BioGeoTree::~BioGeoTree(){
 		if(rev == true && tree->getNode(i)->isInternal()){
 			tree->getNode(i)->deleteDoubleVector(revB);
 		}
+		if(sim == true){
+			delete tree->getNode(i)->getObject("simstate");
+		}
 		tree->getNode(i)->deleteSegVector();
 	}
 	tree->getRoot()->deleteDoubleVector(dc);
 	tree->getRoot()->deleteDoubleVector(andc);
 	tree->getRoot()->deleteDoubleVector(revB);
+
+	gsl_rng_free (r);
 }
 

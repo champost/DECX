@@ -207,7 +207,7 @@ string Node::getNewick(bool bl,string obj){
 			ret = ret+",";
 	}
 	if(isInternal()==true){
-		if (obj == "number"){
+		if ((obj == "number") || (obj == "onlykey")){
 			std::ostringstream o;
 			o << number;
 			ret = ret +o.str();
@@ -221,7 +221,7 @@ string Node::getNewick(bool bl,string obj){
 	}else{//EXTERNAL
 		if(name.size()>0)
 			ret = ret + name;
-		if ((obj == "state") || (obj == "split")) {
+		if ((obj == "state") || (obj == "split") || (obj == "simstate")) {
 			std::ostringstream o;
 			o << (*((StringNodeObject*) (this->getObject(obj))));
 			ret = ret + "[" + o.str() + "]";
@@ -287,8 +287,21 @@ void Node::assocDoubleVector(string name, vector<Superdouble> & obj){
 	assocDV[name] = tvec;
 }
 
+void Node::setIntObject(string name, int & obj)
+{
+	if (intObject.count(name) > 0 ) {
+		intObject.erase(name);
+	}
+	intObject[name] = obj;
+}
+
 vector<Superdouble> * Node::getDoubleVector(string name){
 	return &assocDV[name];
+}
+
+int * Node::getIntObject(string name)
+{
+	return &intObject[name];
 }
 
 void Node::deleteDoubleVector(string name){

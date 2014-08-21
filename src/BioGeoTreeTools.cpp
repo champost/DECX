@@ -146,12 +146,14 @@ void BioGeoTreeTools::summarizeAncState(Node * node,vector<Superdouble> & ans,ma
 	int areasize = rm->get_num_areas();
 	map<int, vector<int> > * distmap = rm->get_int_dists_map();
 	vector<int> bestancdist;
+	int bestdistindex = 0;
 	Superdouble zero(0);
 	for (unsigned int i = 1; i < ans.size(); i++) { //1 because 0 is just the 0 all extinct one
 		if (ans[i] >= best && ans[i] != zero) { //added != 0, need to test
 			best = ans[i];
 			bestancdist = (*distmap)[i];
 			//			cout << "Best likelihood found at " << i << ": " << ans[i] << endl;
+			bestdistindex = i;
 		}
 		sum += ans[i];
 	}
@@ -207,6 +209,7 @@ void BioGeoTreeTools::summarizeAncState(Node * node,vector<Superdouble> & ans,ma
 	}
 	string spl = "state";
 	node->assocObject(spl,disstring);
+	node->setIntObject("bestdistidx",bestdistindex);
 	//cout << -log(best) << " "<< best/sum << endl;
 }
 
@@ -226,5 +229,36 @@ string BioGeoTreeTools::get_string_from_dist_int(int dist,map<int,string> &arean
 	}
     }
     return disstring;
+}
+
+void BioGeoTreeTools::summarizeSimState(Node & node,vector<Superdouble> & ans,RateModel * rm)
+{
+//	cout << "\nnodenum : " << node.getNumber() << endl;
+//	for (unsigned int i = 0; i < ans.size(); i++)
+//		cout << ans[i] << " ";
+//	cout << endl;
+
+	Superdouble best(ans[1]);//use ans[1] because ans[0] is just 0
+	map<int, vector<int> > * distmap = rm->get_int_dists_map();
+	vector<int> bestdist;
+	int bestdistindex = 0;
+	Superdouble zero(0);
+	for (unsigned int i = 1; i < ans.size(); i++) { //1 because 0 is just the 0 all extinct one
+		if (ans[i] >= best && ans[i] != zero) { //added != 0, need to test
+			best = ans[i];
+			bestdist = (*distmap)[i];
+			bestdistindex = i;
+		}
+	}
+
+	StringNodeObject disstring(print_area_vector(bestdist,*rm->get_areanamemaprev()));
+	node.assocObject("simstate",disstring);
+	node.setIntObject("simdistidx",bestdistindex);
+
+//	if (node.isInternal())
+//		cout << node.getNumber() << "\t" << *((StringNodeObject*) (node.getObject("simstate"))) << endl;
+//	else
+//		cout << node.getName() << "\t" << *((StringNodeObject*) (node.getObject("simstate"))) << endl;
+//	cout << "dist : " << print_area_vector(bestancdist,*rm->get_areanamemaprev()) << " (" << bestancindex << ")" << endl;
 }
 
