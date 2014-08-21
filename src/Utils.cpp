@@ -239,7 +239,7 @@ bool connected_dist_BGL(const vector <int> &indices, const vector <vector<bool> 
 	unsigned int dist_size = indices.size();
 
 	if (dist_size == 1)
-		return true;
+		return adjMat[indices[0]][indices[0]];
 
 	if (dist_size == 2)
 		return adjMat[indices[0]][indices[1]];
@@ -265,12 +265,13 @@ bool connected_dist_BGL(const vector <int> &indices, const vector <vector<bool> 
 			typedef adjacency_list <vecS, vecS, undirectedS> Graph;
 
 			Graph G;
+			//	adding edges to the graph
 			for (unsigned int i = 0; i < (dist_size - 1); i++)
 				for (unsigned int j = i+1; j < dist_size; j++)
 					if (adjMat[indices[i]][indices[j]])
 						add_edge(i, j, G);
 
-			//	in case of isolated areas
+			//	special case of isolated areas
 			for (unsigned int i = 0; i < dist_size; i++)
 				add_edge(i, i, G);
 
