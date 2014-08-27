@@ -398,10 +398,11 @@ void RateModel::setup_Q_with_adjacency(){
 			if ((s1 > 0) && s1 <= maxareas){
 				for(unsigned int j=0;j<incldists_per_period[p].size();j++){//incldists_per_period[p]
 					int sxor = calculate_vector_int_sum_xor(incldists_per_period[p][i], incldists_per_period[p][j]);
+					int s2 = accumulate(incldists_per_period[p][j].begin(),incldists_per_period[p][j].end(),0);
+					double rate = 0.0;
+
 					if (sxor == 1){
-						int s2 = accumulate(incldists_per_period[p][j].begin(),incldists_per_period[p][j].end(),0);
 						int dest = locate_vector_int_single_xor(incldists_per_period[p][i],incldists_per_period[p][j]);
-						double rate = 0.0;
 						if (s1 < s2){
 							for (unsigned int src=0;src<incldists_per_period[p][i].size();src++){
 								if(incldists_per_period[p][i][src] != 0){
@@ -411,8 +412,23 @@ void RateModel::setup_Q_with_adjacency(){
 						}else{
 							rate = E[p][dest];
 						}
-						Q[p][i][j] = rate;
 					}
+
+					//	for rapid range expansions during anagenesis
+					else if (sxor == 2) {
+						vector<int> xor_dist = calculate_vector_int_xor_vector(incldists_per_period[p][i],incldists_per_period[p][j]);
+						for (size_t xor_idx = 0; xor_idx < xor_dist.size(); xor_idx++) {
+							if ((xor_dist[xor_idx] == 1) && (incldists_per_period[p][j][xor_idx] == 1)) {
+								for (size_t src = 0; src < s1; src++)
+									if(incldists_per_period[p][i][src] != 0)
+										rate += D[p][src][xor_idx];
+							}
+							else if ((xor_dist[xor_idx] == 1) && (incldists_per_period[p][i][xor_idx] == 1))
+								rate += E[p][xor_idx];
+						}
+					}
+
+					Q[p][i][j] = rate;
 				}
 			}
 			//	special case of "big tip" distributions which are added only during the most recent time period
