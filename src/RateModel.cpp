@@ -32,9 +32,9 @@ using namespace arma;
 
 //#define DEBUG
 
-RateModel::RateModel(int na, bool ge, vector<double> pers, bool sp):
+RateModel::RateModel(int na, bool ge, vector<double> pers, bool sp, bool cv, bool ra):
 	globalext(ge),nareas(na),numthreads(0),periods(pers),sparse(sp),
-	default_adjacency(true),maxareas(1){}
+	classic_vicariance(cv), rapid_anagenesis(ra), default_adjacency(true),maxareas(1){}
 
 void RateModel::set_nthreads(int nthreads){
 	numthreads = nthreads;
@@ -414,8 +414,8 @@ void RateModel::setup_Q_with_adjacency(){
 						}
 					}
 
-					//	for rapid range expansions during anagenesis
-					else if (sxor == 2) {
+					//	for rapid range expansion/contraction during anagenesis
+					else if (rapid_anagenesis && (sxor == 2)) {
 						vector<int> xor_dist = calculate_vector_int_xor_vector(incldists_per_period[p][i],incldists_per_period[p][j]);
 						for (size_t xor_idx = 0; xor_idx < xor_dist.size(); xor_idx++) {
 							if ((xor_dist[xor_idx] == 1) && (incldists_per_period[p][j][xor_idx] == 1)) {
@@ -904,7 +904,7 @@ map<int,vector<vector<vector<int> > > > RateModel::iter_dist_splits_per_period(v
 				}
 				//	allows for DIVA style splits for ranges of size 4 and above
 				//	ONLY if they remain connected during the respective time period
-				if (distSize >= 4) {
+				if (classic_vicariance && (distSize >= 4)) {
 					map<int,int> combidx2distidxmap;
 					int counter = 0;
 					for (unsigned int i = 0; i < nareas; i++) {

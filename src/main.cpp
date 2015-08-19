@@ -56,7 +56,7 @@ int main(int argc, char* argv[]){
 		string adjacencyfile;
 		string ratematrixfile;
 		string logfile;
-		string fileSuffix;
+		string fileTag;
 		string truestatesfile;
 		int maxareas=1;
 		vector<double> periods;
@@ -78,7 +78,7 @@ int main(int argc, char* argv[]){
 		vector<string> fossiltype;
 		vector<string> fossilarea;
 		vector<double> fossilage;//0's for N type and # for B type
-		time_t likStartTime, likeEndTime;
+		time_t likStartTime, likEndTime;
 
 		bool marginal = true; // false means joint
 		bool splits = false;
@@ -89,7 +89,7 @@ int main(int argc, char* argv[]){
 		int numreps = 10000;
 		bool default_adjacency_matrix = true;
 		bool _stop_on_settings_display_ = false;
-		bool _stop_on_global_likelihood_ = false;
+		bool _stop_on_initial_likelihood_ = false;
 		bool LHOODS = false;
 		bool NodeLHOODS = false;
 
@@ -104,6 +104,8 @@ int main(int argc, char* argv[]){
 		unsigned long int seed = 314159265;
 		bool ultrametric = true;	//	is false when at least one of the input trees is non-ultrametric
 		bool readTrueStates = false;
+		bool classic_vicariance = true;
+		bool rapid_anagenesis = true;
 
 		/*
 		 * for stochastic mapping
@@ -133,8 +135,8 @@ int main(int argc, char* argv[]){
 					}
 					if(!strcmp(tokens[0].c_str(), "treefile")){
 						treefile = tokens[1];
-					}else if(!strcmp(tokens[0].c_str(),  "fileSuffix")){
-						fileSuffix = tokens[1];
+					}else if(!strcmp(tokens[0].c_str(),  "fileTag")){
+						fileTag = tokens[1];
 					}else if(!strcmp(tokens[0].c_str(),  "likelihoodfile")){
 						LHOODS = true;
 					}else if(!strcmp(tokens[0].c_str(),  "nodelikelihoodfile")){
@@ -150,8 +152,8 @@ int main(int argc, char* argv[]){
 						}
 					}else if(!strcmp(tokens[0].c_str(),  "_stop_on_settings_display_")){
 						_stop_on_settings_display_ = true;
-					}else if(!strcmp(tokens[0].c_str(),  "_stop_on_global_likelihood_")){
-						_stop_on_global_likelihood_ = true;
+					}else if(!strcmp(tokens[0].c_str(),  "_stop_on_initial_likelihood_")){
+						_stop_on_initial_likelihood_ = true;
 					}else if(!strcmp(tokens[0].c_str(), "areanames")){
 						vector<string> searchtokens;
 						Tokenize(tokens[1], searchtokens, ", 	");
@@ -360,6 +362,10 @@ int main(int argc, char* argv[]){
 						simulate = false;
 					}else if(!strcmp(tokens[0].c_str(),  "not_ultrametric")){
 						ultrametric = false;
+					}else if(!strcmp(tokens[0].c_str(),  "no_classical_vicariance")){
+						classic_vicariance = false;
+					}else if(!strcmp(tokens[0].c_str(),  "no_rapid_anagenesis")){
+						rapid_anagenesis = false;
 					}
 				}
 			}
@@ -420,7 +426,7 @@ int main(int argc, char* argv[]){
 		if(periods.size() < 1){
 			periods.push_back(10000);
 		}
-		RateModel rm(ir.nareas,true,periods,sparse);
+		RateModel rm(ir.nareas,true,periods,sparse,classic_vicariance,rapid_anagenesis);
 		if(numthreads != 0){
 			rm.set_nthreads(numthreads);
 			cout << "Setting the number of threads: " << numthreads << endl;
@@ -668,8 +674,8 @@ int main(int argc, char* argv[]){
 
 						cout << "\tleaf_dists : " << leafDistrib.size() << endl;
 					}
-					time(&likeEndTime);
-					cout << "Time taken for simulation: " <<  float(likeEndTime - likStartTime) << " s." << endl << endl;
+					time(&likEndTime);
+					cout << "Time taken for simulation: " <<  float(likEndTime - likStartTime) << " s." << endl << endl;
 				}
 				else {
 					cout << "Simulating ancestral states for multiple trees simultaneously is currently not possible!" << endl;
@@ -692,10 +698,16 @@ int main(int argc, char* argv[]){
 				cout << "starting likelihood calculations" << endl;
 				time(&likStartTime);
 				cout << "initial -ln likelihood: " << double(bgt.eval_likelihood(marginal)) <<endl;
-				time(&likeEndTime);
-				cout << "Time taken for initial -ln likelihood: " <<  float(likeEndTime - likStartTime) << " s." << endl << endl;
+				time(&likEndTime);
+				cout << "Time taken for initial -ln likelihood: " <<  float(likEndTime - likStartTime) << " s." << endl << endl;
 
 				time(&likStartTime);
+
+				if (_stop_on_initial_likelihood_) {
+					cout << "\n STOPPING after having calculated the initial likelihood" << endl;
+					exit(1);
+				}
+
 				/*
 				 * optimize likelihood
 				 */
@@ -781,8 +793,8 @@ int main(int argc, char* argv[]){
 				}
 
 
-				time(&likeEndTime);
-				cout << "Time taken for final -ln likelihood: " <<  float(likeEndTime - likStartTime) << " s." << endl << endl;
+				time(&likEndTime);
+				cout << "Time taken for final -ln likelihood: " <<  float(likEndTime - likStartTime) << " s." << endl << endl;
 
 				if (intrees.size() == 1) {
 					ofstream LHOODFile;
@@ -796,14 +808,9 @@ int main(int argc, char* argv[]){
 
 							LHOODFile << "\t" << print_area_vector(in,areanamemaprev) << "\t";
 						}
-						LHOODFile << float(likeEndTime - likStartTime) << "s"  << endl;
+						LHOODFile << float(likEndTime - likStartTime) << "s"  << endl;
 						LHOODFile.close();
 					}
-				}
-
-				if (_stop_on_global_likelihood_) {
-					cout << "\n STOPPING after having calculated the global likelihood" << endl;
-					exit(1);
 				}
 
 				/*
@@ -867,9 +874,9 @@ int main(int argc, char* argv[]){
 						 */
 						if (!readTrueStates) {
 							if (intrees.size() > 1)
-								outTreeKeyFile.open((treefile+fileSuffix+".bgkey.tre").c_str(),ios::app);
+								outTreeKeyFile.open((treefile+fileTag+".bgkey.tre").c_str(),ios::app);
 							else
-								outTreeKeyFile.open((treefile+fileSuffix+".bgkey.tre").c_str(),ios::out);
+								outTreeKeyFile.open((treefile+fileTag+".bgkey.tre").c_str(),ios::out);
 							//need to output numbers for internal nodes and states for the tips
 							for(int j=0;j<intrees[i]->getExternalNodeCount();j++){
 								Node * currNode = intrees[i]->getExternalNode(j);
@@ -920,9 +927,9 @@ int main(int argc, char* argv[]){
 					}
 					if(splits && !readTrueStates){
 						if (intrees.size() > 1)
-							outTreeFile.open((treefile+fileSuffix+".bgsplits.tre").c_str(),ios::app);
+							outTreeFile.open((treefile+fileTag+".bgsplits.tre").c_str(),ios::app);
 						else
-							outTreeFile.open((treefile+fileSuffix+".bgsplits.tre").c_str(),ios::out);
+							outTreeFile.open((treefile+fileTag+".bgsplits.tre").c_str(),ios::out);
 						//need to output object "split"
 						for(int j=0;j<intrees[i]->getExternalNodeCount();j++){
 							Node * currNode = intrees[i]->getExternalNode(j);
@@ -939,9 +946,9 @@ int main(int argc, char* argv[]){
 					if(states){
 						if (!readTrueStates) {
 							if (intrees.size() > 1)
-								outTreeFile.open((treefile+fileSuffix+".bgstates.tre").c_str(),ios::app);
+								outTreeFile.open((treefile+fileTag+".bgstates.tre").c_str(),ios::app);
 							else
-								outTreeFile.open((treefile+fileSuffix+".bgstates.tre").c_str(),ios::out);
+								outTreeFile.open((treefile+fileTag+".bgstates.tre").c_str(),ios::out);
 							//need to output object "state"
 							for(int j=0;j<intrees[i]->getExternalNodeCount();j++){
 								Node * currNode = intrees[i]->getExternalNode(j);
@@ -958,7 +965,7 @@ int main(int argc, char* argv[]){
 						else {
 							//	output xor diff between true and inferred ancestral states
 							ofstream checkStates;
-							checkStates.open(("CheckStates"+fileSuffix+".txt").c_str(),ios::out);
+							checkStates.open(("CheckStates"+fileTag+".txt").c_str(),ios::out);
 							checkStates << "True dispersal rate : " << bgt.getTrue_D() << endl
 										<< "True extinction rate : " << bgt.getTrue_E() << endl
 										<< "\nEstimated dispersal rate : " << optDisp << endl

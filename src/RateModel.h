@@ -32,6 +32,9 @@ private:
 	vector<double> periods;
 	vector<vector<int> > dists;
 
+	bool classic_vicariance;
+	bool rapid_anagenesis;
+
 	//	adjacency conditioned data types
 	bool default_adjacency;
 	vector<vector<vector<bool> > > adjMat;
@@ -59,7 +62,7 @@ private:
 	void iter_all_dist_splits_per_period();
 
 public:
-	RateModel(int na, bool ge, vector<double> pers,bool);
+	RateModel(int na, bool ge, vector<double> pers, bool sp, bool cv, bool ra);
 	void set_nthreads(int nthreads);
 	int get_nthreads();
 	void setup_dists();

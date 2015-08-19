@@ -101,7 +101,7 @@ void InputReader::checkData(map<string,vector<int> > data ,vector<Tree *> trees)
 				count += 1;
 		}
 		if(count != 1){
-			cout << "Error: " << trees[0]->getExternalNode(j)->getName() << " found"<<count<<" times in data file." << endl;
+			cout << "Error: " << trees[0]->getExternalNode(j)->getName() << " found "<<count<<" times in data file." << endl;
 			exit(0);
 		}
 	}
