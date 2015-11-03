@@ -96,16 +96,16 @@ vector<int> get_columns_for_sparse(vector<Superdouble> &,RateModel *);
 
 	PRETTY MUCH USELESS UNTIL IMPLEMENTED MATEXP STUFF IN C++
  */
-struct sparse_thread_data{
-	int thread_id;
-	vector<int> columns;
-	vector<vector<double> > presults;
-	RateModel * rm;
-	double t;
-	int period;
-};
-
-void * sparse_column_pmatrix_pthread_go(void *threadarg);
+//struct sparse_thread_data{
+//	int thread_id;
+//	vector<int> columns;
+//	vector<vector<double> > presults;
+//	RateModel * rm;
+//	double t;
+//	int period;
+//};
+//
+//void * sparse_column_pmatrix_pthread_go(void *threadarg);
 
 /*
  * REQUIRES BOOST -- UNCOMMENT TO REACTIVATE

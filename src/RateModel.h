@@ -84,7 +84,7 @@ public:
 	vector<vector<double > > setup_fortran_P(int period, double t, bool store_p_matrices);
 	vector<vector<double > > setup_sparse_full_P(int period, double t);
 	vector<double > setup_sparse_single_column_P(int period, double t, int column);
-	vector<vector<double > > setup_pthread_sparse_P(int period, double t, vector<int> & columns);
+//	vector<vector<double > > setup_pthread_sparse_P(int period, double t, vector<int> & columns);
 	string Q_repr(int period);
 	string P_repr(int period);
 	vector<vector<int> > enumerate_dists();

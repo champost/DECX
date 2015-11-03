@@ -12,7 +12,7 @@
 #include "Utils.h"
 //#include "AncSplit.h"
 
-#include <pthread.h>
+//#include <pthread.h>
 #include <algorithm>
 #include <functional>
 #include <numeric>
@@ -737,68 +737,68 @@ vector<double >  RateModel::setup_sparse_single_column_P(int period, double t, i
 
 	NOT GOING TO BE FASTER UNTIL THE FORTRAN CODE GOES TO C
  */
-vector<vector<double > > RateModel::setup_pthread_sparse_P(int period, double t, vector<int> & columns){
-	struct sparse_thread_data thread_data_array[numthreads];
-	for(int i=0;i<numthreads;i++){
-		vector <int> st_cols;
-		if((i+1) < numthreads){
-			for(unsigned int j=(i*(columns.size()/numthreads));j<((columns.size()/numthreads))*(i+1);j++){
-				st_cols.push_back(columns[j]);
-			}
-		}else{//last one
-			for(unsigned int j=(i*(columns.size()/numthreads));j<columns.size();j++){
-				st_cols.push_back(columns[j]);
-			}
-		}
-//		cout << "spliting: " << st_cols.size() << endl;
-		thread_data_array[i].thread_id = i;
-		thread_data_array[i].columns = st_cols;
-		vector<vector<double> > presults;
-		thread_data_array[i].presults = presults;
-		thread_data_array[i].t = t;
-		thread_data_array[i].period = period;
-		thread_data_array[i].rm = this;
-	}
-	pthread_t threads[numthreads];
-	void *status;
-	int rc;
-	pthread_attr_t attr;
-	pthread_attr_init(&attr);
-	pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
-	for(int i=0; i <numthreads; i++){
-//		cout << "thread: " << i <<endl;
-		rc = pthread_create(&threads[i], &attr, sparse_column_pmatrix_pthread_go, (void *) &thread_data_array[i]);
-		if (rc){
-			printf("ERROR; return code from pthread_create() is %d\n", rc);
-			exit(-1);
-		}
-	}
-	pthread_attr_destroy(&attr);
-	for(int i=0;i<numthreads; i++){
-//		cout << "joining: " << i << endl;
-		pthread_join( threads[i], &status);
-		if (rc){
-			printf("ERROR; return code from pthread_join() is %d\n", rc);
-			exit(-1);
-		}
-//		printf("Completed join with thread %d status= %ld\n",i, (long)status);
-	}
-	/*
-		bring em back and combine for keep_seqs and keep_rc
-	 */
-	vector<vector<double> > preturn (Q[period].size(), vector<double>(Q[period].size()));
-	for (int i=0;i<numthreads; i++){
-		for(unsigned int j=0;j<thread_data_array[i].columns.size();j++){
-			preturn[thread_data_array[i].columns[j]] = thread_data_array[i].presults[j];
-		}
-	}
-	for(unsigned int i=0;i<Q[period].size();i++){
-		if(count(columns.begin(),columns.end(),i) == 0){
-			preturn[i] = vector<double>(Q[period].size(),0);
-		}
-	}
-	return preturn;
-}
+//vector<vector<double > > RateModel::setup_pthread_sparse_P(int period, double t, vector<int> & columns){
+//	struct sparse_thread_data thread_data_array[numthreads];
+//	for(int i=0;i<numthreads;i++){
+//		vector <int> st_cols;
+//		if((i+1) < numthreads){
+//			for(unsigned int j=(i*(columns.size()/numthreads));j<((columns.size()/numthreads))*(i+1);j++){
+//				st_cols.push_back(columns[j]);
+//			}
+//		}else{//last one
+//			for(unsigned int j=(i*(columns.size()/numthreads));j<columns.size();j++){
+//				st_cols.push_back(columns[j]);
+//			}
+//		}
+////		cout << "spliting: " << st_cols.size() << endl;
+//		thread_data_array[i].thread_id = i;
+//		thread_data_array[i].columns = st_cols;
+//		vector<vector<double> > presults;
+//		thread_data_array[i].presults = presults;
+//		thread_data_array[i].t = t;
+//		thread_data_array[i].period = period;
+//		thread_data_array[i].rm = this;
+//	}
+//	pthread_t threads[numthreads];
+//	void *status;
+//	int rc;
+//	pthread_attr_t attr;
+//	pthread_attr_init(&attr);
+//	pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
+//	for(int i=0; i <numthreads; i++){
+////		cout << "thread: " << i <<endl;
+//		rc = pthread_create(&threads[i], &attr, sparse_column_pmatrix_pthread_go, (void *) &thread_data_array[i]);
+//		if (rc){
+//			printf("ERROR; return code from pthread_create() is %d\n", rc);
+//			exit(-1);
+//		}
+//	}
+//	pthread_attr_destroy(&attr);
+//	for(int i=0;i<numthreads; i++){
+////		cout << "joining: " << i << endl;
+//		pthread_join( threads[i], &status);
+//		if (rc){
+//			printf("ERROR; return code from pthread_join() is %d\n", rc);
+//			exit(-1);
+//		}
+////		printf("Completed join with thread %d status= %ld\n",i, (long)status);
+//	}
+//	/*
+//		bring em back and combine for keep_seqs and keep_rc
+//	 */
+//	vector<vector<double> > preturn (Q[period].size(), vector<double>(Q[period].size()));
+//	for (int i=0;i<numthreads; i++){
+//		for(unsigned int j=0;j<thread_data_array[i].columns.size();j++){
+//			preturn[thread_data_array[i].columns[j]] = thread_data_array[i].presults[j];
+//		}
+//	}
+//	for(unsigned int i=0;i<Q[period].size();i++){
+//		if(count(columns.begin(),columns.end(),i) == 0){
+//			preturn[i] = vector<double>(Q[period].size(),0);
+//		}
+//	}
+//	return preturn;
+//}
 
 
 vector<vector<vector<int> > > RateModel::iter_dist_splits(vector<int> & dist){
