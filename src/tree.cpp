@@ -16,12 +16,12 @@ using namespace std;
 #include "tree.h"
 
 Tree::Tree():root(NULL),nodes(vector<Node *>()), internalNodes(vector<Node *>()),
-		externalNodes(vector<Node *>()),internalNodeCount(0),externalNodeCount(0),maxHeight(0.0){
+		externalNodes(vector<Node *>()),internalNodeCount(0),externalNodeCount(0),internalNodeNumber(0),maxHeight(0.0){
 	processRoot();
 }
 
 Tree::Tree(Node * inroot):root(inroot),nodes(vector<Node *>()), internalNodes(vector<Node *>()),
-		externalNodes(vector<Node *>()),internalNodeCount(0),externalNodeCount(0),maxHeight(0.0){
+		externalNodes(vector<Node *>()),internalNodeCount(0),externalNodeCount(0),internalNodeNumber(0),maxHeight(0.0){
 	root = inroot;
 	processRoot();
 }
@@ -268,6 +268,14 @@ void Tree::setHeightFromTipToNodes(){
 	}
 }
 
+void Tree::setNewickStr(string & newick) {
+	newickStr = newick;
+}
+
+string * Tree::getNewickStr() {
+	return &newickStr;
+}
+
 /*
  * private
  */
@@ -280,6 +288,9 @@ void Tree::processRoot(){
 	if (&root == NULL)
 		return;
 	postOrderProcessRoot(root);
+//	exit(-1);
+	internalNodeNumber = externalNodeCount;
+	renumberInternalNodes(root);
 }
 
 void Tree::processReRoot(Node * node){
@@ -321,9 +332,22 @@ void Tree::postOrderProcessRoot(Node * node){
 	if (node->isExternal()) {
 		addExternalNode(node);
 		node->setNumber(externalNodeCount);
-	} else {
+	}	//else {
+//		addInternalNode(node);
+//		node->setNumber(internalNodeCount);
+//	}
+}
+
+void Tree::renumberInternalNodes(Node * node) {
+	if (node == NULL)
+		return;
+	else if (node->isInternal()) {
+		++internalNodeNumber;
 		addInternalNode(node);
-		node->setNumber(internalNodeCount);
+		node->setNumber(internalNodeNumber);
+
+		for (int i = 0; i < node->getChildCount(); i++)
+			renumberInternalNodes(&node->getChild(i));
 	}
 }
 

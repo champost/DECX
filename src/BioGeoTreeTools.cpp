@@ -164,6 +164,7 @@ void BioGeoTreeTools::summarizeAncState(Node * node,vector<Superdouble> & ans,ma
 	Superdouble test2(2);
 	for (unsigned int i = 0; i < ans.size(); i++) {
 		if ((ans[i] != zero) && (((best.getLn()) - (ans[i].getLn())) < test2)) {
+//		if ((ans[i] != zero)) {		// for outputting the fractional likelihoods of all possible ranges ath this node
 			string tdisstring = "";
 			int count1 = 0;
 			for (int m = 0; m < areasize; m++) {

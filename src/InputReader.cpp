@@ -32,6 +32,7 @@ void InputReader::readMultipleTreeFile(string filename, vector<Tree *> & ret){
 	while( getline( ifs, temp ) ){
 		if(temp.size() > 1){
 			Tree * intree = tr.readTree(temp);
+			intree->setNewickStr(temp);
 			cout << "Tree "<< count <<" has " << intree->getExternalNodeCount() << " leaves." << endl;
 			ret.push_back(intree);
 			count++;
