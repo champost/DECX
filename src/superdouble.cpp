@@ -1,8 +1,8 @@
 
 #include "superdouble.h"
-#include <stdio.h>
-#include <stdlib.h>
-#include <math.h>
+#include <cstdio>
+#include <cstdlib>
+#include <cmath>
 #include <iostream>
 using namespace std;
 
@@ -30,11 +30,11 @@ void Superdouble::adjustDecimal() {
 		stilldouble = true;
 	}
 	else {
-		while (fabsl(mantissa)>=10) {
+		while (fabs(mantissa)>=10) {
 			mantissa*=0.1;
 			exponent+=1;
 		}
-		while (fabsl(mantissa)<1) {
+		while (fabs(mantissa)<1) {
 			mantissa*=10.0;
 			exponent+=-1;
 		}
@@ -68,7 +68,7 @@ Superdouble Superdouble::operator + ( Superdouble  x){
 	if (x.mantissa != 0) {	// (CBR 11.03.2014)
 		if (mantissa!=0) {
 			int exponentdif=x.exponent-exponent;
-			return Superdouble(mantissa+(x.mantissa*(pow10l(exponentdif))),exponent);
+			return Superdouble(mantissa+(x.mantissa*(pow(10,exponentdif))),exponent);
 		}
 		else
 			return Superdouble(x.mantissa,x.exponent);
@@ -83,7 +83,7 @@ Superdouble Superdouble::operator - ( Superdouble  x){
 	if (x.mantissa != 0) {	// (CBR 11.03.2014)
 		if (mantissa!=0) {
 			int exponentdif=x.exponent-exponent;
-			return Superdouble(mantissa-(x.mantissa*(pow10l(exponentdif))),exponent);
+			return Superdouble(mantissa-(x.mantissa*(pow(10,exponentdif))),exponent);
 		}
 		else
 			return Superdouble(-1.0*x.mantissa,x.exponent);
@@ -124,12 +124,12 @@ void Superdouble::operator += (const Superdouble  &x){
 		if (mantissa!=0) {
 			if (stilldouble == true && x.stilldouble == true){
 				mantissa += x.mantissa;
-				if (fabsl(mantissa) > upperlimit || fabsl(mantissa) < lowerlimit){
+				if (fabs(mantissa) > upperlimit || fabs(mantissa) < lowerlimit){
 					adjustDecimal();
 				}
 			}else{
 				int exponentdif=x.exponent-exponent;
-				mantissa=mantissa+(x.mantissa*(pow10l(exponentdif)));
+				mantissa=mantissa+(x.mantissa*(pow(10,exponentdif)));
 				adjustDecimal();
 			}
 		}else {
@@ -152,7 +152,7 @@ void Superdouble::operator -= (const Superdouble  &x){
 	if (x.mantissa != 0) {	// (CBR 11.03.2014)
 		if (mantissa!=0) {
 			int exponentdif=x.exponent-exponent;
-			mantissa=mantissa-(x.mantissa*(pow10l(exponentdif)));
+			mantissa=mantissa-(x.mantissa*(pow(10,exponentdif)));
 			adjustDecimal();
 		}
 		else {
@@ -265,11 +265,11 @@ void Superdouble::switch_sign(){
 
 Superdouble Superdouble::getLn(){
 	//ln(a * 10^b) = ln(a) + ln(10^b) = ln(a) + log10 (10^b) / log10 (e^1) = ln(a) + b/log10(e^1)
-	//Superdouble result(logl(mantissa)+(1.0*(exponent))/log10l(exp(1)),0);
+	//Superdouble result(log(mantissa)+(1.0*(exponent))/log10l(exp(1)),0);
 
 	//or (CBR 28.02.2014)
 	//ln(a * 10^b) = ln(a) + ln(10^b) = ln(a) + b log(10)
-	return Superdouble(logl(mantissa)+(double(exponent)*logl(10)),0);
+	return Superdouble(log(mantissa)+(double(exponent)*log(10)),0);
 }
 
 Superdouble Superdouble::abs(){

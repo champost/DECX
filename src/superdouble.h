@@ -22,13 +22,13 @@
 
  more development by Stephen A. Smith
 
- more development by Champak Beeravolu Reddy (2013)
+ more development by Champak Beeravolu Reddy (2013-2015)
  */
 
 #ifndef SUPERDOUBLE_H
 #define SUPERDOUBLE_H
-#include <stdio.h>
-#include <math.h>
+#include <cstdio>
+#include <cmath>
 #include <iostream>
 using namespace std;
 
