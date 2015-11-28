@@ -14,8 +14,8 @@
 #include <cmath>
 using namespace std;
 
-#include <armadillo>
-using namespace arma;
+//#include <armadillo>
+//using namespace arma;
 
 #include "BioGeoTree.h"
 #include "BioGeoTreeTools.h"
@@ -29,7 +29,7 @@ using namespace arma;
 #include "node.h"
 #include "vector_node_object.h"
 
-#include "omp.h"
+//#include "omp.h"
 //octave usage
 //#include <octave/oct.h>
 
@@ -43,13 +43,20 @@ Superdouble MAX(const Superdouble &a, const Superdouble &b){
  * sloppy beginning but best for now because of the complicated bits
  */
 
+//BioGeoTree::BioGeoTree(Tree * tr, vector<double> ps):tree(tr),periods(ps),
+//		age("age"),dc("dist_conditionals"),en("excluded_dists"),
+//		andc("anc_dist_conditionals"),columns(NULL),whichcolumns(NULL),rootratemodel(NULL),
+//		distmap(NULL),store_p_matrices(false),use_stored_matrices(false),revB("revB"),
+//		rev(false),rev_exp_number("rev_exp_number"),rev_exp_time("rev_exp_time"),
+//		stochastic(false),stored_EN_matrices(map<int,map<double, mat > >()),stored_EN_CX_matrices(map<int,map<double, cx_mat > >()),
+//		stored_ER_matrices(map<int,map<double, mat > >()),ultrametric(false),sim(false),ran_seed(314159265),sim_D(0.1),sim_E(0.1),
+//		readSimStates(false),true_D(0),true_E(0){
 BioGeoTree::BioGeoTree(Tree * tr, vector<double> ps):tree(tr),periods(ps),
 		age("age"),dc("dist_conditionals"),en("excluded_dists"),
 		andc("anc_dist_conditionals"),columns(NULL),whichcolumns(NULL),rootratemodel(NULL),
 		distmap(NULL),store_p_matrices(false),use_stored_matrices(false),revB("revB"),
 		rev(false),rev_exp_number("rev_exp_number"),rev_exp_time("rev_exp_time"),
-		stochastic(false),stored_EN_matrices(map<int,map<double, mat > >()),stored_EN_CX_matrices(map<int,map<double, cx_mat > >()),
-		stored_ER_matrices(map<int,map<double, mat > >()),ultrametric(false),sim(false),ran_seed(314159265),sim_D(0.1),sim_E(0.1),
+		stochastic(false),ultrametric(false),sim(false),ran_seed(314159265),sim_D(0.1),sim_E(0.1),
 		readSimStates(false),true_D(0),true_E(0){
 
 	/*
@@ -690,19 +697,19 @@ void BioGeoTree::reverse(Node & node){
 			for(unsigned int j=0;j<dists->size();j++){revconds->at(j) = 0;}
 			RateModel * rm = tsegs->at(ts).getModel();
 			vector<vector<double > > * p = &rm->stored_p_matrices[tsegs->at(ts).getPeriod()][tsegs->at(ts).getDuration()];
-			mat * EN = NULL;
-			mat * ER = NULL;
+//			mat * EN = NULL;
+//			mat * ER = NULL;
 			vector<Superdouble> tempmoveAer(tempA);
 			vector<Superdouble> tempmoveAen(tempA);
 			if(stochastic == true){
 				//initialize the segment B's
 				for(unsigned int j=0;j<dists->size();j++){tempmoveAer[j] = 0;}
 				for(unsigned int j=0;j<dists->size();j++){tempmoveAen[j] = 0;}
-				EN = &stored_EN_matrices[tsegs->at(ts).getPeriod()][tsegs->at(ts).getDuration()];
-				ER = &stored_ER_matrices[tsegs->at(ts).getPeriod()][tsegs->at(ts).getDuration()];
+//				EN = &stored_EN_matrices[tsegs->at(ts).getPeriod()][tsegs->at(ts).getDuration()];
+//				ER = &stored_ER_matrices[tsegs->at(ts).getPeriod()][tsegs->at(ts).getDuration()];
 				//cout << (*EN) << endl;
-				cx_mat * EN_CX = NULL;
-				EN_CX = &stored_EN_CX_matrices[tsegs->at(ts).getPeriod()][tsegs->at(ts).getDuration()];
+//				cx_mat * EN_CX = NULL;
+//				EN_CX = &stored_EN_CX_matrices[tsegs->at(ts).getPeriod()][tsegs->at(ts).getDuration()];
 				//cout << (*EN_CX) << endl;
 				//exit(0);
 			}
@@ -1033,78 +1040,78 @@ double BioGeoTree::getTrue_E()
  * forward and reverse stuff for stochastic mapping
  **********************************************************/
 
-void BioGeoTree::prepare_stochmap_reverse_all_nodes(int from , int to){
-	stochastic = true;
-	int ndists = rootratemodel->getDists()->size();
-
-	//calculate and store local expectation matrix for each branch length
-	//#pragma omp parallel for ordered num_threads(8)
-	for(int k = 0; k < tree->getNodeCount(); k++){
-		//cout << k << " " << tree->getNodeCount() << endl;
-		vector<BranchSegment>* tsegs = tree->getNode(k)->getSegVector();
-		for (unsigned int l = 0;l<tsegs->size();l++){
-			int per = (*tsegs)[l].getPeriod();
-			double dur =  (*tsegs)[l].getDuration();
-			cx_mat eigvec(ndists,ndists);eigvec.fill(cx_double(0.0, 0.0));
-			cx_mat eigval(ndists,ndists);eigval.fill(cx_double(0.0, 0.0));
-			bool isImag = rootratemodel->get_eigenvec_eigenval_from_Q(&eigval, &eigvec,per);
-			mat Ql(ndists,ndists);Ql.fill(0);Ql(from,to) = rootratemodel->get_Q()[per][from][to];
-			mat W(ndists,ndists);W.fill(0);W(from,from) = 1;
-			cx_mat summed(ndists,ndists);summed.fill(cx_double(0.0, 0.0));
-			cx_mat summedR(ndists,ndists);summedR.fill(cx_double(0.0, 0.0));
-			for(int i=0;i<ndists;i++){
-				mat Ei(ndists,ndists);Ei.fill(0);Ei(i,i)=1;
-				cx_mat Si(ndists,ndists);
-				Si = eigvec * Ei * inv(eigvec);
-				for(int j=0;j<ndists;j++){
-					cx_double dij = (eigval(i,i)-eigval(j,j)) * dur;
-					mat Ej(ndists,ndists);Ej.fill(0);Ej(j,j)=1;
-					cx_mat Sj(ndists,ndists);
-					Sj = eigvec * Ej * inv(eigvec);
-					cx_double Iijt = 0;
-					if (abs(dij) > 10){
-						Iijt = (exp(eigval(i,i)*dur)-exp(eigval(j,j)*dur))/(eigval(i,i)-eigval(j,j));
-					}else if(abs(dij) < 10e-20){
-						Iijt = dur*exp(eigval(j,j)*dur)*(1.+dij/2.+pow(dij,2.)/6.+pow(dij,3.)/24.);
-					}else{
-						if(eigval(i,i) == eigval(j,j)){
-							//WAS Iijt = dur*exp(eigval(j,j)*dur)*expm1(dij)/dij;
-							if (isImag)
-								Iijt = dur*exp(eigval(j,j)*dur)*(exp(dij)-1.)/dij;
-							else
-								Iijt = dur*exp(eigval(j,j)*dur)*(expm1(real(dij)))/dij;
-						}else{
-							//WAS Iijt = -dur*exp(eigval(i,i)*dur)*expm1(-dij)/dij;
-							if (isImag)
-								Iijt = -dur*exp(eigval(i,i)*dur)*(exp(-dij)-1.)/dij;
-							else
-								Iijt = -dur*exp(eigval(i,i)*dur)*(expm1(real(-dij)))/dij;
-						}
-					}
-					summed += (Si  * Ql * Sj * Iijt);
-					summedR += (Si * W * Sj * Iijt);
-				}
-			}
-			stored_EN_matrices[per][dur] = (real(summed));
-			stored_EN_CX_matrices[per][dur] = summed;
-			stored_ER_matrices[per][dur] = (real(summedR));
-			//for(int i=0;i<ndists;i++){
-			//	for (int j=0;j<ndists;j++){
-			//		if (real(summed(i,j)) < 0){
-			//			cout <<"N:" <<  summed << endl;
-			//			cout << endl;
-			//			exit(0);
-			//		}
-			//		if (real(summedR(i,j)) < 0){
-			//			cout <<"R:" << summedR << endl;
-			//			cout << endl;
-			//			exit(0);
-			//		}
-			//	}
-			//}
-		}
-	}
-}
+//void BioGeoTree::prepare_stochmap_reverse_all_nodes(int from , int to){
+//	stochastic = true;
+//	int ndists = rootratemodel->getDists()->size();
+//
+//	//calculate and store local expectation matrix for each branch length
+//	//#pragma omp parallel for ordered num_threads(8)
+//	for(int k = 0; k < tree->getNodeCount(); k++){
+//		//cout << k << " " << tree->getNodeCount() << endl;
+//		vector<BranchSegment>* tsegs = tree->getNode(k)->getSegVector();
+//		for (unsigned int l = 0;l<tsegs->size();l++){
+//			int per = (*tsegs)[l].getPeriod();
+//			double dur =  (*tsegs)[l].getDuration();
+//			cx_mat eigvec(ndists,ndists);eigvec.fill(cx_double(0.0, 0.0));
+//			cx_mat eigval(ndists,ndists);eigval.fill(cx_double(0.0, 0.0));
+//			bool isImag = rootratemodel->get_eigenvec_eigenval_from_Q(&eigval, &eigvec,per);
+//			mat Ql(ndists,ndists);Ql.fill(0);Ql(from,to) = rootratemodel->get_Q()[per][from][to];
+//			mat W(ndists,ndists);W.fill(0);W(from,from) = 1;
+//			cx_mat summed(ndists,ndists);summed.fill(cx_double(0.0, 0.0));
+//			cx_mat summedR(ndists,ndists);summedR.fill(cx_double(0.0, 0.0));
+//			for(int i=0;i<ndists;i++){
+//				mat Ei(ndists,ndists);Ei.fill(0);Ei(i,i)=1;
+//				cx_mat Si(ndists,ndists);
+//				Si = eigvec * Ei * inv(eigvec);
+//				for(int j=0;j<ndists;j++){
+//					cx_double dij = (eigval(i,i)-eigval(j,j)) * dur;
+//					mat Ej(ndists,ndists);Ej.fill(0);Ej(j,j)=1;
+//					cx_mat Sj(ndists,ndists);
+//					Sj = eigvec * Ej * inv(eigvec);
+//					cx_double Iijt = 0;
+//					if (abs(dij) > 10){
+//						Iijt = (exp(eigval(i,i)*dur)-exp(eigval(j,j)*dur))/(eigval(i,i)-eigval(j,j));
+//					}else if(abs(dij) < 10e-20){
+//						Iijt = dur*exp(eigval(j,j)*dur)*(1.+dij/2.+pow(dij,2.)/6.+pow(dij,3.)/24.);
+//					}else{
+//						if(eigval(i,i) == eigval(j,j)){
+//							//WAS Iijt = dur*exp(eigval(j,j)*dur)*expm1(dij)/dij;
+//							if (isImag)
+//								Iijt = dur*exp(eigval(j,j)*dur)*(exp(dij)-1.)/dij;
+//							else
+//								Iijt = dur*exp(eigval(j,j)*dur)*(expm1(real(dij)))/dij;
+//						}else{
+//							//WAS Iijt = -dur*exp(eigval(i,i)*dur)*expm1(-dij)/dij;
+//							if (isImag)
+//								Iijt = -dur*exp(eigval(i,i)*dur)*(exp(-dij)-1.)/dij;
+//							else
+//								Iijt = -dur*exp(eigval(i,i)*dur)*(expm1(real(-dij)))/dij;
+//						}
+//					}
+//					summed += (Si  * Ql * Sj * Iijt);
+//					summedR += (Si * W * Sj * Iijt);
+//				}
+//			}
+//			stored_EN_matrices[per][dur] = (real(summed));
+//			stored_EN_CX_matrices[per][dur] = summed;
+//			stored_ER_matrices[per][dur] = (real(summedR));
+//			//for(int i=0;i<ndists;i++){
+//			//	for (int j=0;j<ndists;j++){
+//			//		if (real(summed(i,j)) < 0){
+//			//			cout <<"N:" <<  summed << endl;
+//			//			cout << endl;
+//			//			exit(0);
+//			//		}
+//			//		if (real(summedR(i,j)) < 0){
+//			//			cout <<"R:" << summedR << endl;
+//			//			cout << endl;
+//			//			exit(0);
+//			//		}
+//			//	}
+//			//}
+//		}
+//	}
+//}
 
 /*
  * called directly after reverse_stochastic

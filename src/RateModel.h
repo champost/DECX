@@ -16,8 +16,8 @@
 #include <string>
 using namespace std;
 
-#include <armadillo>
-using namespace arma;
+//#include <armadillo>
+//using namespace arma;
 
 //octave usage
 //#include <octave/oct.h>
@@ -116,7 +116,7 @@ public:
 	 */
 	vector< vector< vector<double> > > & get_Q();
 	//this should be used for getting the eigenvectors and eigenvalues
-	bool get_eigenvec_eigenval_from_Q(cx_mat * eigenvalues, cx_mat * eigenvectors, int period);
+//	bool get_eigenvec_eigenval_from_Q(cx_mat * eigenvalues, cx_mat * eigenvectors, int period);
 	//bool get_eigenvec_eigenval_from_Q_octave(ComplexMatrix * eigenvalues, ComplexMatrix * eigenvectors, int period);
 
 	//REQUIRES BOOST
