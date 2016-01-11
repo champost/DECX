@@ -106,6 +106,7 @@ int main(int argc, char* argv[]){
 		bool readTrueStates = false;
 		bool classic_vicariance = true;
 		bool rapid_anagenesis = true;
+		bool plot_output = false;
 
 		/*
 		 * for stochastic mapping
@@ -366,6 +367,8 @@ int main(int argc, char* argv[]){
 						classic_vicariance = false;
 					}else if(!strcmp(tokens[0].c_str(),  "no_rapid_anagenesis")){
 						rapid_anagenesis = false;
+					}else if(!strcmp(tokens[0].c_str(),  "plot_output")){
+						plot_output = true;
 					}
 				}
 			}
@@ -834,34 +837,33 @@ int main(int argc, char* argv[]){
 
 					if(ancstates[0] == "_all_" || ancstates[0] == "_ALL_"){
 
-
 						ofstream outTipLabelFile, outAreaNameFile;
 						ofstream outBestStateFreqFile, outAreaFreqFile, outTreeFile;
+						if (plot_output) {
+							outTipLabelFile.open(string("tip.labels.out").c_str(),ios::out);
+							outAreaNameFile.open(string("area.names.txt").c_str(),ios::out);
+							outBestStateFreqFile.open(string("node.best.state.out").c_str(),ios::out);
+							outAreaFreqFile.open(string("node.areas.out").c_str(),ios::out);
+							outTreeFile.open(string("user.tree.tre").c_str(),ios::out);
 
-						outTipLabelFile.open(string("tip.labels.out").c_str(),ios::out);
-						outAreaNameFile.open(string("area.names.txt").c_str(),ios::out);
-						outBestStateFreqFile.open(string("node.best.state.out").c_str(),ios::out);
-						outAreaFreqFile.open(string("node.areas.out").c_str(),ios::out);
-						outTreeFile.open(string("user.tree.tre").c_str(),ios::out);
 
+							for(int j=0;j<intrees[i]->getExternalNodeCount();j++){
+								Node * currNode = intrees[i]->getExternalNode(j);
+								vector<int> tipDist = data[currNode->getName()];
+	//							outTipLabelFile << currNode->getName() << "\t" << print_area_vector(tipDist,areanamemaprev) << endl;
+								outTipLabelFile << print_area_vector(tipDist,areanamemaprev) << endl;
+							}
 
-						for(int j=0;j<intrees[i]->getExternalNodeCount();j++){
-							Node * currNode = intrees[i]->getExternalNode(j);
-							vector<int> tipDist = data[currNode->getName()];
-//							outTipLabelFile << currNode->getName() << "\t" << print_area_vector(tipDist,areanamemaprev) << endl;
-							outTipLabelFile << print_area_vector(tipDist,areanamemaprev) << endl;
+							for(unsigned int area = 0; area < areanames.size(); area++)
+								outAreaNameFile << areanames[area] << "\t";
+							outAreaNameFile << endl;
+
+							if ((intrees.size() == 1))
+								outTreeFile << *(intrees[0]->getNewickStr());
+							outTipLabelFile.close();
+							outAreaNameFile.close();
+							outTreeFile.close();
 						}
-
-						for(unsigned int area = 0; area < areanames.size(); area++)
-							outAreaNameFile << areanames[area] << "\t";
-						outAreaNameFile << endl;
-
-						if ((intrees.size() == 1))
-							outTreeFile << *(intrees[0]->getNewickStr());
-						outTipLabelFile.close();
-						outAreaNameFile.close();
-						outTreeFile.close();
-
 
 						for(int j=0;j<intrees[i]->getInternalNodeCount();j++){
 							if(splits){
@@ -896,40 +898,41 @@ int main(int argc, char* argv[]){
 								else {
 									tt.summarizeAncState(intrees[i]->getInternalNode(j),rast,areanamemaprev,&rm, false, NodeLHOODFile);
 
+									if (plot_output) {
+//										outPieFreqFile << intrees[i]->getInternalNode(j)->getNumber() << "\t";
 
-//									outPieFreqFile << intrees[i]->getInternalNode(j)->getNumber() << "\t";
+										Superdouble zero(0);
+										Superdouble best(rast[1]);
+										int bestdistindex = 1;
+										vector<vector<int> > * allDists = rm.getDists();
 
-									Superdouble zero(0);
-									Superdouble best(rast[1]);
-									int bestdistindex = 1;
-									vector<vector<int> > * allDists = rm.getDists();
-
-									//	freqs for the best range
-									for (unsigned int dist = 2; dist < rast.size(); dist++) {
-										if ((rast[dist] != zero) && (rast[dist] >= best)) {
-											best = rast[dist];
-											bestdistindex = dist;
+										//	freqs for the best range
+										for (unsigned int dist = 2; dist < rast.size(); dist++) {
+											if ((rast[dist] != zero) && (rast[dist] >= best)) {
+												best = rast[dist];
+												bestdistindex = dist;
+											}
 										}
-									}
-									vector<int> nodeDist = allDists->at(bestdistindex);
-									outBestStateFreqFile << print_area_vector(nodeDist,areanamemaprev);
-//									int sum = accumulate(nodeDist.begin(),nodeDist.end(),0);
-//									for (unsigned int area = 0; area < nodeDist.size(); area++)
-//										outBestStateFreqFile << double(nodeDist[area])/double(sum) << "\t";
+										vector<int> nodeDist = allDists->at(bestdistindex);
+										outBestStateFreqFile << print_area_vector(nodeDist,areanamemaprev);
+//										int sum = accumulate(nodeDist.begin(),nodeDist.end(),0);
+//										for (unsigned int area = 0; area < nodeDist.size(); area++)
+//											outBestStateFreqFile << double(nodeDist[area])/double(sum) << "\t";
 
 
-									//	freqs only for all areas
-									for (unsigned int area = 0; area < areanames.size(); area++) {
-										Superdouble sum = 0;
-										for (unsigned int dist = 1; dist < rast.size(); dist++) {
-											if ((rast[dist] > zero) && (allDists->at(dist)[area] == 1))
-												sum+= rast[dist]/Superdouble(accumulate(allDists->at(dist).begin(),allDists->at(dist).end(),0))/totlike;
+										//	freqs only for all areas
+										for (unsigned int area = 0; area < areanames.size(); area++) {
+											Superdouble sum = 0;
+											for (unsigned int dist = 1; dist < rast.size(); dist++) {
+												if ((rast[dist] > zero) && (allDists->at(dist)[area] == 1))
+													sum+= rast[dist]/Superdouble(accumulate(allDists->at(dist).begin(),allDists->at(dist).end(),0))/totlike;
+											}
+											outAreaFreqFile << double(sum) << "\t";
 										}
-										outAreaFreqFile << double(sum) << "\t";
-									}
 
-									outBestStateFreqFile << endl;
-									outAreaFreqFile << endl;
+										outBestStateFreqFile << endl;
+										outAreaFreqFile << endl;
+									}
 
 
 								}
@@ -959,13 +962,12 @@ int main(int argc, char* argv[]){
 							}
 						}
 
-
-						outBestStateFreqFile.close();
-						outAreaFreqFile.close();
-						string callstring = "R --vanilla --args < plot_pies.R";
-						system(callstring.c_str());
-
-
+						if (plot_output) {
+							outBestStateFreqFile.close();
+							outAreaFreqFile.close();
+							string callstring = "R --vanilla --args < plot_pies.R";
+							system(callstring.c_str());
+						}
 					}else{
 						for(unsigned int j=0;j<ancstates.size();j++){
 							if(splits){
