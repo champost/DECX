@@ -63,7 +63,7 @@ TARGET_NAME = lagrange_cpp
 #C_OPT = -O0 -ftree-vectorize -ffast-math -g3 -fopenmp
 #C_OPT = -Wall -g
 #C_OPT = -g -pg
-C_OPT = -O3
+C_OPT = -O3 $(debug)
 
 
 #if using octave
@@ -74,7 +74,7 @@ C_OPT = -O3
 #-ldl -lutil -lpython2.6
 # if llapack lblas fail, try larmadillo
 #LIBS := -llapack -lblas -lgfortran -lgsl -lgslcblas -lm -lpthread -lnlopt -fopenmp -larmadillo
-LIBS := -lgfortran -lm -lgsl -lgslcblas 
+LIBS := -lgfortran -lquadmath -lm -lgsl -lgslcblas 
 #-larmadillo 
 
 
@@ -82,7 +82,7 @@ LIBS := -lgfortran -lm -lgsl -lgslcblas
 # FORTRAN BIT
 ######
 FC	= /usr/bin/gfortran
-FFLAGS	= -O3
+FFLAGS	= -O3 $(debug)
 #.f.o:;  $(FC) $(FFLAGS) -c $<
 
 # Each subdirectory must supply rules for building sources it contributes
@@ -111,8 +111,8 @@ LINK_LIB_DIRS = -L/usr/lib/ -L/usr/local/lib/
 # Tool invocations
 lagrange_cpp: $(OBJS) $(FORT_OBJS)
 	@echo 'Building target: $@'
-#	$(CC) $(LINK_LIB_DIRS) $(PYTHON_REQ) -o "$(TARGET_NAME)" $(FORT_OBJS) $(OBJS) $(LIBS)
-	$(CC) $(LINK_LIB_DIRS) -o "$(TARGET_NAME)" $(FORT_OBJS) $(OBJS) $(LIBS)
+#	$(CC) $(static) $(LINK_LIB_DIRS) $(PYTHON_REQ) -o "$(TARGET_NAME)" $(FORT_OBJS) $(OBJS) $(LIBS)
+	$(CC) $(static) $(debug) $(LINK_LIB_DIRS) -o "$(TARGET_NAME)" $(FORT_OBJS) $(OBJS) $(LIBS)
 #	$(CC) $(LINK_LIB_DIRS) -g -pg -o "$(TARGET_NAME)" $(FORT_OBJS) $(OBJS) $(LIBS)
 	@echo 'Finished building target: $(TARGET_NAME)'
 	@echo ' '
@@ -127,7 +127,17 @@ lagrange_cpp: $(OBJS) $(FORT_OBJS)
 # All Target
 all: lagrange_cpp
 
+static: static=-static
+static: all
+
+debug: debug=-g
+debug: all
+
+debugstatic: debug=-g
+debugstatic: static=-static
+debugstatic: all
+
 # Other Targets
 clean:
-	-$(RM) *.o *.d
+	-$(RM) *.o *.d $(TARGET_NAME)
 	-@echo ' '
