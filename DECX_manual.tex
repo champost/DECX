@@ -1,0 +1,145 @@
+\documentclass[12pt,a4]{article}
+\usepackage[left=3.5cm,right=3.5cm]{geometry}
+
+\usepackage{fancyvrb}
+\usepackage[linkcolor=blue,urlcolor=blue,colorlinks]{hyperref}
+\usepackage{color}
+
+
+\newcommand{\DECX}{\texttt{DECX}}
+\newcommand{\DEC}{\texttt{DEC}}
+
+
+%opening
+\title{\textit{DECX : DEC eXtended}}
+\author{\vspace{0.5cm}by\\
+Champak Beeravolu Reddy \\
+\vspace{0.2cm}(\url{champak.br@gmail.com}),\\
+\vspace{0.5cm}Fabien Condamine \& Julien Veyssier}
+
+\begin{document}
+
+\maketitle
+
+\tableofcontents
+
+\clearpage
+
+\section{Preamble}
+
+The below is a succinct description of how the \DEC\ method (\textcolor{red}{ref.}) came about and the reasons for resorting to C++. The original document can be \href{https://github.com/blackrim/lagrange/blob/master/manual.pdf}{found here}.\\
+
+\textquotedblleft\textit{Lagrange began as a Python library or program (however you want to look at it) with Richard Ree. I was coding along side this project a Java implementation (called AReA), but we later joined forces and produced the paper with the explicitly solved rate matrix, $ Q $ (Ree and Smith, 2008). This package has been successfully used for a variety of projects including some of our own. However, development has continued. Rick developed a nice web interface for the construction of input files. This is especially helpful when describing more complex area connectivity scenarios. Nevertheless, some users, including the developers, have recognized the speed limitations, and therefore dataset limitations, of the Python version. In order to continue the development of more computationally intensive procedures, we have moved to a C++ version.}\textquotedblright
+
+
+\section{Introduction}
+This is the documentation file accompanying the program \DECX\ as presented in the paper \textit{An Extended Maximum Likelihood Inference of Geographic Range Evolution by Dispersal, Local Extinction and Cladogenesis} (\textcolor{red}{biorXiv link here}). The current version of the \DECX\ project is freely available at \url{https://github.com/champost/DECX}. 
+
+\section{Compilation and Installation}
+
+\subsection{Linux}
+
+\subsection{MacOSX}
+
+\subsection{Windows}
+
+\section{Configuration file}
+Due to the many improvements proposed in the paper on which this program is based the configuration file options have increased considerably since the original C++ version of \DEC. Apart from the simplest of models specified in \DECX\, one can expect this version to quite different \textit{i.e. backwards incompatible} with the original version. For the initiated, this will be become clear in the following sections.
+
+\subsection{Options}
+Any line in the config file beginning with the hash symbol \texttt{\#} is considered as a comment by \DECX\ and will thus be ignored.
+\begin{itemize}
+\item \texttt{treefile} =\\
+
+\item \texttt{fileTag} =\\
+
+\item \texttt{likelihoodfile} =\\
+
+\item \texttt{nodelikelihoodfile} =\\
+
+\item \texttt{datafile} =\\
+
+\item \texttt{adjacency} =\\
+
+\item \texttt{ratematrix} =\\
+
+\item \texttt{\_stop\_on\_settings\_display\_} =\\
+
+\item \texttt{\_stop\_on\_initial\_likelihood\_} =\\
+
+\item \texttt{areanames} =\\
+
+\item \texttt{isolated} =\\
+
+\item \texttt{fixnode} =\\
+
+\item \texttt{excludedists} =\\
+
+\item \texttt{includedists} =\\
+
+\item \texttt{areacolors} =\\
+
+\item \texttt{periods} =\\
+
+\item \texttt{treecolors} =\\
+
+\item \texttt{mrca} =\\
+
+\item \texttt{ancstate} =\\
+
+\item \texttt{fossil} =\\
+
+\item \texttt{calctype} =\\
+
+\item \texttt{report} =\\
+
+\item \texttt{sparse} =\\
+
+\item \texttt{splits} =\\
+
+\item \texttt{states} =\\
+
+\item \texttt{estimate\_dispersal\_mask} =\\
+
+\item \texttt{numthreads} =\\
+
+\item \texttt{stochastic\_time} =\\
+
+\item \texttt{stochastic\_number} =\\
+
+\item \texttt{bayesian} =\\
+
+\item \texttt{dispersal} =\\
+
+\item \texttt{sim\_dispersal} =\\
+
+\item \texttt{extinction} =\\
+
+\item \texttt{sim\_extinction} =\\
+
+\item \texttt{maxiterations} =\\
+
+\item \texttt{stoppingprecision} =\\
+
+\item \texttt{simbiogeotree} =\\
+
+\item \texttt{seed} =\\
+
+\item \texttt{read\_true\_states} =\\
+
+\item \texttt{not\_ultrametric} =\\
+
+\item \texttt{no\_classical\_vicariance} =\\
+
+\item \texttt{no\_rapid\_anagenesis} =\\
+
+\item \texttt{plot\_output} =\\
+
+
+\end{itemize}
+
+\subsection{Examples}
+
+\section{Acknowledgments}
+
+\end{document}

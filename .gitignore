@@ -1,0 +1,13 @@
+# Latex auxillary files
+*.aux
+*.bbl
+*.blg
+*.log
+*.out
+*.toc
+*.synctex.gz
+
+# some txt files
+main_code.txt
+config_options.txt
+
