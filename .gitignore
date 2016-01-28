@@ -11,3 +11,6 @@
 main_code.txt
 config_options.txt
 
+# some obslete directories
+/older/*
+/python/*
