@@ -45,7 +45,7 @@ make -f makefile.champak static
 
 What i did to be able to compile on windows :
 
-* Install git with git-bash from https://git-scm.com/ .
+* Install git with git-bash from https://git-scm.com/
 * Install minGW32 from http://www.mingw.org/download/installer
 * Install all dev packages inside minGW
 * Edit ~/.bashrc in git-bash to change PATH : ```export PATH=$PATH:/c/MinGW/bin/```
@@ -54,9 +54,30 @@ What i did to be able to compile on windows :
 * Download lib boost from http://sourceforge.net/projects/boost/files/boost-binaries/1.60.0/
 * Install it in C:\local\boost_1_60_0
 * Adjust the src/makefile.win to fit with my files paths
-* run ```make -f makefile.win static``` to get a static bin
+* Run ```make -f makefile.win static``` to get a static bin
+* Be satisfied
 
 ### MacOS
 
-Still in progress
+To get things right under MacOS, you'll need _fink_ or another pseudo-package
+manager. The goal is to install correct gcc/g++ and the needed libs :
 
+```
+git clone https://github.com/fink/fink.git
+cd fink
+# the next command is quite long
+sudo ./bootstrap
+echo ". /sw/bin/init.sh" > ~/.bashr_profile
+. ~/.bashrc_profile
+# this might also be very long
+sudo fink selfupdate-cvs
+# and the longest is...this one
+sudo fink install gcc49 boost1.55-python27 gsl
+
+cd
+cd DECX/src
+make -f makefile.mac clean
+make -f makefile.mac
+```
+
+I'm working on a way to produce a quasi-static binary for MacOSX.
