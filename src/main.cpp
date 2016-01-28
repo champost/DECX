@@ -15,10 +15,10 @@
 #include <string.h>
 #include <map>
 #include <set>
-#include <math.h>
-#include <float.h>
+#include <cmath>
+#include <cfloat>
 #include <iomanip>
-#include <time.h>
+#include <ctime>
 #include <numeric>
 
 using namespace std;
@@ -28,12 +28,12 @@ using namespace std;
 #include "RateModel.h"
 #include "BioGeoTree.h"
 #include "OptimizeBioGeo.h"
-#include "OptimizeBioGeoAllDispersal.h"
-#include "OptimizeBioGeoAllDispersal_nlopt.h"
+//#include "OptimizeBioGeoAllDispersal.h"
+//#include "OptimizeBioGeoAllDispersal_nlopt.h"
 #include "InputReader.h"
 #include "Utils.h"
-#include "BayesianBioGeo.h"
-#include "BayesianBioGeoAllDispersal.h"
+//#include "BayesianBioGeo.h"
+//#include "BayesianBioGeoAllDispersal.h"
 #include "vector_node_object.h"
 #include "superdouble.h"
 #include "string_node_object.h"
