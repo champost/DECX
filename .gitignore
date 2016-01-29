@@ -1,4 +1,5 @@
 # Latex auxillary files
+/doc/*.pdf
 /doc/*.aux
 /doc/*.bbl
 /doc/*.blg
