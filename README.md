@@ -12,17 +12,14 @@ To be written...
 
 To build lagrange\_cpp binary you need to install :
 
-* lib armadillo dev
 * gfortran
-* lib nlopt dev
 * lib gcc dev
 * lib gsl dev
-* lib boost dev
 
 Under Debian-like systems :
 
 ```
-sudo apt-get install gfortran libnlopt-dev libarmadillo-dev gcc g++ libgsl0-dev libboost-dev
+sudo apt-get install gfortran gcc g++ libgsl0-dev
 ```
 
 Go to src/ directory and type
@@ -51,8 +48,6 @@ What i did to be able to compile on windows :
 * Edit ~/.bashrc in git-bash to change PATH : ```export PATH=$PATH:/c/MinGW/bin/```
 * Download lib GSL sources from ftp://ftp.gnu.org/gnu/gsl/
 * Compile them
-* Download lib boost from http://sourceforge.net/projects/boost/files/boost-binaries/1.60.0/
-* Install it in C:\local\boost_1_60_0
 * Adjust the src/makefile.win to fit with my files paths
 * Run ```make -f makefile.win static``` to get a static bin
 * Be satisfied
@@ -72,7 +67,7 @@ echo ". /sw/bin/init.sh" > ~/.bashr_profile
 # this might also be very long
 sudo fink selfupdate-cvs
 # and the longest is...this one
-sudo fink install gcc49 boost1.55-python27 gsl
+sudo fink install gcc49 gsl
 
 cd
 cd DECX/src
