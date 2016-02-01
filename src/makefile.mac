@@ -70,7 +70,8 @@ C_OPT = -O3 $(debug)
 #if using octave
 #INCLUDES = -I/usr/include/octave-3.0.5/octave/
 #INCLUDES = -I/usr/include/octave-3.2.4/
-INCLUDES = -I/sw/opt/boost-1_55/include/ -I/sw/opt/boost-1_55/include/boost/ -I/sw/include/gsl/
+#INCLUDES = -I/sw/opt/boost-1_55/include/ -I/sw/opt/boost-1_55/include/boost/ -I/sw/include/gsl/
+INCLUDES = -I ../deps/ -I/sw/include/gsl/
 
 
 # requires fortran, gsl, and pthread -- and -ldl -lutil -lpython2.6 are for python
@@ -111,7 +112,8 @@ FORT_OBJS += \
 
 # link library locations
 # LINK_LIB_DIRS = -L/usr/lib/ -L/usr/local/lib/ -L/sw/opt/boost-1_55/lib/boost-1_55/libs/ -L/sw/lib/gcc4.9/lib
-LINK_LIB_DIRS = -L/sw/opt/boost-1_55/lib/boost-1_55/libs/ -L/sw/lib/gcc4.9/lib -L/sw/lib/
+#LINK_LIB_DIRS = -L/sw/opt/boost-1_55/lib/boost-1_55/libs/ -L/sw/lib/gcc4.9/lib -L/sw/lib/
+LINK_LIB_DIRS = -L/sw/lib/gcc4.9/lib -L/sw/lib/
 
 # Tool invocations
 lagrange_cpp: $(OBJS) $(FORT_OBJS)

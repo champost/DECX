@@ -81,7 +81,7 @@ LIBS := -lgfortran -lquadmath -lm -lgsl -lgslcblas
 #######
 # FORTRAN BIT
 ######
-FC	= /usr/bin/gfortran
+FC	= gfortran
 FFLAGS	= -O3 $(debug)
 #.f.o:;  $(FC) $(FFLAGS) -c $<
 
