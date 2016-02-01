@@ -69,7 +69,7 @@ C_OPT = -O3 $(debug)
 #if using octave
 #INCLUDES = -I/usr/include/octave-3.0.5/octave/
 #INCLUDES = -I/usr/include/octave-3.2.4/
-INCLUDES = -I/c/Users/clean/Downloads/gslbuild/ -I/c/local/boost_1_60_0/boost/ -I../deps/
+INCLUDES = -I/c/Users/clean/Downloads/gslbuild/ -I../deps/
 
 
 # requires fortran, gsl, and pthread -- and -ldl -lutil -lpython2.6 are for python
