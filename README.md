@@ -46,6 +46,7 @@ What i did to be able to compile on windows :
 * Install minGW32 from http://www.mingw.org/download/installer
 * Install all dev packages inside minGW
 * Edit ~/.bashrc in git-bash to change PATH : ```export PATH=$PATH:/c/MinGW/bin/```
+* make symbolic link for make : ```cd /c/MinGW/bin ; ln -s mingw32-make.exe make```
 * Download lib GSL sources from ftp://ftp.gnu.org/gnu/gsl/
 * Compile them
 * Adjust the src/makefile.win to fit with my files paths
