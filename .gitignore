@@ -33,3 +33,4 @@ src/expokit.f
 src/.cproject
 src/.project
 src/.settings/*
+.*
