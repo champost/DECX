@@ -65,6 +65,8 @@ TARGET_NAME = lagrange_cpp
 #C_OPT = -g -pg
 C_OPT = -O3 $(debug)
 
+INCLUDE_BOOST = -I../deps
+
 
 #if using octave
 #INCLUDES = -I/usr/include/octave-3.0.5/octave/
@@ -102,7 +104,7 @@ FORT_OBJS += \
 %.o: ./%.cpp
 #	$(CC) $(DEBUG) $(INCLUDES) $(C_OPT) -c -fmessage-length=0 -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@:%.o=%.d)" -o "$@" "$<"
 #	$(CC) -O3 -fpic -pipe -g -pg -c -o "$@" "$<"
-	$(CC) $(C_OPT) -c -o "$@" "$<"
+	$(CC) $(INCLUDE_BOOST) $(C_OPT) -c -o "$@" "$<"
 
 
 # link library locations
