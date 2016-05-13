@@ -63,7 +63,7 @@ git clone https://github.com/fink/fink.git
 cd fink
 # the next command is quite long
 sudo ./bootstrap
-echo ". /sw/bin/init.sh" > ~/.bashr_profile
+echo ". /sw/bin/init.sh" > ~/.bashrc_profile
 . ~/.bashrc_profile
 # this might also be very long
 sudo fink selfupdate-cvs
