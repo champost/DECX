@@ -11,14 +11,11 @@
 #include <string>
 //**************************************************************
 //	required only for connected_dist_BGL
-#include "../deps/boost/config.hpp"
-//#include <boost/config.hpp>
+#include <boost/config.hpp>
 #include <algorithm>
 #include <utility>
-#include "../deps/boost/graph/adjacency_list.hpp"
-#include "../deps/boost/graph/connected_components.hpp"
-//#include <boost/graph/adjacency_list.hpp>
-//#include <boost/graph/connected_components.hpp>
+#include <boost/graph/adjacency_list.hpp>
+#include <boost/graph/connected_components.hpp>
 //**************************************************************
 
 using namespace std;
