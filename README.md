@@ -50,7 +50,7 @@ Then, build DECX with:
 
 ```bash
 # Get source code from public MBB repo.
-git clone https://github.com/champost/DECX
+git clone --recursive https://github.com/champost/DECX
 
 # Choose a build directory.
 cd decx/

@@ -1,0 +1,3 @@
+[submodule "deps/toml++"]
+	path = src/deps/toml++
+	url = git@github.com:marzer/tomlplusplus.git

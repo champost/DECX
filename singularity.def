@@ -37,7 +37,7 @@ From: archlinux
     #---- Compilation ----------------------------------------------------------
     # Get source code.
     cd /opt
-    git clone https://github.com/champost/DECX
+    git clone --recursive https://github.com/champost/DECX
     cd DECX
 
     # Compile

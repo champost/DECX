@@ -17,9 +17,14 @@ find_package(Boost 1.59.0 REQUIRED)
 find_package(BLAS REQUIRED)
 find_package(LAPACK REQUIRED)
 
+
 # Release mode.
 set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 set(CMAKE_Fortran_FLAGS_RELEASE "-O3")
+
+# TOML++ is not mainstream enough to have its own FindTOMLPLUSPLUS ¯\(ツ)/¯
+# Still, ensure updates with a dedicated git submodule.
+include_directories(${PROJECT_SOURCE_DIR}/deps)
 
 add_executable(
   decx main.cpp

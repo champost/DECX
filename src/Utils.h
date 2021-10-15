@@ -13,8 +13,10 @@
 #include <map>
 
 using namespace std;
+// ONHOLD: only used for parsing config file?
 void Tokenize(const string& str, vector<string>& tokens,const string& delimiters = " ");
 void TrimSpaces( string& str);
+
 long comb(int m, int n);
 vector< vector<int> > iterate(int M, int N);
 vector<int> comb_at_index(int m, int n, int i);
