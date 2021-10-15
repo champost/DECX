@@ -1,0 +1,7 @@
+BasedOnStyle: LLVM
+AlwaysBreakTemplateDeclarations: Yes
+ConstructorInitializerAllOnOneLineOrOnePerLine: Yes
+BreakConstructorInitializers: AfterColon
+BinPackArguments: false
+BinPackParameters: false
+PointerAlignment: Left

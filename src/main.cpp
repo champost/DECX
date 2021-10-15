@@ -46,13 +46,31 @@ using namespace std;
 //#define DEBUG
 
 int main(int argc, char* argv[]){
-	if(argc != 2){
-		cout << "you need more arguments." << endl;
-		cout << "usage: lagrange configfile" << endl;
-		//cout << DBL_MIN << " " << DBL_EPSILON << endl;
-		exit(0);
-	}else{
-		string treefile;
+
+  // Get a few things out of the way.
+  if (argc < 2) {
+    std::cerr << "No configuration file provided. Exiting." << std::endl;
+    exit(1);
+  } else if (argc > 2) {
+    std::cerr << "Too many arguments. Exiting." << std::endl;
+    exit(1);
+  }
+
+  // Parse TOML configuration file.
+  std::string toml_file{argv[1]};
+  toml::table config;
+  try {
+    config = toml::parse_file(toml_file);
+  } catch (const toml::parse_error& err) {
+    std::cerr << "Failed to parse DECX config file:" << std::endl;
+    std::cerr << "  " << err << std::endl;
+    exit(2);
+  }
+
+  std::cout << "Only highjacked to this point for now, exiting." << std::endl;
+  exit(0);
+
+    string treefile;
 		string datafile;
 		string adjacencyfile;
 		string ratematrixfile;
@@ -1154,7 +1172,6 @@ int main(int argc, char* argv[]){
 		for(unsigned int i=0;i<intrees.size();i++){
 			delete intrees[i];
 		}
-	}
 	cout << "done!" << endl;
 	return 0;
 }
