@@ -6,7 +6,7 @@ project(decx VERSION 0.21.0 LANGUAGES C CXX Fortran)
 # Check C++/Fortran compatibility according to:
 # https://enccs.github.io/cmake-workshop/cxx-fortran/
 include(FortranCInterface)
-FortranCInterface_VERIFY(CXX)
+fortrancinterface_verify(CXX)
 # Some warning have turned into a hard error since gfortran > 10.
 # Ignore and compile anyway (https://forum.abinit.org/viewtopic.php?f=2&t=5205).
 set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -fallow-argument-mismatch")
@@ -14,16 +14,17 @@ set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -fallow-argument-mismatch")
 # Dependencies.
 find_package(GSL REQUIRED)
 find_package(Boost 1.59.0 REQUIRED)
+find_package(BLAS REQUIRED)
+find_package(LAPACK REQUIRED)
 
 # Release mode.
 set(CMAKE_CXX_FLAGS_RELEASE "-O3")
+set(CMAKE_Fortran_FLAGS_RELEASE "-O3")
 
 add_executable(
   decx
   main.cpp
   # Fortran sources
-  blas.f
-  lapack.f
   my_expokit.f
   my_matexp.f
   # C++ sources
@@ -42,4 +43,9 @@ add_executable(
   tree_reader.cpp
 )
 
-target_link_libraries(decx ${GSL_LIBRARIES})
+target_link_libraries(
+  decx
+  ${GSL_LIBRARIES}
+  ${BLAS_LIBRARIES}
+  ${LAPACK_LIBRARIES}
+)
