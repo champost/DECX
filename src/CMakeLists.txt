@@ -40,6 +40,7 @@ add_executable(
   BioGeoTree.cpp
   BioGeoTreeTools.cpp
   BranchSegment.cpp
+  config_parsing.cpp
   InputReader.cpp
   node.cpp
   OptimizeBioGeo.cpp

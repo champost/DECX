@@ -38,6 +38,7 @@ using namespace std;
 #include "vector_node_object.h"
 #include "superdouble.h"
 #include "string_node_object.h"
+#include "config_parsing.hpp"
 
 #ifdef XYZ
 #include "gmpfrxx/gmpfrxx.h"
@@ -46,6 +47,8 @@ using namespace std;
 //#define DEBUG
 
 int main(int argc, char* argv[]){
+
+  using namespace config;
 
   // Get a few things out of the way.
   if (argc < 2) {
@@ -67,12 +70,6 @@ int main(int argc, char* argv[]){
     exit(2);
   }
 
-  std::cout << "Only highjacked to this point for now, exiting." << std::endl;
-  exit(0);
-
-    string treefile;
-		string datafile;
-		string adjacencyfile;
 		string ratematrixfile;
 		string logfile;
 		string fileTag;
@@ -138,6 +135,24 @@ int main(int argc, char* argv[]){
 
 		BioGeoTreeTools tt;
 
+  auto& files{require_table(config, "input_files")};
+
+  const std::string treefile{require_string(files, "tree")};
+  const std::string datafile{require_string(files, "data")};
+  const std::string adjacencyfile{require_string(files, "adjacency")};
+  // HERE: handle optional files.
+
+  std::cout << treefile << std::endl;
+  std::cout << datafile << std::endl;
+  std::cout << adjacencyfile << std::endl;
+
+  std::cout << "Only highjacked to this point for now, exiting." << std::endl;
+  exit(0);
+
+
+  std::cout << "Only highjacked to this point for now, exiting." << std::endl;
+  exit(0);
+
 		/*************
 		 * read the configuration file
 		 **************/
@@ -153,18 +168,12 @@ int main(int argc, char* argv[]){
 					for(unsigned int j=0;j<tokens.size();j++){
 						TrimSpaces(tokens[j]);
 					}
-					if(!strcmp(tokens[0].c_str(), "treefile")){
-						treefile = tokens[1];
-					}else if(!strcmp(tokens[0].c_str(),  "fileTag")){
+					if(!strcmp(tokens[0].c_str(),  "fileTag")){
 						fileTag = tokens[1];
 					}else if(!strcmp(tokens[0].c_str(),  "likelihoodfile")){
 						LHOODS = true;
 					}else if(!strcmp(tokens[0].c_str(),  "nodelikelihoodfile")){
 						NodeLHOODS = true;
-					}else if(!strcmp(tokens[0].c_str(),  "datafile")){
-						datafile = tokens[1];
-					}else if(!strcmp(tokens[0].c_str(),  "adjacency")){
-						adjacencyfile = tokens[1];
 					}else if(!strcmp(tokens[0].c_str(),  "ratematrix")){
 						ratematrixfile = tokens[1];
 						if(ratematrixfile == "d" || ratematrixfile == "D"){
