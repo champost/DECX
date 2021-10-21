@@ -134,9 +134,10 @@ int main(int argc, char* argv[]){
 
 		BioGeoTreeTools tt;
 
+  // Input files table. --------------------------------------------------------
   Context context{};
-  auto& files{require_table(config, "input_files", context)};
-  context.emplace_back("input_files");
+  const auto& files{require_table(config, "input_files", context)};
+  context.stack.emplace_back("input_files");
 
   const std::string treefile{require_file(files, "tree", context)};
   const std::string datafile{require_file(files, "data", context)};
@@ -144,9 +145,49 @@ int main(int argc, char* argv[]){
   const std::optional<std::string> rate_matrix_file{
       seek_file(files, "rate_matrix", context)};
 
+  // Parameters table ----------------------------------------------------------
+  context.stack.pop_back();
+  const auto& parameters{require_table(config, "parameters", context)};
+  context.stack.emplace_back("parameters");
+  std::vector<std::string> ancestral_states;
+  const auto& node{require_node(parameters,
+                                "ancestral_states",
+                                std::array{toml::node_type::array,
+                                           toml::node_type::boolean,
+                                           toml::node_type::string},
+                                context)};
+  switch (node.type()) {
+  case toml::node_type::array:
+    for (auto& element : *node.as_array()) {
+      if (element.is_string()) {
+        ancestral_states.emplace_back(*element.as_string());
+      } else {
+        std::cerr << "Configuration error: ancestral states array "
+                  << "should only contain strings, not " << element.type()
+                  << " (" << element.source() << ")." << std::endl;
+        exit(3);
+      }
+    }
+    break;
+  case toml::node_type::boolean:
+    if (*node.as_boolean()) {
+      ancestral_states.push_back("__all__");
+    }
+    break;
+  case toml::node_type::string:
+    ancestral_states.emplace_back(*node.as_string());
+    break;
+  default: // Alternate types have already been ruled out.
+    break;
+  }
+
   std::cout << treefile << std::endl;
   std::cout << datafile << std::endl;
   std::cout << adjacencyfile << std::endl;
+
+  for (auto& state : ancestral_states) {
+    std::cout << state << std::endl;
+  }
 
   std::cout << "Only highjacked to this point for now, exiting." << std::endl;
   exit(0);
