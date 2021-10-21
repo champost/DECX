@@ -110,4 +110,22 @@ std::optional<std::string> seek_file(const toml::table& table,
                                      const std::string& name,
                                      const Context& context);
 
+// -----------------------------------------------------------------------------
+// There also are more sophisticated types of parameters.
+// Specify them below.
+
+struct AncestralState {
+  // Which ancestral states are required? Either none, or some or all.
+  std::vector<std::string> states;
+  bool all;
+  // (ideal would be a tagged union, but they are a pain to implement in C++)
+
+  // Construct as a particular node requirement.
+  AncestralState(const toml::table& table, const Context& context);
+  // Erase "some" to make it "all".
+  void set_all();
+  // Is there any to process?
+  bool some();
+};
+
 } // namespace config

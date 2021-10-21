@@ -78,4 +78,46 @@ std::ostream& operator<<(std::ostream& out, const Context& c) {
   return out;
 };
 
+AncestralState::AncestralState(const toml::table& table,
+                               const Context& context) :
+    states({}), all(false) {
+  // Require a node of several possible types..
+  const auto& node{require_node(table,
+                                "ancestral_states",
+                                std::array{toml::node_type::array,
+                                           toml::node_type::boolean,
+                                           toml::node_type::string},
+                                context)};
+  // Construct the value depending on the node type.
+  switch (node.type()) {
+  case toml::node_type::array:
+    for (auto& element : *node.as_array()) {
+      if (element.is_string()) {
+        this->states.emplace_back(*element.as_string());
+      } else {
+        std::cerr << "Configuration error: ancestral states array "
+                  << "should only contain strings, not " << element.type()
+                  << " (" << element.source() << ")." << std::endl;
+        exit(3);
+      }
+    }
+    break;
+  case toml::node_type::boolean:
+    all = node.as_boolean()->get();
+    break;
+  case toml::node_type::string:
+    states.emplace_back(node.as_string()->get());
+    break;
+  default: // Alternate types have already been ruled out.
+    break;
+  }
+};
+
+void AncestralState::set_all() {
+  states.clear();
+  all = true;
+};
+
+bool AncestralState::some() { return !(all || states.empty()); };
+
 } // namespace config

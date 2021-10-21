@@ -85,7 +85,6 @@ int main(int argc, char* argv[]){
 		vector<string> isolatedAreas;
 		map<string,int> areanamemap;
 		map<int,string> areanamemaprev;
-		vector<string> ancstates;//string should be the mrca or if it is just _all_
 		//then everything will be computed
 		bool treecolors;
 		vector<string> areacolors;
@@ -149,43 +148,14 @@ int main(int argc, char* argv[]){
   context.stack.pop_back();
   const auto& parameters{require_table(config, "parameters", context)};
   context.stack.emplace_back("parameters");
-  std::vector<std::string> ancestral_states;
-  const auto& node{require_node(parameters,
-                                "ancestral_states",
-                                std::array{toml::node_type::array,
-                                           toml::node_type::boolean,
-                                           toml::node_type::string},
-                                context)};
-  switch (node.type()) {
-  case toml::node_type::array:
-    for (auto& element : *node.as_array()) {
-      if (element.is_string()) {
-        ancestral_states.emplace_back(*element.as_string());
-      } else {
-        std::cerr << "Configuration error: ancestral states array "
-                  << "should only contain strings, not " << element.type()
-                  << " (" << element.source() << ")." << std::endl;
-        exit(3);
-      }
-    }
-    break;
-  case toml::node_type::boolean:
-    if (*node.as_boolean()) {
-      ancestral_states.push_back("__all__");
-    }
-    break;
-  case toml::node_type::string:
-    ancestral_states.emplace_back(*node.as_string());
-    break;
-  default: // Alternate types have already been ruled out.
-    break;
-  }
+  AncestralState ancestral_states{parameters, context};
 
   std::cout << treefile << std::endl;
   std::cout << datafile << std::endl;
   std::cout << adjacencyfile << std::endl;
 
-  for (auto& state : ancestral_states) {
+  std::cout << ancestral_states.all << std::endl;
+  for (auto& state : ancestral_states.states) {
     std::cout << state << std::endl;
   }
 
@@ -302,13 +272,6 @@ int main(int argc, char* argv[]){
 							mrc.push_back(searchtokens[j]);
 						}
 						mrcas[searchtokens[0]] = mrc;
-					}else if(!strcmp(tokens[0].c_str(), "ancstate")){
-						vector<string> searchtokens;
-						Tokenize(tokens[1], searchtokens, ", 	");
-						for(unsigned int j=0;j<searchtokens.size();j++){
-							TrimSpaces(searchtokens[j]);
-						}
-						ancstates.push_back(searchtokens[0]);
 					}else if(!strcmp(tokens[0].c_str(), "fossil")){
 						vector<string> searchtokens;
 						Tokenize(tokens[1], searchtokens, ", 	");
@@ -344,10 +307,7 @@ int main(int argc, char* argv[]){
 						numthreads = atoi(tokens[1].c_str());
 					}else if(!strcmp(tokens[0].c_str(), "stochastic_time")){
 						states = true; // requires ancestral states
-						if(ancstates.size() > 0)
-							ancstates[0] = "_all_";
-						else
-							ancstates.push_back("_all_");
+            ancestral_states.set_all();
 						vector<string> searchtokens;
 						Tokenize(tokens[1], searchtokens, ", 	");
 						for(unsigned int j=0;j<searchtokens.size();j++){
@@ -363,10 +323,7 @@ int main(int argc, char* argv[]){
 						}
 					}else if(!strcmp(tokens[0].c_str(), "stochastic_number")){
 						states = true; // requires ancestral states
-						if(ancstates.size() > 0)
-							ancstates[0] = "_all_";
-						else
-							ancstates.push_back("_all_");
+            ancestral_states.set_all();
 						vector<string> searchtokens;
 						Tokenize(tokens[1], searchtokens, ", 	");
 						for(unsigned int j=0;j<searchtokens.size();j++){
@@ -906,13 +863,13 @@ int main(int argc, char* argv[]){
 				/*
 				 * ancestral splits calculation
 				 */
-				if(ancstates.size() > 0){
+				if(ancestral_states.some()){
 					bgt.set_use_stored_matrices(true);
 
 					bgt.prepare_ancstate_reverse();
 					Superdouble totlike = 0; // calculate_vector_double_sum(rast) , should be the same for every node
 
-					if(ancstates[0] == "_all_" || ancstates[0] == "_ALL_"){
+					if(ancestral_states.all){
 
 						ofstream outTipLabelFile, outAreaNameFile;
 						ofstream outBestStateFreqFile, outAreaFreqFile, outTreeFile;
@@ -1046,6 +1003,7 @@ int main(int argc, char* argv[]){
 							system(callstring.c_str());
 						}
 					}else{
+            auto& ancstates{ancestral_states.states};
 						for(unsigned int j=0;j<ancstates.size();j++){
 							if(splits){
 								cout << "Ancestral splits for: " << ancstates[j] <<endl;
