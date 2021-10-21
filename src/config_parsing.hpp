@@ -9,17 +9,33 @@
 namespace config {
 
 // Protect against missing or incorrect nodes.
-toml::node_view<toml::node> require_node(toml::table& table,
-                                         const std::string& name,
-                                         const toml::node_type& type);
+std::optional<toml::node_view<const toml::node>>
+seek_node(const toml::table& table,
+          const std::string& name,
+          const toml::node_type& type);
+toml::node_view<const toml::node> require_node(const toml::table& table,
+                                               const std::string& name,
+                                               const toml::node_type& type);
 
 // Protect against missing or incorrect nodes.
-void check_type(toml::node_view<toml::node>& node,
+void check_type(const toml::node_view<const toml::node> node,
                 const std::string& name,
                 const toml::node_type& type);
 
+// Check that given file can be opened, error and exits otherwise.
+void check_file(const std::string& filename);
+
 // Boilerplate type-specific cases.
-toml::table& require_table(toml::table& table, const std::string& name);
-std::string& require_string(toml::table& table, const std::string& name);
+const toml::table& require_table(const toml::table& table,
+                                 const std::string& name);
+const std::string& require_string(const toml::table& table,
+                                  const std::string& name);
+const std::string& require_file(const toml::table& table,
+                                const std::string& name);
+// (couldn't manage to return a const ref to string instead)
+std::optional<std::string> seek_string(const toml::table& table,
+                                       const std::string& name);
+std::optional<std::string> seek_file(const toml::table& table,
+                                     const std::string& name);
 
 } // namespace config

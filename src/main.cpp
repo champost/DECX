@@ -70,7 +70,6 @@ int main(int argc, char* argv[]){
     exit(2);
   }
 
-		string ratematrixfile;
 		string logfile;
 		string fileTag;
 		string truestatesfile;
@@ -137,18 +136,15 @@ int main(int argc, char* argv[]){
 
   auto& files{require_table(config, "input_files")};
 
-  const std::string treefile{require_string(files, "tree")};
-  const std::string datafile{require_string(files, "data")};
-  const std::string adjacencyfile{require_string(files, "adjacency")};
-  // HERE: handle optional files.
+  const std::string treefile{require_file(files, "tree")};
+  const std::string datafile{require_file(files, "data")};
+  const std::string adjacencyfile{require_file(files, "adjacency")};
+  const std::optional<std::string> rate_matrix_file{
+      seek_file(files, "rate_matrix")};
 
   std::cout << treefile << std::endl;
   std::cout << datafile << std::endl;
   std::cout << adjacencyfile << std::endl;
-
-  std::cout << "Only highjacked to this point for now, exiting." << std::endl;
-  exit(0);
-
 
   std::cout << "Only highjacked to this point for now, exiting." << std::endl;
   exit(0);
@@ -174,11 +170,6 @@ int main(int argc, char* argv[]){
 						LHOODS = true;
 					}else if(!strcmp(tokens[0].c_str(),  "nodelikelihoodfile")){
 						NodeLHOODS = true;
-					}else if(!strcmp(tokens[0].c_str(),  "ratematrix")){
-						ratematrixfile = tokens[1];
-						if(ratematrixfile == "d" || ratematrixfile == "D"){
-							ratematrixfile = "";
-						}
 					}else if(!strcmp(tokens[0].c_str(),  "_stop_on_settings_display_")){
 						_stop_on_settings_display_ = true;
 					}else if(!strcmp(tokens[0].c_str(),  "_stop_on_initial_likelihood_")){
@@ -467,9 +458,9 @@ int main(int argc, char* argv[]){
 		/*
 		 * if there is a ratematrixfile then it will be processed
 		 */
-		if(ratematrixfile != "" && ratematrixfile.size() > 0){
+		if(rate_matrix_file.has_value()){
 			cout << "Reading rate matrix file" << endl;
-			vector<vector<vector<double> > > dmconfig = processRateMatrixConfigFile(ratematrixfile,ir.nareas,periods.size());
+			vector<vector<vector<double> > > dmconfig = processRateMatrixConfigFile(rate_matrix_file.value(),ir.nareas,periods.size());
 			for(unsigned int i=0;i<dmconfig.size();i++){
 				for(unsigned int j=0;j<dmconfig[i].size();j++){
 					for(unsigned int k=0;k<dmconfig[i][j].size();k++){
