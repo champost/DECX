@@ -134,13 +134,15 @@ int main(int argc, char* argv[]){
 
 		BioGeoTreeTools tt;
 
-  auto& files{require_table(config, "input_files")};
+  Context context{};
+  auto& files{require_table(config, "input_files", context)};
+  context.emplace_back("input_files");
 
-  const std::string treefile{require_file(files, "tree")};
-  const std::string datafile{require_file(files, "data")};
-  const std::string adjacencyfile{require_file(files, "adjacency")};
+  const std::string treefile{require_file(files, "tree", context)};
+  const std::string datafile{require_file(files, "data", context)};
+  const std::string adjacencyfile{require_file(files, "adjacency", context)};
   const std::optional<std::string> rate_matrix_file{
-      seek_file(files, "rate_matrix")};
+      seek_file(files, "rate_matrix", context)};
 
   std::cout << treefile << std::endl;
   std::cout << datafile << std::endl;
