@@ -138,4 +138,7 @@ enum class ReportType {
 
 ReportType read_report_type(const toml::table& table, const Context& context);
 
+std::vector<double> read_periods(const toml::table& table,
+                                 const Context& context);
+
 } // namespace config

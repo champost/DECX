@@ -103,7 +103,7 @@ AncestralState::AncestralState(const toml::table& table,
   case toml::node_type::array:
     for (auto& element : *node.as_array()) {
       if (element.is_string()) {
-        this->states.emplace_back(*element.as_string());
+        states.emplace_back(*element.as_string());
       } else {
         std::cerr << "Configuration error: ancestral states array "
                   << "should only contain strings, not " << element.type()
@@ -144,5 +144,24 @@ ReportType read_report_type(const toml::table& table, const Context& context) {
               << node.node()->source() << ").";
     exit(3);
   }
+}
+
+std::vector<double> read_periods(const toml::table& table,
+                                 const Context& context) {
+  auto node{require_node(
+      table, "periods", std::array{toml::node_type::array}, context)};
+  std::vector<double> periods{};
+  for (auto& element : *node.as_array()) {
+    if (element.is_floating_point()) {
+      periods.emplace_back(*element.as_floating_point());
+    } else {
+      std::cerr << "Configuration error: periods "
+                << "should only contain floating numbers, not "
+                << element.type() << "(" << element.source() << ")."
+                << std::endl;
+      exit(3);
+    }
+  }
+  return periods;
 }
 } // namespace config

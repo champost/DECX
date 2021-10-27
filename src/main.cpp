@@ -74,7 +74,6 @@ int main(int argc, char* argv[]){
 		string fileTag;
 		string truestatesfile;
 		int maxareas=1;
-		vector<double> periods;
 		map<string,vector<string> > mrcas;
 		map<string,vector<int> > fixnodewithmrca;
 		vector<vector<int> > excludedists;
@@ -150,6 +149,7 @@ int main(int argc, char* argv[]){
       require_bool(parameters, "classic_vicariance", context)};
   const bool rapid_anagenesis{
       require_bool(parameters, "rapid_anagenesis", context)};
+  std::vector<double> periods{read_periods(parameters, context)};
 
   std::cout << "Only highjacked to this point for now, exiting." << std::endl;
   exit(0);
@@ -244,13 +244,6 @@ int main(int argc, char* argv[]){
 							TrimSpaces(searchtokens[j]);
 						}
 						areacolors = searchtokens;
-					}else if(!strcmp(tokens[0].c_str(), "periods")){
-						vector<string> searchtokens;
-						Tokenize(tokens[1], searchtokens, ", 	");
-						for(unsigned int j=0;j<searchtokens.size();j++){
-							TrimSpaces(searchtokens[j]);
-							periods.push_back(atof(searchtokens[j].c_str()));
-						}
 					}else if(!strcmp(tokens[0].c_str(),  "treecolors")){
 						treecolors = true;
 					}else if(!strcmp(tokens[0].c_str(), "mrca")){
