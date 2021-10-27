@@ -80,7 +80,6 @@ int main(int argc, char* argv[]){
 		vector<vector<int> > includedists;
 		vector<vector<vector<int> > > exdists_per_period;
 		vector<vector<vector<bool> > > adjMat;
-		vector<string> areanames;
 		vector<string> isolatedAreas;
 		map<string,int> areanamemap;
 		map<int,string> areanamemaprev;
@@ -151,6 +150,16 @@ int main(int argc, char* argv[]){
       require_bool(parameters, "rapid_anagenesis", context)};
   std::vector<double> periods{read_periods(parameters, context)};
 
+  // Geographical parameters ---------------------------------------------------
+  context.stack.pop_back();
+  const auto& areas{require_table(config, "areas", context)};
+  context.stack.emplace_back("areas");
+  std::vector<std::string> area_names{read_area_names(areas, context)};
+  const auto& distributions{require_table(areas, "distributions", context)};
+  context.stack.emplace_back("distributions");
+  // HERE: the 'distributions" table
+  // is a little more engaged to interpret, right?
+
   std::cout << "Only highjacked to this point for now, exiting." << std::endl;
   exit(0);
 
@@ -179,13 +188,6 @@ int main(int argc, char* argv[]){
 						_stop_on_settings_display_ = true;
 					}else if(!strcmp(tokens[0].c_str(),  "_stop_on_initial_likelihood_")){
 						_stop_on_initial_likelihood_ = true;
-					}else if(!strcmp(tokens[0].c_str(), "areanames")){
-						vector<string> searchtokens;
-						Tokenize(tokens[1], searchtokens, ", 	");
-						for(unsigned int j=0;j<searchtokens.size();j++){
-							TrimSpaces(searchtokens[j]);
-						}
-						areanames = searchtokens;
 					}else if(!strcmp(tokens[0].c_str(), "isolated")){
 						vector<string> searchtokens;
 						Tokenize(tokens[1], searchtokens, ", 	");
@@ -389,15 +391,15 @@ int main(int argc, char* argv[]){
 		/*
 		 * read area names
 		 */
-		if(areanames.size() > 0){
+		if(area_names.size() > 0){
 			cout << "reading area names" << endl;
-			for(unsigned int i=0;i<areanames.size();i++){
-				areanamemap[areanames[i]] = i;
-				areanamemaprev[i] = areanames[i];
-				cout << i <<"=" <<areanames[i] << endl;
+			for(unsigned int i=0;i<area_names.size();i++){
+				areanamemap[area_names[i]] = i;
+				areanamemaprev[i] = area_names[i];
+				cout << i <<"=" <<area_names[i] << endl;
 			}
 			if (simulate)
-				ir.nareas = areanames.size();
+				ir.nareas = area_names.size();
 		}
 		else{
 			if (!simulate) {
@@ -411,7 +413,7 @@ int main(int argc, char* argv[]){
 			}
 			else {
 				cout << "Information on the total number of areas is missing! "
-						"Please use the \"areanames = \" keyword..." << endl;
+						"Please use the `names = [...]` parameter under [areas] table." << endl;
 				exit(-1);
 			}
 		}
@@ -459,14 +461,14 @@ int main(int argc, char* argv[]){
 		* if there is a adjacencymatrixfile then it will be processed
 		*/
 		if (adjacencyfile.size() > 0)
-			rm.setup_adjacency(adjacencyfile, areanames);
+			rm.setup_adjacency(adjacencyfile, area_names);
 		else {
 			cout << "\nUsing the default adjacency matrix for all time slices..." << endl;
-			for (unsigned int j = 0; j < areanames.size(); j++)
-				cout << "\t" << areanames[j];
+			for (unsigned int j = 0; j < area_names.size(); j++)
+				cout << "\t" << area_names[j];
 			cout << endl << endl;
-			for (unsigned int i = 0; i < areanames.size(); i++) {
-				cout << areanames[i] << "\t";
+			for (unsigned int i = 0; i < area_names.size(); i++) {
+				cout << area_names[i] << "\t";
 				for (unsigned int j = 0; j <= i; j++)
 					cout << 1 << "\t";
 				cout << endl;
@@ -769,11 +771,11 @@ int main(int argc, char* argv[]){
 							cout << periods.at(i) << endl;
 							cout << "\t";
 							for(unsigned int j=0;j<D_mask[i].size();j++){
-								cout << areanames[j] << "\t" ;
+								cout << area_names[j] << "\t" ;
 							}
 							cout << endl;
 							for (unsigned int j=0;j<D_mask[i].size();j++){
-								cout << areanames[j] << "\t" ;
+								cout << area_names[j] << "\t" ;
 								for (unsigned int k=0;k<D_mask[i][j].size();k++){
 									cout << D_mask[i][j][k] << "\t";
 								}
@@ -861,8 +863,8 @@ int main(int argc, char* argv[]){
 								outTipLabelFile << print_area_vector(tipDist,areanamemaprev) << endl;
 							}
 
-							for(unsigned int area = 0; area < areanames.size(); area++)
-								outAreaNameFile << areanames[area] << "\t";
+							for(unsigned int area = 0; area < area_names.size(); area++)
+								outAreaNameFile << area_names[area] << "\t";
 							outAreaNameFile << endl;
 
 							if ((intrees.size() == 1))
@@ -935,7 +937,7 @@ int main(int argc, char* argv[]){
 
 
 										//	freqs only for all areas
-										for (unsigned int area = 0; area < areanames.size(); area++) {
+										for (unsigned int area = 0; area < area_names.size(); area++) {
 											Superdouble sum = 0;
 											for (unsigned int dist = 1; dist < rast.size(); dist++) {
 												if ((rast[dist] > zero) && (allDists->at(dist)[area] == 1))

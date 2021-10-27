@@ -48,6 +48,42 @@ void check_type(const toml::node_view<const toml::node> view,
   }
 };
 
+// Same for uniform array of that type.
+template <size_t N>
+void check_uniform_array(const toml::node_view<const toml::node> view,
+                         const std::string& name,
+                         const std::array<toml::node_type, N>& expected_types,
+                         const Context& context) {
+  static_assert(N > 0, "You should expect at least 1 type.");
+  check_type(view, name, std::array{toml::node_type::array}, context);
+  for (auto& element : *view.as_array()) {
+    bool found{false};
+    for (auto& t : expected_types) {
+      if (element.type() == t) {
+        found = true;
+        break;
+      }
+    }
+    if (!found) {
+      std::cerr << "Configuration error: elements of array '" << name << "' in "
+                << context << " should ";
+      switch (N) {
+      case 1:
+        std::cerr << "be of type " << expected_types[0];
+        break;
+      default:
+        std::cerr << "either be of type " << expected_types[0];
+        for (int i{1}; i < expected_types.size(); ++i) {
+          std::cerr << " or " << expected_types[i];
+        }
+      }
+      std::cerr << " (not " << element.type() << ": " << element.source()
+                << ")." << std::endl;
+      exit(3);
+    }
+  }
+};
+
 // Look for an optional node, and return monadic type.
 template <size_t N>
 std::optional<toml::node_view<const toml::node>>
@@ -138,7 +174,10 @@ enum class ReportType {
 
 ReportType read_report_type(const toml::table& table, const Context& context);
 
+// TODO: factorize those with a macro?
 std::vector<double> read_periods(const toml::table& table,
                                  const Context& context);
+std::vector<std::string> read_area_names(const toml::table& table,
+                                         const Context& context);
 
 } // namespace config

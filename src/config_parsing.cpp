@@ -101,15 +101,10 @@ AncestralState::AncestralState(const toml::table& table,
   // Construct the value depending on the node type.
   switch (node.type()) {
   case toml::node_type::array:
+    check_uniform_array(
+        node, "ancestral_states", std::array{toml::node_type::string}, context);
     for (auto& element : *node.as_array()) {
-      if (element.is_string()) {
-        states.emplace_back(*element.as_string());
-      } else {
-        std::cerr << "Configuration error: ancestral states array "
-                  << "should only contain strings, not " << element.type()
-                  << " (" << element.source() << ")." << std::endl;
-        exit(3);
-      }
+      states.emplace_back(*element.as_string());
     }
     break;
   case toml::node_type::boolean:
@@ -150,18 +145,26 @@ std::vector<double> read_periods(const toml::table& table,
                                  const Context& context) {
   auto node{require_node(
       table, "periods", std::array{toml::node_type::array}, context)};
+  check_uniform_array(
+      node, "periods", std::array{toml::node_type::floating_point}, context);
   std::vector<double> periods{};
   for (auto& element : *node.as_array()) {
-    if (element.is_floating_point()) {
-      periods.emplace_back(*element.as_floating_point());
-    } else {
-      std::cerr << "Configuration error: periods "
-                << "should only contain floating numbers, not "
-                << element.type() << "(" << element.source() << ")."
-                << std::endl;
-      exit(3);
-    }
+    periods.emplace_back(*element.as_floating_point());
   }
   return periods;
 }
+
+std::vector<std::string> read_area_names(const toml::table& table,
+                                         const Context& context) {
+  auto node{require_node(
+      table, "names", std::array{toml::node_type::array}, context)};
+  check_uniform_array(
+      node, "names", std::array{toml::node_type::string}, context);
+  std::vector<std::string> names{};
+  for (auto& element : *node.as_array()) {
+    names.emplace_back(*element.as_string());
+  }
+  return names;
+}
+
 } // namespace config
