@@ -95,8 +95,6 @@ int main(int argc, char* argv[]){
 		time_t likStartTime, likEndTime;
 
 		bool marginal = true; // false means joint
-		bool splits = false;
-		bool states = false;
 		int numthreads = 0;
 		bool sparse = false;
 		bool bayesian = false;
@@ -149,15 +147,7 @@ int main(int argc, char* argv[]){
   const auto& parameters{require_table(config, "parameters", context)};
   context.stack.emplace_back("parameters");
   AncestralState ancestral_states{parameters, context};
-
-  std::cout << treefile << std::endl;
-  std::cout << datafile << std::endl;
-  std::cout << adjacencyfile << std::endl;
-
-  std::cout << ancestral_states.all << std::endl;
-  for (auto& state : ancestral_states.states) {
-    std::cout << state << std::endl;
-  }
+  ReportType report_type(read_report_type(parameters, context));
 
   std::cout << "Only highjacked to this point for now, exiting." << std::endl;
   exit(0);
@@ -291,22 +281,14 @@ int main(int argc, char* argv[]){
 						if(calctype.compare("m") != 0 && calctype.compare("M") != 0){
 							marginal = false;
 						}
-					}else if(!strcmp(tokens[0].c_str(),  "report")){
-						if(tokens[1].compare("split") != 0){
-							splits = false;
-						}
 					}else if(!strcmp(tokens[0].c_str(),  "sparse")){
 						sparse = true;
-					}else if(!strcmp(tokens[0].c_str(),  "splits")){
-						splits = true;
-					}else if(!strcmp(tokens[0].c_str(),  "states")){
-						states = true;
 					}else if(!strcmp(tokens[0].c_str(),  "estimate_dispersal_mask")){
 						estimate_dispersal_mask = true;
 					}else if(!strcmp(tokens[0].c_str(),  "numthreads")){
 						numthreads = atoi(tokens[1].c_str());
 					}else if(!strcmp(tokens[0].c_str(), "stochastic_time")){
-						states = true; // requires ancestral states
+						report_type = ReportType::States; // requires ancestral states
             ancestral_states.set_all();
 						vector<string> searchtokens;
 						Tokenize(tokens[1], searchtokens, ", 	");
@@ -322,7 +304,7 @@ int main(int argc, char* argv[]){
 							stochastic_time_dists.push_back(dist);
 						}
 					}else if(!strcmp(tokens[0].c_str(), "stochastic_number")){
-						states = true; // requires ancestral states
+						report_type = ReportType::States; // requires ancestral states
             ancestral_states.set_all();
 						vector<string> searchtokens;
 						Tokenize(tokens[1], searchtokens, ", 	");
@@ -900,14 +882,21 @@ int main(int argc, char* argv[]){
 						}
 
 						for(int j=0;j<intrees[i]->getInternalNodeCount();j++){
-							if(splits){
+
+              // Old paired ifs replaced by switch when introducing ReportType.
+              switch (report_type) {
+                case config::ReportType::Splits: {
+
 								cout << "Ancestral splits for:\t" << intrees[i]->getInternalNode(j)->getNumber() <<endl;
 								map<vector<int>,vector<AncSplit> > ras = bgt.calculate_ancsplit_reverse(*intrees[i]->getInternalNode(j),marginal);
 								//bgt.ancstate_calculation_all_dists(*intrees[i]->getNode(j),marginal);
 								tt.summarizeSplits(intrees[i]->getInternalNode(j),ras,areanamemaprev,&rm);
 								cout << endl;
-							}
-							if(states){
+
+                  break;
+                }
+                case config::ReportType::States: {
+
 								cout << "Ancestral states for:\t" << intrees[i]->getInternalNode(j)->getNumber() <<endl;
 								vector<Superdouble> rast = bgt.calculate_ancstate_reverse(*intrees[i]->getInternalNode(j),marginal);
 								totlike = calculate_vector_Superdouble_sum(rast);
@@ -972,7 +961,9 @@ int main(int argc, char* argv[]){
 								}
 								NodeLHOODFile.close();
 								cout << endl;
-							}
+                  break;
+                }
+              }
 						}
 						/*
 						 * key file output
@@ -1005,12 +996,17 @@ int main(int argc, char* argv[]){
 					}else{
             auto& ancstates{ancestral_states.states};
 						for(unsigned int j=0;j<ancstates.size();j++){
-							if(splits){
+              // Old paired ifs replaced by switch when introducing ReportType.
+              switch (report_type) {
+                case config::ReportType::Splits: {
+
 								cout << "Ancestral splits for: " << ancstates[j] <<endl;
 								map<vector<int>,vector<AncSplit> > ras = bgt.calculate_ancsplit_reverse(*mrcanodeint[ancstates[j]],marginal);
 								tt.summarizeSplits(mrcanodeint[ancstates[j]],ras,areanamemaprev,&rm);
-							}
-							if(states){
+                  break;
+                }
+                case config::ReportType::States: {
+
 								cout << "Ancestral states for: " << ancstates[j] <<endl;
 								vector<Superdouble> rast = bgt.calculate_ancstate_reverse(*mrcanodeint[ancstates[j]],marginal);
 
@@ -1035,10 +1031,12 @@ int main(int argc, char* argv[]){
 									tt.summarizeAncState(mrcanodeint[ancstates[j]],rast,areanamemaprev,&rm, false, NodeLHOODFile);
 								NodeLHOODFile.close();
 								cout << endl;
-							}
+                  break;
+                }
+              }
 						}
 					}
-					if(splits && !readTrueStates){
+					if(report_type == ReportType::Splits && !readTrueStates){
 						if (intrees.size() > 1)
 							outTreeFile.open((treefile+fileTag+".bgsplits.tre").c_str(),ios::app);
 						else
@@ -1056,7 +1054,7 @@ int main(int argc, char* argv[]){
 								delete intrees[i]->getNode(j)->getObject("split");
 						}
 					}
-					if(states){
+					if(report_type == ReportType::States){
 						if (!readTrueStates) {
 							if (intrees.size() > 1)
 								outTreeFile.open((treefile+fileTag+".bgstates.tre").c_str(),ios::app);

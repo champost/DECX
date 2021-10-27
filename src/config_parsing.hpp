@@ -128,4 +128,11 @@ struct AncestralState {
   bool some();
 };
 
+enum class ReportType {
+  States,
+  Splits,
+};
+
+ReportType read_report_type(const toml::table& table, const Context& context);
+
 } // namespace config

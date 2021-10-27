@@ -120,4 +120,19 @@ void AncestralState::set_all() {
 
 bool AncestralState::some() { return !(all || states.empty()); };
 
+ReportType read_report_type(const toml::table& table, const Context& context) {
+  auto node{require_node(
+      table, "report", std::array{toml::node_type::string}, context)};
+  auto& string{node.as_string()->get()};
+  if (string == "states") {
+    return ReportType::States;
+  } else if (string == "splits") {
+    return ReportType::Splits;
+  } else {
+    std::cerr << "Unknown report type: '" << string << "'. "
+              << "Supported types are 'states' and 'splits' ("
+              << node.node()->source() << ").";
+    exit(3);
+  }
+}
 } // namespace config
