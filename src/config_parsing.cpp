@@ -28,6 +28,16 @@ const std::string& require_string(const toml::table& table,
       .as_string()
       ->get();
 };
+
+bool require_bool(const toml::table& table,
+                  const std::string& name,
+                  const Context& context) {
+  return require_node(
+             table, name, std::array{toml::node_type::boolean}, context)
+      .as_boolean()
+      ->get();
+};
+
 const std::string& require_file(const toml::table& table,
                                 const std::string& name,
                                 const Context& context) {

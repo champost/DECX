@@ -99,6 +99,9 @@ const toml::table& require_table(const toml::table& table,
 const std::string& require_string(const toml::table& table,
                                   const std::string& name,
                                   const Context& context);
+bool require_bool(const toml::table& table,
+                  const std::string& name,
+                  const Context& context);
 const std::string& require_file(const toml::table& table,
                                 const std::string& name,
                                 const Context& context);

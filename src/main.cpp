@@ -116,8 +116,6 @@ int main(int argc, char* argv[]){
 		unsigned long int seed = 314159265;
 		bool ultrametric = true;	//	is false when at least one of the input trees is non-ultrametric
 		bool readTrueStates = false;
-		bool classic_vicariance = true;
-		bool rapid_anagenesis = true;
 		bool plot_output = false;
 
 		/*
@@ -148,6 +146,10 @@ int main(int argc, char* argv[]){
   context.stack.emplace_back("parameters");
   AncestralState ancestral_states{parameters, context};
   ReportType report_type(read_report_type(parameters, context));
+  const bool classic_vicariance{
+      require_bool(parameters, "classic_vicariance", context)};
+  const bool rapid_anagenesis{
+      require_bool(parameters, "rapid_anagenesis", context)};
 
   std::cout << "Only highjacked to this point for now, exiting." << std::endl;
   exit(0);
@@ -364,10 +366,6 @@ int main(int argc, char* argv[]){
 						simulate = false;
 					}else if(!strcmp(tokens[0].c_str(),  "not_ultrametric")){
 						ultrametric = false;
-					}else if(!strcmp(tokens[0].c_str(),  "no_classical_vicariance")){
-						classic_vicariance = false;
-					}else if(!strcmp(tokens[0].c_str(),  "no_rapid_anagenesis")){
-						rapid_anagenesis = false;
 					}else if(!strcmp(tokens[0].c_str(),  "plot_output")){
 						plot_output = true;
 					}
