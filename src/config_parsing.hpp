@@ -152,6 +152,9 @@ public:
 
   // Get next required table, update context.
   void into_table(Name table_name);
+  // Same with non-required table.
+  // Returns true if the table is present. Don't forget to step up then.
+  bool into_optional_table(Name table_name);
 
   // Take one step back up the context hierarchy.
   void step_up();
@@ -160,6 +163,7 @@ public:
   Table require_table(Name name);
   std::string require_string(Name name);
   bool require_bool(Name name);
+  int require_integer(Name name);
   std::string require_file(Name name);
   // (couldn't manage to return a const ref to string instead)
   std::optional<std::string> seek_string(Name name);

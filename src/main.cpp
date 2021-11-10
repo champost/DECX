@@ -74,7 +74,6 @@ int main(int argc, char* argv[]){
 		string logfile;
 		string fileTag;
 		string truestatesfile;
-		int maxareas=1;
 		map<string,vector<string> > mrcas;
 		map<string,vector<int> > fixnodewithmrca;
 		vector<vector<int> > excludedists;
@@ -155,8 +154,11 @@ int main(int argc, char* argv[]){
   config.step_up();
   config.into_table("areas");
   std::vector<std::string> area_names{config.read_area_names()};
-  // HERE: the 'distributions" table
-  // is a little more engaged to interpret, right?
+  int max_areas{1};
+  if (config.into_optional_table("distributions")) {
+    max_areas = config.require_integer("max");
+    config.step_up();
+  }
 
   std::cout << "Only highjacked to this point for now, exiting." << std::endl;
   exit(0);
@@ -226,7 +228,7 @@ int main(int argc, char* argv[]){
 							TrimSpaces(searchtokens[j]);
 						}
 						if(searchtokens[0].size()==1){
-							maxareas = atoi(searchtokens[0].c_str());
+							max_areas = atoi(searchtokens[0].c_str());
 						}else{
 							for(unsigned int j=0;j<searchtokens.size();j++){
 								vector<int> dist;
@@ -487,7 +489,7 @@ int main(int argc, char* argv[]){
 //		}else{
 //			rm.setup_dists();
 //		}
-		includedists = rm.generate_adjacent_dists(maxareas, areanamemaprev);
+		includedists = rm.generate_adjacent_dists(max_areas, areanamemaprev);
 		if (!simulate)
 			rm.include_tip_dists(data, includedists, areanamemaprev);
 		rm.setup_dists(includedists,true);

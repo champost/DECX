@@ -33,8 +33,16 @@ void ConfigChecker::into_table(Name table_name) {
   context.push_back({table_name, table});
 };
 
+bool ConfigChecker::into_optional_table(Name table_name) {
+  const auto& table{seek_node(table_name, {toml::node_type::table})};
+  if (table.has_value()) {
+    into_table(table_name);
+    return true;
+  }
+  return false;
+};
+
 Table ConfigChecker::require_table(Name name) {
-  std::cout << "require_table" << std::endl;
   return require_node(name, {toml::node_type::table}).as_table();
 };
 
@@ -44,6 +52,10 @@ std::string ConfigChecker::require_string(Name name) {
 
 bool ConfigChecker::require_bool(Name name) {
   return require_node(name, {toml::node_type::boolean}).as_boolean()->get();
+};
+
+int ConfigChecker::require_integer(Name name) {
+  return require_node(name, {toml::node_type::integer}).as_integer()->get();
 };
 
 std::string ConfigChecker::require_file(Name name) {
