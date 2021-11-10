@@ -61,14 +61,15 @@ int main(int argc, char* argv[]){
 
   // Parse TOML configuration file.
   std::string toml_file{argv[1]};
-  toml::table config;
+  toml::table parsed;
   try {
-    config = toml::parse_file(toml_file);
+    parsed = toml::parse_file(toml_file);
   } catch (const toml::parse_error& err) {
     std::cerr << "Failed to parse DECX config file:" << std::endl;
     std::cerr << "  " << err << std::endl;
     exit(2);
   }
+  ConfigChecker config{&parsed};
 
 		string logfile;
 		string fileTag;
@@ -128,35 +129,32 @@ int main(int argc, char* argv[]){
 		BioGeoTreeTools tt;
 
   // Input files table. --------------------------------------------------------
-  Context context{};
-  const auto& files{require_table(config, "input_files", context)};
-  context.stack.emplace_back("input_files");
+  config.into_table("input_files");
 
-  const std::string treefile{require_file(files, "tree", context)};
-  const std::string datafile{require_file(files, "data", context)};
-  const std::string adjacencyfile{require_file(files, "adjacency", context)};
+  const std::string treefile{config.require_file("tree")};
+  const std::string datafile{config.require_file("data")};
+  const std::string adjacencyfile{config.require_file("adjacency")};
   const std::optional<std::string> rate_matrix_file{
-      seek_file(files, "rate_matrix", context)};
+      config.seek_file("rate_matrix")};
+
+  std::cout << "treefile: " << treefile << std::endl;
+  std::cout << "datafile: " << datafile << std::endl;
+  std::cout << "adjacencyfile: " << adjacencyfile << std::endl;
+  std::cout << "rate_matrix_file: " << rate_matrix_file.has_value() << std::endl;
 
   // Parameters table ----------------------------------------------------------
-  context.stack.pop_back();
-  const auto& parameters{require_table(config, "parameters", context)};
-  context.stack.emplace_back("parameters");
-  AncestralState ancestral_states{parameters, context};
-  ReportType report_type(read_report_type(parameters, context));
-  const bool classic_vicariance{
-      require_bool(parameters, "classic_vicariance", context)};
-  const bool rapid_anagenesis{
-      require_bool(parameters, "rapid_anagenesis", context)};
-  std::vector<double> periods{read_periods(parameters, context)};
+  config.step_up();
+  config.into_table("parameters");
+  AncestralState ancestral_states{config.read_ancestral_state()};
+  ReportType report_type(config.read_report_type());
+  const bool classic_vicariance{config.require_bool("classic_vicariance")};
+  const bool rapid_anagenesis{config.require_bool("rapid_anagenesis")};
+  std::vector<double> periods{config.read_periods()};
 
   // Geographical parameters ---------------------------------------------------
-  context.stack.pop_back();
-  const auto& areas{require_table(config, "areas", context)};
-  context.stack.emplace_back("areas");
-  std::vector<std::string> area_names{read_area_names(areas, context)};
-  const auto& distributions{require_table(areas, "distributions", context)};
-  context.stack.emplace_back("distributions");
+  config.step_up();
+  config.into_table("areas");
+  std::vector<std::string> area_names{config.read_area_names()};
   // HERE: the 'distributions" table
   // is a little more engaged to interpret, right?
 
