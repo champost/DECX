@@ -73,7 +73,8 @@ public:
   ConfigChecker(Table r) : root(r), focal((View)r), table(r){};
 
   // Get focal node sources.
-  const toml::source_region& focal_source() { return focal.node()->source(); }
+  const toml::source_region& focal_source() const;
+  void source_and_exit() const;
 
   // Check focal node type.
   template <std::size_t N>
@@ -93,7 +94,7 @@ public:
       }
       std::cerr << " (not a " << focal.type() << ": " << focal_source() << ")."
                 << std::endl;
-      exit(3);
+      exit(1);
     }
   };
 
@@ -117,7 +118,7 @@ public:
         }
         std::cerr << " (not " << element.type() << ": " << element.source()
                   << ")." << std::endl;
-        exit(3);
+        exit(1);
       }
     }
   };
@@ -142,10 +143,13 @@ public:
       std::cerr << "Configuration error: parameter '" << name
                 << "' is required, but not given in " << context << " ("
                 << table->source() << ")." << std::endl;
-      exit(3);
+      exit(1);
     }
     return focal;
   }
+
+  // Just check for node presence.
+  bool has_node(Name name);
 
   // Raise error with current node info if file does not exist.
   void check_file(Name filename);
@@ -166,8 +170,11 @@ public:
   int require_integer(Name name);
   std::string require_file(Name name);
   // (couldn't manage to return a const ref to string instead)
-  std::optional<std::string> seek_string(Name name);
   std::optional<std::string> seek_file(Name name);
+  std::optional<std::string> seek_string(Name name);
+  std::optional<int> seek_integer(Name name);
+  // Seek or pick default name.
+  std::string seek_string_or(Name name, std::string def);
 
   // More sophisticated parameters.
   AncestralState read_ancestral_state();
@@ -176,6 +183,18 @@ public:
   // Read uniform array types.
   std::vector<double> read_periods();
   std::vector<std::string> read_area_names();
+
+  // Parse distributions specifications.
+  // Every given string is one distribution, specified either as:
+  //  - binary code: "0110" meaning areas at index 1 and 2.
+  //  - areas names: "B C" meaning areas B and C.
+  std::vector<std::vector<int>> // indexes into area_names.
+  read_distributions(Name name, const std::vector<std::string>& area_names);
+
+private:
+  std::vector<int>
+  read_distribution(const toml::node& node,
+                    const std::vector<std::string>& area_names);
 };
 
 } // namespace config

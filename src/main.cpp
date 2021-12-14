@@ -76,8 +76,6 @@ int main(int argc, char* argv[]){
 		string truestatesfile;
 		map<string,vector<string> > mrcas;
 		map<string,vector<int> > fixnodewithmrca;
-		vector<vector<int> > excludedists;
-		vector<vector<int> > includedists;
 		vector<vector<vector<int> > > exdists_per_period;
 		vector<vector<vector<bool> > > adjMat;
 		vector<string> isolatedAreas;
@@ -154,10 +152,47 @@ int main(int argc, char* argv[]){
   config.step_up();
   config.into_table("areas");
   std::vector<std::string> area_names{config.read_area_names()};
+
   int max_areas{1};
+  std::vector<std::vector<int>> includedists;
+  std::vector<std::vector<int>> excludedists;
   if (config.into_optional_table("distributions")) {
-    max_areas = config.require_integer("max");
+    std::string constraint_spec{config.seek_string_or("constraint", "include")};
+    if (constraint_spec == "exclude") {
+      std::cerr << "The feature `constraint = \"exclude\"` is not "
+                   "supported by DECX anymore."
+                << std::endl;
+      config.source_and_exit();
+    } else if (constraint_spec != "include") {
+      std::cerr << "Invalid distribution constraint: \"" << constraint_spec
+                << "\". Valid constraints are: \"include\" and \"exclude\"."
+                << std::endl;
+      config.source_and_exit();
+    }
+    const auto& max_spec{config.seek_integer("max")};
+    if (max_spec.has_value()) {
+      if (config.has_node("set")) {
+        std::cerr << "Incompatible distributions specification: "
+                  << "'max' and 'set' cannot be both given." << std::endl;
+        config.source_and_exit();
+      }
+      max_areas = max_spec.value();
+    } else {
+      includedists = config.read_distributions("set", area_names);
+    }
     config.step_up();
+  }
+
+  if (max_areas > 1) {
+    std::cout << "max_areas: " << max_areas << std::endl;
+  } else if (!includedists.empty()) {
+    for (const auto& dist : includedists) {
+      std::cout << "Distribution:";
+      for (const int i : dist) {
+        std::cout << " " << i;
+      }
+      std::cout << std::endl;
+    }
   }
 
   std::cout << "Only highjacked to this point for now, exiting." << std::endl;
@@ -207,38 +242,6 @@ int main(int argc, char* argv[]){
 							dist.push_back(atoi(&c));
 						}
 						fixnodewithmrca[searchtokens[0]] = dist;
-					}else if(!strcmp(tokens[0].c_str(), "excludedists")){
-						vector<string> searchtokens;
-						Tokenize(tokens[1], searchtokens, ", 	");
-						for(unsigned int j=0;j<searchtokens.size();j++){
-							TrimSpaces(searchtokens[j]);
-						}
-						for(unsigned int j=0;j<searchtokens.size();j++){
-							vector<int> dist;
-							for(unsigned int k=0;k<searchtokens[j].size();k++){
-								char c = (searchtokens[j].c_str())[k];
-								dist.push_back(atoi(&c));
-							}
-							excludedists.push_back(dist);
-						}
-					}else if(!strcmp(tokens[0].c_str(), "includedists")){
-						vector<string> searchtokens;
-						Tokenize(tokens[1], searchtokens, ", 	");
-						for(unsigned int j=0;j<searchtokens.size();j++){
-							TrimSpaces(searchtokens[j]);
-						}
-						if(searchtokens[0].size()==1){
-							max_areas = atoi(searchtokens[0].c_str());
-						}else{
-							for(unsigned int j=0;j<searchtokens.size();j++){
-								vector<int> dist;
-								for(unsigned int k=0;k<searchtokens[j].size();k++){
-									char c = (searchtokens[j].c_str())[k];
-									dist.push_back(atoi(&c));
-								}
-								includedists.push_back(dist);
-							}
-						}
 					}else if(!strcmp(tokens[0].c_str(), "areacolors")){
 						vector<string> searchtokens;
 						Tokenize(tokens[1], searchtokens, ", 	");
