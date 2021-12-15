@@ -74,8 +74,6 @@ int main(int argc, char* argv[]){
 		string logfile;
 		string fileTag;
 		string truestatesfile;
-		map<string,vector<string> > mrcas;
-		map<string,vector<int> > fixnodewithmrca;
 		vector<vector<vector<int> > > exdists_per_period;
 		vector<vector<vector<bool> > > adjMat;
 		vector<string> isolatedAreas;
@@ -84,10 +82,6 @@ int main(int argc, char* argv[]){
 		//then everything will be computed
 		bool treecolors;
 		vector<string> areacolors;
-		vector<string> fossilmrca;
-		vector<string> fossiltype;
-		vector<string> fossilarea;
-		vector<double> fossilage;//0's for N type and # for B type
 		time_t likStartTime, likEndTime;
 
 		bool marginal = true; // false means joint
@@ -125,6 +119,12 @@ int main(int argc, char* argv[]){
 
 		BioGeoTreeTools tt;
 
+  // The input parameters file has been refreshed below with TOML format,
+  // the idea was to improve file structure and error handling
+  // without touching the original code below.
+  // So, while the parse procedure is refreshed,
+  // the data structures used later in the program are left as-is.
+
   // Input files table. --------------------------------------------------------
   config.into_table("input_files");
 
@@ -151,7 +151,8 @@ int main(int argc, char* argv[]){
   // Geographical parameters ---------------------------------------------------
   config.step_up();
   config.into_table("areas");
-  std::vector<std::string> area_names{config.read_area_names()};
+  std::vector<std::string> area_names{
+      config.read_unique_strings("names", "Area")};
 
   int max_areas{1};
   std::vector<std::vector<int>> includedists;
@@ -195,6 +196,74 @@ int main(int argc, char* argv[]){
     }
   }
 
+  config.step_up();
+  // Read mrca data: Name ↦ species
+  std::map<std::string, std::vector<std::string>> mrcas;
+  // Fixed nodes: Name ↦ distribution
+  std::map<std::string, std::vector<int>> fixnodewithmrca;
+  // Fossil MRCA seem organized differently.
+  std::vector<std::string> fossilmrca; // name
+  std::vector<std::string> fossiltype; // 'N'/'n' or 'B'/'b'
+  std::vector<std::string> fossilarea; // distribution
+  // "0's for N type and # for B type" according to original comment.
+  std::vector<double> fossilage;
+  config.read_mrcas(mrcas,
+                    fixnodewithmrca,
+                    fossilmrca,
+                    fossiltype,
+                    fossilarea,
+                    fossilage,
+                    area_names);
+
+  std::cout << "MRCAs:";
+  for (const auto& pair : mrcas) {
+    const auto& k{pair.first};
+    const auto& v{pair.second};
+    std::cout << " " << k << " ↦ (";
+    for (const auto& i : v) {
+      std::cout << i << " ";
+    }
+    std::cout << ")";
+  }
+  std::cout << std::endl;
+
+  std::cout << "fixnodewithmrca: ";
+  for (const auto& pair : fixnodewithmrca) {
+    const auto& k{pair.first};
+    const auto& v{pair.second};
+    std::cout << " " << k << " ↦ (";
+    for (const auto& i : v) {
+      std::cout << i << " ";
+    }
+    std::cout << ")";
+  }
+  std::cout << std::endl;
+
+  std::cout << "fossilmrca:";
+  for (const auto& i : fossilmrca) {
+    std::cout << " " << i;
+  }
+  std::cout << std::endl;
+
+  std::cout << "fossiltype:";
+  for (const auto& i : fossiltype) {
+    std::cout << " " << i;
+  }
+  std::cout << std::endl;
+
+  std::cout << "fossilarea:";
+  for (const auto& i : fossilarea) {
+    std::cout << " " << i;
+  }
+  std::cout << std::endl;
+
+  std::cout << "fossilage:";
+  for (const auto& i : fossilage) {
+    std::cout << " " << i;
+  }
+  std::cout << std::endl;
+
+
   std::cout << "Only highjacked to this point for now, exiting." << std::endl;
   exit(0);
 
@@ -230,18 +299,6 @@ int main(int argc, char* argv[]){
 							TrimSpaces(searchtokens[j]);
 						}
 						isolatedAreas = searchtokens;
-					}else if(!strcmp(tokens[0].c_str(), "fixnode")){
-						vector<string> searchtokens;
-						Tokenize(tokens[1], searchtokens, ", 	");
-						for(unsigned int j=0;j<searchtokens.size();j++){
-							TrimSpaces(searchtokens[j]);
-						}
-						vector<int> dist;
-						for(unsigned int j=0;j<searchtokens[1].size();j++){
-							char c = (searchtokens[1].c_str())[j];
-							dist.push_back(atoi(&c));
-						}
-						fixnodewithmrca[searchtokens[0]] = dist;
 					}else if(!strcmp(tokens[0].c_str(), "areacolors")){
 						vector<string> searchtokens;
 						Tokenize(tokens[1], searchtokens, ", 	");
@@ -251,31 +308,6 @@ int main(int argc, char* argv[]){
 						areacolors = searchtokens;
 					}else if(!strcmp(tokens[0].c_str(),  "treecolors")){
 						treecolors = true;
-					}else if(!strcmp(tokens[0].c_str(), "mrca")){
-						vector<string> searchtokens;
-						Tokenize(tokens[1], searchtokens, ", 	");
-						for(unsigned int j=0;j<searchtokens.size();j++){
-							TrimSpaces(searchtokens[j]);
-						}
-						vector<string> mrc;
-						for(unsigned int j=1;j<searchtokens.size();j++){
-							mrc.push_back(searchtokens[j]);
-						}
-						mrcas[searchtokens[0]] = mrc;
-					}else if(!strcmp(tokens[0].c_str(), "fossil")){
-						vector<string> searchtokens;
-						Tokenize(tokens[1], searchtokens, ", 	");
-						for(unsigned int j=0;j<searchtokens.size();j++){
-							TrimSpaces(searchtokens[j]);
-						}
-						fossiltype.push_back(searchtokens[0]);
-						fossilmrca.push_back(searchtokens[1]);
-						fossilarea.push_back(searchtokens[2]);
-						if(searchtokens.size()>3){
-							fossilage.push_back(atof(searchtokens[3].c_str()));
-						}else{
-							fossilage.push_back(0.0);
-						}
 					}else if(!strcmp(tokens[0].c_str(),  "calctype")){
 						string calctype = tokens[1];
 						if(calctype.compare("m") != 0 && calctype.compare("M") != 0){
@@ -581,6 +613,8 @@ int main(int argc, char* argv[]){
 			 * setting up fossils
 			 */
 			for (std::size_t k{0}; k < fossiltype.size(); ++k) {
+        // TODO: remove checks if config file parsing
+        // make it impossible to screw it up.
         const auto& type{fossiltype.at(k)};
         const auto& mrca{fossilmrca.at(k)};
         if (!mrcanodeint.count(mrca)) {

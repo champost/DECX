@@ -53,35 +53,26 @@ bool ConfigChecker::into_optional_table(Name table_name) {
   return false;
 };
 
+#define DEFINE_REQUIRER(fnname, type, ret)                                     \
+  ret ConfigChecker::require_##fnname(Name name) {                             \
+    return require_node(name, {toml::node_type::type}).as_##type()->get();     \
+  };
+
+DEFINE_REQUIRER(string, string, std::string);
+DEFINE_REQUIRER(bool, boolean, bool);
+DEFINE_REQUIRER(integer, integer, int);
+DEFINE_REQUIRER(float, floating_point, double);
+
+// This one's special because there's no ->get();
 Table ConfigChecker::require_table(Name name) {
   return require_node(name, {toml::node_type::table}).as_table();
 };
 
-std::string ConfigChecker::require_string(Name name) {
-  return require_node(name, {toml::node_type::string}).as_string()->get();
-};
-
-bool ConfigChecker::require_bool(Name name) {
-  return require_node(name, {toml::node_type::boolean}).as_boolean()->get();
-};
-
-int ConfigChecker::require_integer(Name name) {
-  return require_node(name, {toml::node_type::integer}).as_integer()->get();
-};
-
+// This one's special because there is the file checking.
 std::string ConfigChecker::require_file(Name name) {
   const auto& filename{require_string(name)};
   check_file(filename);
   return filename;
-};
-
-std::optional<std::string> ConfigChecker::seek_file(Name name) {
-  const auto& filename{seek_string(name)};
-  if (filename.has_value()) {
-    check_file(filename.value());
-    return filename;
-  }
-  return {};
 };
 
 #define DEFINE_SEEKER(type, ret)                                               \
@@ -95,6 +86,15 @@ std::optional<std::string> ConfigChecker::seek_file(Name name) {
 
 DEFINE_SEEKER(string, std::string);
 DEFINE_SEEKER(integer, int);
+
+std::optional<std::string> ConfigChecker::seek_file(Name name) {
+  const auto& filename{seek_string(name)};
+  if (filename.has_value()) {
+    check_file(filename.value());
+    return filename;
+  }
+  return {};
+};
 
 std::string ConfigChecker::seek_string_or(Name name, std::string def) {
   const auto& node{seek_node(name, {toml::node_type::string})};
@@ -183,22 +183,25 @@ std::vector<double> ConfigChecker::read_periods() {
   return periods;
 }
 
-std::vector<std::string> ConfigChecker::read_area_names() {
-  auto node{require_node("names", {toml::node_type::array})};
-  check_uniform_array("names", {toml::node_type::string});
-  std::vector<std::string> names{};
+std::vector<std::string>
+ConfigChecker::read_unique_strings(Name name, const std::string& item_meaning) {
+  auto node{require_node(name, {toml::node_type::array})};
+  check_uniform_array(name, {toml::node_type::string});
+  std::vector<std::string> result{};
   for (const auto& element : *node.as_array()) {
+    focal = toml::node_view(element);
     // Bruteforce check that no duplicate has been given.
-    const std::string name{*element.as_string()};
-    for (const auto& given : names) {
-      if (name == given) {
-        std::cerr << "Area name '" << name << "' given twice." << std::endl;
+    const std::string item{*element.as_string()};
+    for (const auto& given : result) {
+      if (item == given) {
+        std::cerr << item_meaning << " name '" << item << "' given twice."
+                  << std::endl;
         source_and_exit();
       }
     }
-    names.emplace_back(name);
+    result.emplace_back(item);
   }
-  return names;
+  return result;
 }
 
 std::vector<std::vector<int>>
@@ -240,7 +243,7 @@ ConfigChecker::read_distribution(const toml::node& node,
   std::vector<std::string> words{};
   std::string current;
   bool next{true};
-  for (char c : input) {
+  for (const char c : input) {
     if (std::isspace(c)) {
       next = true;
     } else if (next) {
@@ -283,7 +286,7 @@ ConfigChecker::read_distribution(const toml::node& node,
       std::cerr << "Ambiguous distribution specification : '" << word
                 << "' could either represent the single area '" << word
                 << "' or a binary set of other areas.."
-                << "now be honest: you did that on purpose, right?"
+                << " now be honest: you did that on purpose, right?"
                 << std::endl;
       source_and_exit();
     }
@@ -327,4 +330,85 @@ ConfigChecker::read_distribution(const toml::node& node,
   return result;
 }
 
+std::string
+ConfigChecker::read_area(Name name,
+                         const std::vector<std::string>& area_names) {
+  const std::string area{require_string(name)};
+  // Check that the area name is known.
+  bool found{false};
+  for (const auto& known : area_names) {
+    if (area == known) {
+      found = true;
+      break;
+    }
+  }
+  if (!found) {
+    std::cerr << "Unknown area '" << area << "' provided.";
+    source_and_exit();
+  }
+  return area;
+};
+
+void ConfigChecker::read_mrcas(
+    std::map<std::string, std::vector<std::string>>& mrcas,
+    std::map<std::string, std::vector<int>>& fixnodes,
+    std::vector<std::string>& fossilnames,
+    std::vector<std::string>& fossiltypes,
+    std::vector<std::string>& fossilareas,
+    std::vector<double>& fossilages,
+    const std::vector<std::string>& area_names) {
+
+  // It may be that none is given.
+  if (!into_optional_table("mrca")) {
+    return;
+  }
+
+  // Every given MRCA is a sub-table.
+  const auto& table{*focal.as_table()};
+  for (const auto& mrca : table) {
+    const auto& name{mrca.first};
+    into_table(name);
+    // Got it.
+
+    // All need to have a list of species.
+    const std::vector<std::string> species{
+        read_unique_strings("species", "Species")};
+    mrcas.insert({name, species});
+
+    // The rest will depend on their type.
+    const std::string type{require_string("type")};
+
+    if (type == "fixed node") {
+      // Then a distribution is given.
+      const std::vector<int> distribution{read_distribution(
+          *require_node("distribution", {toml::node_type::string}).node(),
+          area_names)};
+
+      fixnodes.insert({name, distribution});
+    } else {
+      if (type == "fossil node") {
+        fossiltypes.push_back("N");
+        fossilages.push_back(0.);
+      } else if (type == "fossil branch") {
+        fossiltypes.push_back("B");
+        fossilages.push_back(require_float("age"));
+      } else {
+        std::cerr << "Unknown MRCA type: '" << type << "'.";
+        std::cerr << " Supported types are ";
+        std::cerr << "'fixed node', 'fossil node' and 'fossil branch'";
+        std::cerr << "." << std::endl;
+        source_and_exit();
+      }
+      fossilnames.push_back(name);
+      // Then only one area is supported.
+      const auto& area{read_area("area", area_names)};
+      fossilareas.push_back(area);
+    }
+
+    step_up();
+  }
+
+  // Step out of MRCA table.
+  step_up();
+};
 } // namespace config

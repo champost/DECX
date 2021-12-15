@@ -168,6 +168,7 @@ public:
   std::string require_string(Name name);
   bool require_bool(Name name);
   int require_integer(Name name);
+  double require_float(Name name);
   std::string require_file(Name name);
   // (couldn't manage to return a const ref to string instead)
   std::optional<std::string> seek_file(Name name);
@@ -182,7 +183,12 @@ public:
 
   // Read uniform array types.
   std::vector<double> read_periods();
-  std::vector<std::string> read_area_names();
+  // + check for unicity.
+  // (item_meaning is used to make error message more informative).
+  // TODO: replace with "read_unique_words" from
+  // one string: (less typing for users.)
+  std::vector<std::string> read_unique_strings(Name name,
+                                               const std::string& item_meaning);
 
   // Parse distributions specifications.
   // Every given string is one distribution, specified either as:
@@ -190,6 +196,18 @@ public:
   //  - areas names: "B C" meaning areas B and C.
   std::vector<std::vector<int>> // indexes into area_names.
   read_distributions(Name name, const std::vector<std::string>& area_names);
+
+  // Same with only one area.
+  std::string read_area(Name name, const std::vector<std::string>& area_names);
+
+  // Parse MRCA, filling outer parameters.
+  void read_mrcas(std::map<std::string, std::vector<std::string>>& mrcas,
+                  std::map<std::string, std::vector<int>>& fixnodes,
+                  std::vector<std::string>& fossilnames,
+                  std::vector<std::string>& fossiltypes,
+                  std::vector<std::string>& fossilareas,
+                  std::vector<double>& fossilages,
+                  const std::vector<std::string>& area_names);
 
 private:
   std::vector<int>
