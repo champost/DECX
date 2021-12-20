@@ -583,18 +583,33 @@ int main(int argc, char* argv[]){
 			/*
 			 * setting up fossils
 			 */
-			for(unsigned int k=0;k<fossiltype.size();k++){
-				if(fossiltype[k] == "n" || fossiltype[k] == "N"){
-					bgt.setFossilatNodeByMRCA_id(mrcanodeint[fossilmrca[k]],areanamemap[fossilarea[k]]);
-					cout << "Setting node fossil at mrca: " << fossilmrca[k] << " at area: " << fossilarea[k] << endl;
-				}else if(fossiltype[k] == "b" || fossiltype[k] == "B"){
-					if (mrcanodeint[fossilmrca[k]]->isInternal()) {
-						bgt.setFossilatInternalBranchByMRCA_id(mrcanodeint[fossilmrca[k]],areanamemap[fossilarea[k]],fossilage[k]);
-						cout << "Setting INTERNAL branch fossil at mrca: " << fossilmrca[k] << " at area: " << fossilarea[k] << " at age: " << fossilage[k] << endl;
+			for (std::size_t k{0}; k < fossiltype.size(); ++k) {
+        const auto& type{fossiltype.at(k)};
+        const auto& mrca{fossilmrca.at(k)};
+        if (!mrcanodeint.count(mrca)) {
+          std::cerr << "ERROR: undefined MRCA: " << mrca << std::endl;
+          exit(1);
+        }
+        const auto& node_id{mrcanodeint.at(mrca)};
+        const auto& area_name{fossilarea.at(k)};
+        if (!areanamemap.count(area_name)) {
+          std::cerr << "ERROR: undefined area name for " << mrca
+                    << ": " << area_name << std::endl;
+          exit(1);
+        }
+        const auto& area_id{areanamemap.at(area_name)};
+        const auto& age{fossilage.at(k)};
+				if(type == "n" || type == "N"){
+					bgt.setFossilatNodeByMRCA_id(node_id, area_id);
+					cout << "Setting node fossil at mrca: " << mrca << " at area: " << area_name << endl;
+				}else if(type == "b" || type == "B"){
+					if (node_id->isInternal()) {
+						bgt.setFossilatInternalBranchByMRCA_id(node_id, area_id, age);
+						cout << "Setting INTERNAL branch fossil at mrca: " << mrca << " at area: " << area_name << " at age: " << age << endl;
 					}
 					else {
-						bgt.setFossilatExternalBranchByMRCA_id(mrcanodeint[fossilmrca[k]],areanamemap[fossilarea[k]],fossilage[k]);
-						cout << "Setting EXTERNAL branch fossil at mrca: " << fossilmrca[k] << " at area: " << fossilarea[k] << " at age: " << fossilage[k] << endl;
+						bgt.setFossilatExternalBranchByMRCA_id(node_id, area_id, age);
+						cout << "Setting EXTERNAL branch fossil at mrca: " << mrca << " at area: " << area_name << " at age: " << age << endl;
 					}
 				}
 			}
