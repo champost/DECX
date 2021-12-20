@@ -8,72 +8,37 @@ To be written...
 
 ## Build instructions
 
-### Linux
+DECX requires that the following dependencies be installed on your system:
+- [GFortran]
+- [GSL]
+- [Boost]
+- [LAPACK]
+- [CMake]
 
-To build lagrange\_cpp binary you need to install :
+[gfortran]: https://gcc.gnu.org/wiki/GFortran
+[gsl]: https://www.gnu.org/software/gsl/
+[boost]: https://www.boost.org/
+[LAPACK]: http://www.netlib.org/lapack/
+[CMake]: https://cmake.org/
 
-* gfortran
-* lib gcc dev
-* lib gsl dev
+Then, build DECX with:
 
-Under Debian-like systems :
+```bash
+# Get source code from public MBB repo.
+git clone https://gitlab.mbb.univ-montp2.fr/ibonnici/decx.git
 
+# Choose a build directory.
+cd decx/
+mkdir build
+cd build
+
+# Configure compilation with CMake.
+# This step is supposed to fail if a dependency cannot be found on your system.
+cmake ../src
+
+# Compile.
+make -j 8 # Or any number of workers you can handle.
+
+# Run with desired config file.
+./decx my_config_file.txt
 ```
-sudo apt-get install gfortran gcc g++ libgsl0-dev
-```
-
-Go to src/ directory and type
-
-```
-make -f makefile.champak clean
-make -f makefile.champak
-```
-
-It should produce ```lagrange_cpp``` dynamic binary.
-
-You may also want a static binary :
-
-```
-make -f makefile.champak clean
-make -f makefile.champak static
-```
-
-### Windows
-
-What i did to be able to compile on windows :
-
-* Install git with git-bash from https://git-scm.com/
-* Install minGW32 from http://www.mingw.org/download/installer
-* Install all dev packages inside minGW
-* Edit ~/.bashrc in git-bash to change PATH : ```export PATH=$PATH:/c/MinGW/bin/```
-* make symbolic link for make : ```cd /c/MinGW/bin ; ln -s mingw32-make.exe make```
-* Download lib GSL sources from ftp://ftp.gnu.org/gnu/gsl/
-* Compile them
-* Adjust the src/makefile.win to fit with my files paths
-* Run ```make -f makefile.win static``` to get a static bin
-* Be satisfied
-
-### MacOS
-
-To get things right under MacOS, you'll need _fink_ or another pseudo-package
-manager. The goal is to install correct gcc/g++ and the needed libs :
-
-```
-git clone https://github.com/fink/fink.git
-cd fink
-# the next command is quite long
-sudo ./bootstrap
-echo ". /sw/bin/init.sh" > ~/.bash_profile
-. ~/.bash_profile
-# this might also be very long
-sudo fink selfupdate-cvs
-# and the longest is...this one
-sudo fink install gcc49 gsl
-
-cd
-cd DECX/src
-make -f makefile.mac clean
-make -f makefile.mac
-```
-
-I'm working on a way to produce a quasi-static binary for MacOSX.
