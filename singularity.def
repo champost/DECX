@@ -1,4 +1,5 @@
-BootStrap: arch
+BootStrap: docker
+From: archlinux
 
 %post
     echo "Building container.."
@@ -29,6 +30,7 @@ BootStrap: arch
     # Install all this.
     echo 'Server = https://mirrors.kernel.org/archlinux/$repo/os/$arch' \
          > /etc/pacman.d/mirrorlist
+    pacman -Syu --noconfirm
     pacman -Sy --noconfirm ${BUILD_DEPS} ${DEPS}
     #---------------------------------------------------------------------------
 
