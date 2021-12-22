@@ -1,4 +1,5 @@
 build
+*.sif
 
 doc/
 !doc/*.tex

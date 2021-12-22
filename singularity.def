@@ -1,0 +1,64 @@
+BootStrap: arch
+
+%post
+    echo "Building container.."
+
+    #---- Dependencies ---------------------------------------------------------
+    # Collect in this temporary variable.
+    DEPS=""
+    deps() {
+        DEPS="${DEPS} $@"
+    }
+
+    # "Build" dependencies are removed after compilation.
+    BUILD_DEPS=""
+    bdeps() {
+        BUILD_DEPS="${BUILD_DEPS} $@"
+    }
+
+    # Build-time only dependencies.
+    bdeps git             # To get source code.
+    bdeps cmake make      # Build tools.
+    bdeps gcc gcc-fortran # Compilers
+    bdeps boost           # Template lib.
+    bdeps pacman-contrib  # For paccache.
+
+    # Runtime dependencies.
+    deps gsl lapack
+
+    # Install all this.
+    echo 'Server = https://mirrors.kernel.org/archlinux/$repo/os/$arch' \
+         > /etc/pacman.d/mirrorlist
+    pacman -Sy --noconfirm ${BUILD_DEPS} ${DEPS}
+    #---------------------------------------------------------------------------
+
+    #---- Compilation ----------------------------------------------------------
+    # Get source code.
+    cd /opt
+    git clone https://gitlab.mbb.univ-montp2.fr/ibonnici/decx
+    cd decx
+
+    # Compile
+    mkdir build
+    cd build
+    cmake ../src
+    make -j $(nproc)
+    #---------------------------------------------------------------------------
+
+    #---- Installation ---------------------------------------------------------
+    ln -s /opt/decx/build/decx /usr/bin/decx
+    #---------------------------------------------------------------------------
+
+    #---- Cleanup --------------------------------------------------------------
+    # Remove the packages downloaded to image's Pacman cache dir.
+    paccache -r -k0
+
+    # Uninstall build dependencies.
+    pacman -Rns --noconfirm ${BUILD_DEPS}
+    #---------------------------------------------------------------------------
+
+    echo "export CONTAINER_BUILD_TIME=\"$(date)\"" >> ${SINGULARITY_ENVIRONMENT}
+
+%runscript
+    echo "Running DECX container (created on ${CONTAINER_BUILD_TIME})"
+    decx $@
