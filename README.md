@@ -2,13 +2,38 @@
 
 This is the git version of the http://code.google.com/p/lagrange c++ version
 
-# Usage
+## Usage
 
 To be written...
 
 ## Build instructions
 
-DECX requires that the following dependencies be installed on your system:
+### With Singularity
+
+DECX can be run from a singularity container,
+provided you have [Singularity] installed.
+
+First, build the container image as root:
+```
+# Get definition file.
+curl https://gitlab.mbb.univ-montp2.fr/ibonnici/decx/-/raw/main/singularity.def\
+     > decx_singularity.def
+
+# Build container.
+sudo singularity build decx.sif decx_singularity.def
+```
+
+Then, run the container as regular user:
+```
+./decx.sif my_config_file.txt
+```
+
+
+[Singularity]: https://sylabs.io/
+
+### From source
+
+Install the following dependencies on your system:
 - [GFortran]
 - [GSL]
 - [Boost]
@@ -37,7 +62,7 @@ cd build
 cmake ../src
 
 # Compile.
-make -j 8 # Or any number of workers you can handle.
+make -j $(nproc)
 
 # Run with desired config file.
 ./decx my_config_file.txt
