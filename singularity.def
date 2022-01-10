@@ -37,8 +37,8 @@ From: archlinux
     #---- Compilation ----------------------------------------------------------
     # Get source code.
     cd /opt
-    git clone https://gitlab.mbb.univ-montp2.fr/ibonnici/decx
-    cd decx
+    git clone https://github.com/champost/DECX
+    cd DECX
 
     # Compile
     mkdir build
@@ -48,7 +48,7 @@ From: archlinux
     #---------------------------------------------------------------------------
 
     #---- Installation ---------------------------------------------------------
-    ln -s /opt/decx/build/decx /usr/bin/decx
+    ln -s /opt/DECX/build/decx /usr/bin/decx
     #---------------------------------------------------------------------------
 
     #---- Cleanup --------------------------------------------------------------

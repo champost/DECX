@@ -16,7 +16,7 @@ provided you have [Singularity] installed.
 First, build the container image as root:
 ```
 # Get definition file.
-curl https://gitlab.mbb.univ-montp2.fr/ibonnici/decx/-/raw/main/singularity.def\
+curl https://raw.githubusercontent.com/champost/DECX/main/singularity.def \
      > decx_singularity.def
 
 # Build container.
@@ -50,7 +50,7 @@ Then, build DECX with:
 
 ```bash
 # Get source code from public MBB repo.
-git clone https://gitlab.mbb.univ-montp2.fr/ibonnici/decx.git
+git clone https://github.com/champost/DECX
 
 # Choose a build directory.
 cd decx/
