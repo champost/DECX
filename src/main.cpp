@@ -152,7 +152,7 @@ int main(int argc, char* argv[]){
   config.step_up();
   config.into_table("areas");
   std::vector<std::string> area_names{
-      config.read_unique_strings("names", "Area")};
+      config.read_unique_identifiers("names", "Area")};
 
   int max_areas{1};
   std::vector<std::vector<int>> includedists;

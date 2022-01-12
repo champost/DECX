@@ -204,6 +204,49 @@ ConfigChecker::read_unique_strings(Name name, const std::string& item_meaning) {
   return result;
 }
 
+std::vector<std::string>
+ConfigChecker::read_unique_words(Name name, const std::string& item_meaning) {
+  auto words{require_string(name)};
+  std::vector<std::string> result{};
+  std::string current{};
+  bool next{true};
+  for (auto c : words) {
+    if (std::isspace(c)) {
+      next = true;
+    } else if (next) {
+      if (!current.empty()) {
+        // We have a new word.
+        // Check against others for unicity.
+        for (const auto& other : result) {
+          if (other == current) {
+            std::cerr << item_meaning << " name '" << current
+                      << "' given twice." << std::endl;
+            source_and_exit();
+          }
+        }
+        result.push_back(current);
+        current = std::string{};
+      }
+      current.push_back(c);
+      next = false;
+    } else {
+      current.push_back(c);
+    }
+  }
+  return result;
+};
+
+std::vector<std::string>
+ConfigChecker::read_unique_identifiers(Name name,
+                                       const std::string& item_meaning) {
+  const auto node{
+      require_node(name, {toml::node_type::array, toml::node_type::string})};
+  if (node.type() == toml::node_type::string) {
+    return read_unique_words(name, item_meaning);
+  }
+  return read_unique_strings(name, item_meaning);
+}
+
 std::vector<std::vector<int>>
 ConfigChecker::read_distributions(Name name,
                                   const std::vector<std::string>& area_names) {
@@ -372,7 +415,7 @@ void ConfigChecker::read_mrcas(
 
     // All need to have a list of species.
     const std::vector<std::string> species{
-        read_unique_strings("species", "Species")};
+        read_unique_identifiers("species", "Species")};
     mrcas.insert({name, species});
 
     // The rest will depend on their type.

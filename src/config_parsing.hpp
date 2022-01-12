@@ -177,6 +177,7 @@ public:
   // Seek or pick default name.
   std::string seek_string_or(Name name, std::string def);
 
+  //---------------------------------------------------------------------------
   // More sophisticated parameters.
   AncestralState read_ancestral_state();
   ReportType read_report_type();
@@ -185,10 +186,16 @@ public:
   std::vector<double> read_periods();
   // + check for unicity.
   // (item_meaning is used to make error message more informative).
-  // TODO: replace with "read_unique_words" from
-  // one string: (less typing for users.)
   std::vector<std::string> read_unique_strings(Name name,
                                                const std::string& item_meaning);
+  // Same principle as above, but with space-separated words,
+  // so the user can type "A B C" instead of ["A", "B", "C"].
+  // Multiple/prefix/trailing spaces are allowed.
+  std::vector<std::string> read_unique_words(Name name,
+                                             const std::string& item_meaning);
+  // Abstract over the two previous ones when both are supported.
+  std::vector<std::string>
+  read_unique_identifiers(Name name, const std::string& item_meaning);
 
   // Parse distributions specifications.
   // Every given string is one distribution, specified either as:
