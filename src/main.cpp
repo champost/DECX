@@ -71,6 +71,99 @@ int main(int argc, char* argv[]){
   }
   ConfigChecker config{&parsed};
 
+  //============================================================================
+  // The input parameters file has been refreshed below with TOML format,
+  // the idea was to improve file structure and error handling
+  // without touching the original code below.
+  // So, while the parse procedure is refreshed,
+  // the data structures used later in the program are left as-is.
+
+  // Input files table. --------------------------------------------------------
+  config.into_table("input_files");
+
+  const std::string treefile{config.require_file("tree")};
+  const std::string datafile{config.require_file("data")};
+  const std::string adjacencyfile{config.require_file("adjacency")};
+  const std::optional<std::string> rate_matrix_file{
+      config.seek_file("rate_matrix")};
+
+  // Parameters table ----------------------------------------------------------
+  config.step_up();
+  config.into_table("parameters");
+  AncestralState ancestral_states{config.read_ancestral_state()};
+  ReportType report_type(config.read_report_type());
+  const bool classic_vicariance{config.require_bool("classic_vicariance")};
+  const bool rapid_anagenesis{config.require_bool("rapid_anagenesis")};
+  std::vector<double> periods{config.read_periods()};
+
+  // Geographical parameters ---------------------------------------------------
+  config.step_up();
+  config.into_table("areas");
+  std::vector<std::string> area_names{
+      config.read_unique_identifiers("names", "Area")};
+
+  int max_areas{1};
+  std::vector<std::vector<int>> includedists;
+  std::vector<std::vector<int>> excludedists;
+  if (config.into_optional_table("distributions")) {
+    std::string constraint_spec{config.seek_string_or("constraint", "include")};
+    if (constraint_spec == "exclude") {
+      std::cerr << "The feature `constraint = \"exclude\"` is not "
+                   "supported by DECX anymore."
+                << std::endl;
+      config.source_and_exit();
+    } else if (constraint_spec != "include") {
+      std::cerr << "Invalid distribution constraint: \"" << constraint_spec
+                << "\". Valid constraints are: \"include\" and \"exclude\"."
+                << std::endl;
+      config.source_and_exit();
+    }
+    const auto& max_spec{config.seek_integer("max")};
+    if (max_spec.has_value()) {
+      if (config.has_node("set")) {
+        std::cerr << "Incompatible distributions specification: "
+                  << "'max' and 'set' cannot be both given." << std::endl;
+        config.source_and_exit();
+      }
+      max_areas = max_spec.value();
+    } else {
+      includedists = config.read_distributions("set", area_names);
+    }
+    config.step_up();
+  }
+
+  config.step_up();
+
+  // MRCA specifications -------------------------------------------------------
+
+  // Read mrca data: Name ↦ species
+  std::map<std::string, std::vector<std::string>> mrcas;
+  // Fixed nodes: Name ↦ distribution
+  std::map<std::string, std::vector<int>> fixnodewithmrca;
+  // Fossil MRCA seem organized differently.
+  std::vector<std::string> fossilmrca; // name
+  std::vector<std::string> fossiltype; // 'N'/'n' or 'B'/'b'
+  std::vector<std::string> fossilarea; // distribution
+  // "0's for N type and # for B type" according to original comment.
+  std::vector<double> fossilage;
+  config.read_mrcas(mrcas,
+                    fixnodewithmrca,
+                    fossilmrca,
+                    fossiltype,
+                    fossilarea,
+                    fossilage,
+                    area_names);
+
+  // Output settings -----------------------------------------------------------
+
+  // Output files suffix.
+  config.into_table("output");
+  const std::string fileTag{config.require_string("file_tag")};
+  //============================================================================
+
+  // The following variables have been kept from original code,
+  // just not to break it.
+
 		string logfile;
 		string truestatesfile;
 		vector<vector<vector<int> > > exdists_per_period;
@@ -118,157 +211,11 @@ int main(int argc, char* argv[]){
 
 		BioGeoTreeTools tt;
 
-  // The input parameters file has been refreshed below with TOML format,
-  // the idea was to improve file structure and error handling
-  // without touching the original code below.
-  // So, while the parse procedure is refreshed,
-  // the data structures used later in the program are left as-is.
-
-  // Input files table. --------------------------------------------------------
-  config.into_table("input_files");
-
-  const std::string treefile{config.require_file("tree")};
-  const std::string datafile{config.require_file("data")};
-  const std::string adjacencyfile{config.require_file("adjacency")};
-  const std::optional<std::string> rate_matrix_file{
-      config.seek_file("rate_matrix")};
-
-  std::cout << "treefile: " << treefile << std::endl;
-  std::cout << "datafile: " << datafile << std::endl;
-  std::cout << "adjacencyfile: " << adjacencyfile << std::endl;
-  std::cout << "rate_matrix_file: " << rate_matrix_file.has_value() << std::endl;
-
-  // Parameters table ----------------------------------------------------------
-  config.step_up();
-  config.into_table("parameters");
-  AncestralState ancestral_states{config.read_ancestral_state()};
-  ReportType report_type(config.read_report_type());
-  const bool classic_vicariance{config.require_bool("classic_vicariance")};
-  const bool rapid_anagenesis{config.require_bool("rapid_anagenesis")};
-  std::vector<double> periods{config.read_periods()};
-
-  // Geographical parameters ---------------------------------------------------
-  config.step_up();
-  config.into_table("areas");
-  std::vector<std::string> area_names{
-      config.read_unique_identifiers("names", "Area")};
-
-  int max_areas{1};
-  std::vector<std::vector<int>> includedists;
-  std::vector<std::vector<int>> excludedists;
-  if (config.into_optional_table("distributions")) {
-    std::string constraint_spec{config.seek_string_or("constraint", "include")};
-    if (constraint_spec == "exclude") {
-      std::cerr << "The feature `constraint = \"exclude\"` is not "
-                   "supported by DECX anymore."
-                << std::endl;
-      config.source_and_exit();
-    } else if (constraint_spec != "include") {
-      std::cerr << "Invalid distribution constraint: \"" << constraint_spec
-                << "\". Valid constraints are: \"include\" and \"exclude\"."
-                << std::endl;
-      config.source_and_exit();
-    }
-    const auto& max_spec{config.seek_integer("max")};
-    if (max_spec.has_value()) {
-      if (config.has_node("set")) {
-        std::cerr << "Incompatible distributions specification: "
-                  << "'max' and 'set' cannot be both given." << std::endl;
-        config.source_and_exit();
-      }
-      max_areas = max_spec.value();
-    } else {
-      includedists = config.read_distributions("set", area_names);
-    }
-    config.step_up();
-  }
-
-  if (max_areas > 1) {
-    std::cout << "max_areas: " << max_areas << std::endl;
-  } else if (!includedists.empty()) {
-    for (const auto& dist : includedists) {
-      std::cout << "Distribution:";
-      for (const int i : dist) {
-        std::cout << " " << i;
-      }
-      std::cout << std::endl;
-    }
-  }
-
-  config.step_up();
-  // Read mrca data: Name ↦ species
-  std::map<std::string, std::vector<std::string>> mrcas;
-  // Fixed nodes: Name ↦ distribution
-  std::map<std::string, std::vector<int>> fixnodewithmrca;
-  // Fossil MRCA seem organized differently.
-  std::vector<std::string> fossilmrca; // name
-  std::vector<std::string> fossiltype; // 'N'/'n' or 'B'/'b'
-  std::vector<std::string> fossilarea; // distribution
-  // "0's for N type and # for B type" according to original comment.
-  std::vector<double> fossilage;
-  config.read_mrcas(mrcas,
-                    fixnodewithmrca,
-                    fossilmrca,
-                    fossiltype,
-                    fossilarea,
-                    fossilage,
-                    area_names);
-
-  std::cout << "MRCAs:";
-  for (const auto& pair : mrcas) {
-    const auto& k{pair.first};
-    const auto& v{pair.second};
-    std::cout << " " << k << " ↦ (";
-    for (const auto& i : v) {
-      std::cout << i << " ";
-    }
-    std::cout << ")";
-  }
-  std::cout << std::endl;
-
-  std::cout << "fixnodewithmrca: ";
-  for (const auto& pair : fixnodewithmrca) {
-    const auto& k{pair.first};
-    const auto& v{pair.second};
-    std::cout << " " << k << " ↦ (";
-    for (const auto& i : v) {
-      std::cout << i << " ";
-    }
-    std::cout << ")";
-  }
-  std::cout << std::endl;
-
-  std::cout << "fossilmrca:";
-  for (const auto& i : fossilmrca) {
-    std::cout << " " << i;
-  }
-  std::cout << std::endl;
-
-  std::cout << "fossiltype:";
-  for (const auto& i : fossiltype) {
-    std::cout << " " << i;
-  }
-  std::cout << std::endl;
-
-  std::cout << "fossilarea:";
-  for (const auto& i : fossilarea) {
-    std::cout << " " << i;
-  }
-  std::cout << std::endl;
-
-  std::cout << "fossilage:";
-  for (const auto& i : fossilage) {
-    std::cout << " " << i;
-  }
-  std::cout << std::endl;
-
-  // Eventually, retrieve the output files suffix.
-  config.into_table("output");
-  const std::string fileTag{config.require_string("file_tag")};
-  std::cout << "fileTag: " << fileTag << std::endl;
-
-  std::cout << "Only highjacked to this point for now, exiting." << std::endl;
-  exit(0);
+  //============================================================================
+  // The code below for legacy input file format parsing
+  // is kept as raw (archeo-)documentation,
+  // but is not executed anymore.
+  if (false) {
 
 		/*************
 		 * read the configuration file
@@ -407,6 +354,9 @@ int main(int argc, char* argv[]){
 		/*****************
 		 * finish reading the configuration file
 		 *****************/
+  }
+  //============================================================================
+
 		/*
 		 * after reading the input file
 		 */
