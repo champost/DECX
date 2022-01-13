@@ -72,7 +72,6 @@ int main(int argc, char* argv[]){
   ConfigChecker config{&parsed};
 
 		string logfile;
-		string fileTag;
 		string truestatesfile;
 		vector<vector<vector<int> > > exdists_per_period;
 		vector<vector<vector<bool> > > adjMat;
@@ -263,6 +262,10 @@ int main(int argc, char* argv[]){
   }
   std::cout << std::endl;
 
+  // Eventually, retrieve the output files suffix.
+  config.into_table("output");
+  const std::string fileTag{config.require_string("file_tag")};
+  std::cout << "fileTag: " << fileTag << std::endl;
 
   std::cout << "Only highjacked to this point for now, exiting." << std::endl;
   exit(0);
@@ -282,9 +285,7 @@ int main(int argc, char* argv[]){
 					for(unsigned int j=0;j<tokens.size();j++){
 						TrimSpaces(tokens[j]);
 					}
-					if(!strcmp(tokens[0].c_str(),  "fileTag")){
-						fileTag = tokens[1];
-					}else if(!strcmp(tokens[0].c_str(),  "likelihoodfile")){
+					if(!strcmp(tokens[0].c_str(),  "likelihoodfile")){
 						LHOODS = true;
 					}else if(!strcmp(tokens[0].c_str(),  "nodelikelihoodfile")){
 						NodeLHOODS = true;
