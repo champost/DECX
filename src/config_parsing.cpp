@@ -233,6 +233,14 @@ ConfigChecker::read_unique_words(Name name, const std::string& item_meaning) {
       current.push_back(c);
     }
   }
+  if (!current.empty()) {
+    result.push_back(current);
+  }
+  if (result.empty()) {
+    std::cerr << "No identifiers provided";
+    std::cerr << " for " << item_meaning << "." << std::endl;
+    source_and_exit();
+  }
   return result;
 };
 
@@ -307,6 +315,17 @@ ConfigChecker::read_distribution(const toml::node& node,
     std::cerr << "Distributions cannot be empty." << std::endl;
     source_and_exit();
   }
+
+  auto unknown_area_error{[&](const std::string& word) {
+    std::cerr << "Unknown area name in distribution: '" << word << "'"
+              << " (known areas:";
+    for (const auto& area : area_names) {
+      std::cout << " '" << area << "'";
+    }
+    std::cout << ")." << std::endl;
+    source_and_exit();
+  }};
+
   // If there is only one word, it could be a binary specification.
   if (words.size() == 1) {
     const std::string& word{words.back()};
@@ -333,19 +352,14 @@ ConfigChecker::read_distribution(const toml::node& node,
                 << std::endl;
       source_and_exit();
     }
+
     if (!is_binary) {
       // Then it's a single area name.
       result.clear();
       if (index.has_value()) {
         result.push_back(index.value());
       } else {
-        std::cerr << "Unknown area name in distribution: '" << word << "'"
-                  << " (known areas:";
-        for (const auto& area : area_names) {
-          std::cout << " " << area;
-        }
-        std::cout << ")." << std::endl;
-        source_and_exit();
+        unknown_area_error(word);
       }
     } else if (word.size() != area_names.size()) {
       std::cerr << "Invalid binary specification of a distribution: '" << word
@@ -360,13 +374,7 @@ ConfigChecker::read_distribution(const toml::node& node,
       if (index.has_value()) {
         result.push_back(index.value());
       } else {
-        std::cerr << "Unknown area name in distribution: '" << word << "'"
-                  << "(known areas:";
-        for (const auto& area : area_names) {
-          std::cout << " " << area;
-        }
-        std::cout << ")." << std::endl;
-        source_and_exit();
+        unknown_area_error(word);
       }
     }
   }
