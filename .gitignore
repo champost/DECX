@@ -3,3 +3,6 @@ build
 
 doc/
 !doc/*.tex
+
+singularity.def
+Dockerfile
