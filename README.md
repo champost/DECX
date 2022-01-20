@@ -16,20 +16,40 @@ provided you have [Singularity] installed.
 First, build the container image as root:
 ```
 # Get definition file.
-curl https://raw.githubusercontent.com/champost/DECX/main/singularity.def \
-     > decx_singularity.def
+curl -L \
+  https://github.com/champost/DECX/releases/latest/download/singularity.def \
+  > decx_singularity.def # (or download by hand)
 
-# Build container.
+# Build image.
 sudo singularity build decx.sif decx_singularity.def
 ```
 
-Then, run the container as regular user:
+Then run the container as regular user:
 ```
-./decx.sif my_config_file.txt
+./decx.sif my_config_file.toml
 ```
-
 
 [Singularity]: https://sylabs.io/
+
+### With Docker
+
+DECX can be run from a docker container,
+provided you have [Docker] installed.
+
+First, build the container image:
+```
+# Build image from distant file.
+docker buildx build -t decx \
+  https://github.com/champost/DECX/releases/latest/download/Dockerfile
+```
+
+Then run the container:
+```
+docker run --rm -it -v ${PWD}:/home/decx decx my_config.file.toml
+```
+
+[Docker]: https://www.docker.com/
+
 
 ### From source
 
