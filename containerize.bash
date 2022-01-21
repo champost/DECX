@@ -23,7 +23,7 @@ bdeps boost           # Template lib.
 bdeps pacman-contrib  # For paccache.
 
 # Runtime dependencies.
-deps gsl lapack
+deps openblas lapack gsl
 
 #=== Construction layers =======================================================
 read -r -d '' DEPENDENCIES_LAYER <<-EOF
@@ -45,7 +45,7 @@ read -r -d '' COMPILATION_LAYER <<-'EOF'
     # Compile
     mkdir build
     cd build
-    cmake ../src
+    cmake -DCMAKE_BUILD_TYPE=Release ../src
     make -j $(nproc)
     #---------------------------------------------------------------------------
 EOF
