@@ -5,7 +5,7 @@
 // and handle errors.
 
 #include <iostream>
-#include <toml++/toml.hpp>
+#include <toml++/toml.h>
 
 namespace config {
 

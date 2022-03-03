@@ -1,31 +1,3 @@
-cmake_minimum_required(VERSION 3.9.0)
-set(CMAKE_CXX_STANDARD 17)
-
-project(decx VERSION 0.21.0 LANGUAGES C CXX Fortran)
-
-# Check C++/Fortran compatibility according to:
-# https://enccs.github.io/cmake-workshop/cxx-fortran/
-include(FortranCInterface)
-fortrancinterface_verify(CXX)
-# Some warning have turned into a hard error since gfortran > 10.
-# Ignore and compile anyway (https://forum.abinit.org/viewtopic.php?f=2&t=5205).
-set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -fallow-argument-mismatch")
-
-# Dependencies.
-find_package(GSL REQUIRED)
-find_package(Boost 1.59.0 REQUIRED)
-find_package(BLAS REQUIRED)
-find_package(LAPACK REQUIRED)
-
-
-# Release mode.
-set(CMAKE_CXX_FLAGS_RELEASE "-O3")
-set(CMAKE_Fortran_FLAGS_RELEASE "-O3")
-
-# TOML++ is not mainstream enough to have its own FindTOMLPLUSPLUS ¯\(ツ)/¯
-# Still, ensure updates with a dedicated git submodule.
-include_directories(${PROJECT_SOURCE_DIR}/deps)
-
 add_executable(
   decx main.cpp
 
@@ -40,21 +12,22 @@ add_executable(
   BioGeoTree.cpp
   BioGeoTreeTools.cpp
   BranchSegment.cpp
-  config_parsing.cpp
   InputReader.cpp
-  node.cpp
   OptimizeBioGeo.cpp
   RateMatrixUtils.cpp
   RateModel.cpp
+  Utils.cpp
+  config_parsing.cpp
+  node.cpp
   superdouble.cpp
   tree.cpp
   tree_reader.cpp
-  Utils.cpp
 )
 
 target_link_libraries(
-  decx
+  decx PRIVATE
   ${GSL_LIBRARIES}
   ${BLAS_LIBRARIES}
   ${LAPACK_LIBRARIES}
+  toml++
 )

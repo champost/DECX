@@ -45,7 +45,7 @@ read -r -d '' COMPILATION_LAYER <<-'EOF'
     # Compile
     mkdir build
     cd build
-    cmake -DCMAKE_BUILD_TYPE=Release ../src
+    cmake -DCMAKE_BUILD_TYPE=Release ..
     make -j $(nproc)
     #---------------------------------------------------------------------------
 EOF

@@ -6,3 +6,6 @@ doc/
 
 singularity.def
 Dockerfile
+
+# clang files.
+.cache
