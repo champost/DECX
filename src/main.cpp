@@ -1017,10 +1017,12 @@ int main(int argc, char* argv[]){
 						}
 					}
 					if(report_type == ReportType::Splits && !readTrueStates){
-						if (intrees.size() > 1)
+						if (intrees.size() > 1) {
 							outTreeFile.open((treefile+fileTag+".bgsplits.tre").c_str(),ios::app);
-						else
+            }
+						else {
 							outTreeFile.open((treefile+fileTag+".bgsplits.tre").c_str(),ios::out);
+            }
 						//need to output object "split"
 						for(int j=0;j<intrees[i]->getExternalNodeCount();j++){
 							Node * currNode = intrees[i]->getExternalNode(j);

@@ -156,7 +156,7 @@ void AncestralState::set_all() {
   all = true;
 };
 
-bool AncestralState::some() { return !(all || states.empty()); };
+bool AncestralState::some() { return all || !states.empty(); };
 
 ReportType ConfigChecker::read_report_type() {
   auto string{require_string("report")};
