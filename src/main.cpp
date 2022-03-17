@@ -93,7 +93,8 @@ int main(int argc, char* argv[]){
   ReportType report_type(config.read_report_type());
   const bool classic_vicariance{
       config.seek_boolean("classic_vicariance").value_or(false)};
-  const bool rapid_anagenesis{config.require_bool("rapid_anagenesis")};
+  const bool rapid_anagenesis{
+      config.seek_boolean("rapid_anagenesis").value_or(false)};
   std::vector<double> periods{config.read_periods()};
 
   // Geographical parameters ---------------------------------------------------
