@@ -168,10 +168,17 @@ ReportType ConfigChecker::read_report_type() {
 // TODO: iterate to generate the following ones?
 std::vector<double> ConfigChecker::read_periods() {
   auto node{require_node("periods", {toml::node_type::array})};
-  check_uniform_array("periods", {toml::node_type::floating_point});
+  check_uniform_array(
+      "periods", {toml::node_type::floating_point, toml::node_type::integer});
   std::vector<double> periods{};
   for (auto& element : *node.as_array()) {
-    periods.emplace_back(*element.as_floating_point());
+    if (element.type() == toml::node_type::floating_point) {
+      periods.emplace_back(*element.as_floating_point());
+    } else if (element.type() == toml::node_type::integer) {
+      periods.emplace_back(static_cast<double>(element.as_integer()->get()));
+    } else {
+      exit(-1); // unreachable.
+    }
   }
   return periods;
 }
