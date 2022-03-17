@@ -181,9 +181,10 @@ public:
   double require_float(Name name);
   std::string require_file(Name name);
   // (couldn't manage to return a const ref to string instead)
+  std::optional<bool> seek_boolean(Name name);
+  std::optional<int> seek_integer(Name name);
   std::optional<std::string> seek_file(Name name);
   std::optional<std::string> seek_string(Name name);
-  std::optional<int> seek_integer(Name name);
   // Seek or pick default name.
   std::string seek_string_or(Name name, std::string def);
 

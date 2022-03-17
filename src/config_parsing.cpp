@@ -84,8 +84,9 @@ std::string ConfigChecker::require_file(Name name) {
     return {};                                                                 \
   };
 
-DEFINE_SEEKER(string, std::string);
+DEFINE_SEEKER(boolean, bool);
 DEFINE_SEEKER(integer, int);
+DEFINE_SEEKER(string, std::string);
 
 std::optional<std::string> ConfigChecker::seek_file(Name name) {
   const auto& filename{seek_string(name)};

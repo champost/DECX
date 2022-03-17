@@ -91,7 +91,8 @@ int main(int argc, char* argv[]){
   config.into_table("parameters");
   AncestralState ancestral_states{config.read_ancestral_state()};
   ReportType report_type(config.read_report_type());
-  const bool classic_vicariance{config.require_bool("classic_vicariance")};
+  const bool classic_vicariance{
+      config.seek_boolean("classic_vicariance").value_or(false)};
   const bool rapid_anagenesis{config.require_bool("rapid_anagenesis")};
   std::vector<double> periods{config.read_periods()};
 
