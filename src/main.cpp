@@ -82,7 +82,7 @@ int main(int argc, char* argv[]){
 
   const std::string treefile{config.require_file("tree")};
   const std::string datafile{config.require_file("data")};
-  const std::string adjacencyfile{config.require_file("adjacency")};
+  const std::string adjacencyfile{config.seek_file("adjacency").value_or("")};
   const std::optional<std::string> rate_matrix_file{
       config.seek_file("rate_matrix")};
 
