@@ -185,8 +185,6 @@ public:
   std::optional<int> seek_integer(Name name);
   std::optional<std::string> seek_file(Name name);
   std::optional<std::string> seek_string(Name name);
-  // Seek or pick default name.
-  std::string seek_string_or(Name name, std::string def);
 
   //---------------------------------------------------------------------------
   // More sophisticated parameters.

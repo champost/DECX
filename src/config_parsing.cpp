@@ -97,14 +97,6 @@ std::optional<std::string> ConfigChecker::seek_file(Name name) {
   return {};
 };
 
-std::string ConfigChecker::seek_string_or(Name name, std::string def) {
-  const auto& node{seek_node(name, {toml::node_type::string})};
-  if (node.has_value()) {
-    return node.value().as_string()->get();
-  }
-  return def;
-};
-
 // Display context.
 std::ostream& operator<<(std::ostream& out, const Context& c) {
   switch (c.size()) {

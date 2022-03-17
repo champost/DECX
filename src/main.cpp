@@ -106,7 +106,8 @@ int main(int argc, char* argv[]){
   std::vector<std::vector<int>> includedists;
   std::vector<std::vector<int>> excludedists;
   if (config.into_optional_table("distributions")) {
-    std::string constraint_spec{config.seek_string_or("constraint", "include")};
+    std::string constraint_spec{
+        config.seek_string("constraint").value_or("include")};
     if (constraint_spec == "exclude") {
       std::cerr << "The feature `constraint = \"exclude\"` is not "
                    "supported by DECX anymore."
