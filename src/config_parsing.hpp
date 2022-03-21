@@ -50,12 +50,22 @@ using Name = const std::string&; // Refer to a parameter name.
 // and dropped with the reader.
 struct Node {
   View data;
-  std::string name;
+  std::optional<std::string> name;
   std::optional<Node*> parent;
 
   Node(View d, std::string n, std::optional<Node*> p) :
       data(d), name(n), parent(p) {}
+
+  // Collect all nodes names back to the root
+  // (root is last and elided because it is unnamed).
+  std::vector<std::string> hierarchy() const;
 };
+
+// Stream all named nodes back to the root.
+struct ColonHierarchy {
+  Node* node;
+};
+std::ostream& operator<<(std::ostream& out, const ColonHierarchy& d);
 
 // Match node type against several ones.
 template <std::size_t N>
@@ -91,7 +101,7 @@ public:
 
   // Get focal node sources.
   const toml::source_region& focal_source() const;
-  void source_and_exit() const;
+  [[noreturn]] void source_and_exit() const;
 
   // Check focal node type.
   template <std::size_t N>

@@ -35,12 +35,46 @@ Reader::~Reader() {
 }
 // = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 
+std::vector<std::string> Node::hierarchy() const {
+  std::vector<std::string> result;
+  const Node* current{this};
+  while (current->parent.has_value()) {
+    if (current->name.has_value()) {
+      result.emplace_back(*(current->name));
+      current = *current->parent;
+    }
+  }
+  return result;
+}
+
+std::ostream& operator<<(std::ostream& out, const ColonHierarchy& d) {
+  const auto h{d.node->hierarchy()};
+  switch (h.size()) {
+  case 0:
+    out << "root table";
+    break;
+  case 1:
+    out << "'" << h.back() << "'";
+    break;
+  default:
+    out << "'";
+    for (size_t i{h.size() - 1}; i > 0; --i) {
+      out << h[i];
+      out << ':';
+    }
+    out << h[0];
+    out << "'";
+  }
+  return out;
+};
+
 const toml::source_region& Reader::focal_source() const {
-  return focal.node()->source();
+  return focal->data.node()->source();
 }
 
 void Reader::source_and_exit() const {
-  std::cerr << "(" << focal_source() << ")" << std::endl;
+  std::cerr << "(" << ColonHierarchy{focal} << " " << focal_source() << ")"
+            << std::endl;
   exit(1);
 }
 
