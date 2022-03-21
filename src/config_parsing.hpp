@@ -103,59 +103,46 @@ public:
   const toml::source_region& focal_source() const;
   [[noreturn]] void source_and_exit() const;
 
-  // Check focal node type.
+  // Check focal node TOML type.
+  // If wrong, errors with its source and name information.
   template <std::size_t N>
-  void check_type(Name name, Types<N> expected_types) {
-    if (!is_of_type(focal, expected_types)) {
-      std::cerr << "Configuration error: Identifier '" << name << "' of "
-                << context << " should ";
+  void check_type(Types<N> expected_types) {
+    if (!is_of_type(focal->data, expected_types)) {
+      std::cerr << "Configuration error: node should ";
       switch (N) {
       case 1:
-        std::cerr << "name a " << expected_types[0];
+        std::cerr << "be of type " << expected_types[0];
         break;
       default:
-        std::cerr << "either name a " << expected_types[0];
+        std::cerr << "either be of type " << expected_types[0];
         for (int i{1}; i < N; ++i) {
-          std::cerr << " or a " << expected_types[i];
+          std::cerr << " or " << expected_types[i];
         }
       }
-      std::cerr << " (not a " << focal.type() << ": " << focal_source() << ")."
-                << std::endl;
-      exit(1);
+      std::cerr << ", not " << focal->data.type() << ". ";
+      // Additional information in specific cases.
+      if (is_of_type(focal->data, {toml::node_type::integer}) && N == 1 &&
+          expected_types[0] == toml::node_type::floating_point) {
+        const auto& e{*focal->data.as_integer()};
+        std::cerr << "Consider writing `" << e << ".0`";
+        std::cerr << " instead of `" << e << "`. ";
+      }
+      source_and_exit();
     }
   };
 
   // Same for uniform array of that type.
+  // During this pass every value is checked in turn
+  // with element number as node name.
+  // Then the focal is reset.
   template <size_t N>
-  void check_uniform_array(Name name, Types<N> expected_types) {
-    check_type(name, {toml::node_type::array});
+  void check_uniform_array(Types<N> expected_types) {
+    check_type({toml::node_type::array});
     std::size_t i{1};
-    for (auto&& element : *focal.as_array()) {
-      if (!is_of_type((View)element, expected_types)) {
-        std::cerr << "Configuration error: element " << i;
-        std::cerr << " of array '" << name << "'";
-        std::cerr << " in " << context << " should ";
-        switch (N) {
-        case 1:
-          std::cerr << "be of type " << expected_types[0];
-          break;
-        default:
-          std::cerr << "either be of type " << expected_types[0];
-          for (int i{1}; i < N; ++i) {
-            std::cerr << " or " << expected_types[i];
-          }
-        }
-        std::cerr << " (not " << element.type() << ": " << element.source()
-                  << ")." << std::endl;
-        // Additional information in specific cases.
-        if (is_of_type((View)element, {toml::node_type::integer}) && N == 1 &&
-            expected_types[0] == toml::node_type::floating_point) {
-          const auto& e{*element.as_integer()};
-          std::cerr << "Consider writing '" << e << ".0'";
-          std::cerr << " instead of '" << e << "'." << std::endl;
-        }
-        exit(1);
-      }
+    for (auto&& element : *focal->data.as_array()) {
+      descend((View)element, std::to_string(i));
+      check_type(expected_types);
+      step_up();
       ++i;
     }
   };
