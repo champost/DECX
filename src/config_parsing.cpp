@@ -8,8 +8,8 @@ namespace config {
 // Core reader tree-logic and memory handling. = = = = = = = = = = = = = = = = =
 Reader::Reader(Table root) : focal(new Node((View)root, {}, {})){};
 
-void Reader::descend(View data, std::string name) {
-  focal = new Node(data, name, focal);
+void Reader::descend(View data, Name name) {
+  focal = new Node(data, std::string(name), focal);
 };
 
 void Reader::step_up() {

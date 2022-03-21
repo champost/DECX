@@ -29,12 +29,11 @@ enum class ReportType {
 
 // Lighten verbosity of the types used in this namespace.
 using View = toml::node_view<const toml::node>;
-using Option = std::optional<View>;
 using Type = toml::node_type;
 using Table = const toml::table*;
 template <std::size_t N> // Useful for a static collection of types.
 using Types = const Type (&)[N];
-using Name = const std::string&; // Refer to a parameter name.
+using Name = std::string_view; // Refer to a parameter name.
 
 // Use this object to scroll the TOML parsed config and check:
 // - mandatory parameters presence
@@ -89,7 +88,7 @@ class Reader {
   Node* focal;
 
   // Set focus one step down into a new subnode.
-  void descend(View data, std::string name);
+  void descend(View data, Name name);
 
 public:
   // Restore focus to parent node.
@@ -147,16 +146,29 @@ public:
     }
   };
 
-  // Look for an optional node by name, and return monadic type.
-  // If present, set it as focal.
+  // Assuming the focal node is a table,
+  // look for an optional node by name and return monadic type.
+  // If present and `descend` is true, leave it as focal.
   template <size_t N>
-  Option seek_node(Name name, Types<N> expected_types) {
-    if (!table->contains(name)) {
-      return std::nullopt;
+  std::optional<View>
+  seek_node(Name name, Types<N> expected_types, const bool descend) {
+    if (!is_of_type(focal->data, {toml::node_type::table})) {
+      std::cerr << "Error in source code: should not seek node by name "
+                   "while standing on a non-table node."
+                << std::endl;
+      exit(-1);
     }
-    focal = (*table)[name];
-    check_type(name, expected_types);
-    return focal;
+    const auto& table{focal->data.as_table()};
+    if (!table->contains(name)) {
+      return {};
+    }
+    const auto& view{(*table)[name]};
+    this->descend(view, name);
+    check_type(expected_types);
+    if (!descend) {
+      step_up();
+    }
+    return {view};
   }
 
   // Protect against missing or incorrect nodes.
