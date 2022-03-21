@@ -27,7 +27,7 @@ enum class ReportType {
   Splits,
 };
 
-// Lighten verbosity of the types used in the files.
+// Lighten verbosity of the types used in this namespace.
 using View = toml::node_view<const toml::node>;
 using Option = std::optional<View>;
 using Type = toml::node_type;
@@ -59,7 +59,7 @@ bool is_of_type(View view, Types<N> types) {
   return false;
 };
 
-class ConfigChecker {
+class Reader {
 
   Table root;
   // Currently checked node.
@@ -69,8 +69,8 @@ class ConfigChecker {
   Context context;
 
 public:
-  ConfigChecker(){};
-  ConfigChecker(Table r) : root(r), focal((View)r), table(r){};
+  Reader(){};
+  Reader(Table r) : root(r), focal((View)r), table(r){};
 
   // Get focal node sources.
   const toml::source_region& focal_source() const;

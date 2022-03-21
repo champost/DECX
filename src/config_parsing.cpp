@@ -5,18 +5,18 @@
 
 namespace config {
 
-const toml::source_region& ConfigChecker::focal_source() const {
+const toml::source_region& Reader::focal_source() const {
   return focal.node()->source();
 }
 
-void ConfigChecker::source_and_exit() const {
+void Reader::source_and_exit() const {
   std::cerr << "(" << focal_source() << ")" << std::endl;
   exit(1);
 }
 
-bool ConfigChecker::has_node(Name name) { return table->contains(name); }
+bool Reader::has_node(Name name) { return table->contains(name); }
 
-void ConfigChecker::check_file(const std::string& filename) {
+void Reader::check_file(const std::string& filename) {
   if (!std::filesystem::exists(filename)) {
     std::cerr << "Configuration error: Could not find file " << filename
               << std::endl;
@@ -24,7 +24,7 @@ void ConfigChecker::check_file(const std::string& filename) {
   }
 };
 
-void ConfigChecker::step_up() {
+void Reader::step_up() {
   if (context.empty()) {
     std::cerr << "Error in configuration parsing logic: "
               << "cannot step up root context.";
@@ -39,12 +39,12 @@ void ConfigChecker::step_up() {
   }
 };
 
-void ConfigChecker::into_table(Name table_name) {
+void Reader::into_table(Name table_name) {
   table = require_table(table_name);
   context.push_back({table_name, table});
 };
 
-bool ConfigChecker::into_optional_table(Name table_name) {
+bool Reader::into_optional_table(Name table_name) {
   const auto& table{seek_node(table_name, {toml::node_type::table})};
   if (table.has_value()) {
     into_table(table_name);
@@ -54,7 +54,7 @@ bool ConfigChecker::into_optional_table(Name table_name) {
 };
 
 #define DEFINE_REQUIRER(fnname, type, ret)                                     \
-  ret ConfigChecker::require_##fnname(Name name) {                             \
+  ret Reader::require_##fnname(Name name) {                                    \
     return require_node(name, {toml::node_type::type}).as_##type()->get();     \
   };
 
@@ -64,19 +64,19 @@ DEFINE_REQUIRER(integer, integer, int);
 DEFINE_REQUIRER(float, floating_point, double);
 
 // This one's special because there's no ->get();
-Table ConfigChecker::require_table(Name name) {
+Table Reader::require_table(Name name) {
   return require_node(name, {toml::node_type::table}).as_table();
 };
 
 // This one's special because there is the file checking.
-std::string ConfigChecker::require_file(Name name) {
+std::string Reader::require_file(Name name) {
   const auto& filename{require_string(name)};
   check_file(filename);
   return filename;
 };
 
 #define DEFINE_SEEKER(type, ret)                                               \
-  std::optional<ret> ConfigChecker::seek_##type(Name name) {                   \
+  std::optional<ret> Reader::seek_##type(Name name) {                          \
     const auto& node{seek_node(name, {toml::node_type::type})};                \
     if (node.has_value()) {                                                    \
       return {node.value().as_##type()->get()};                                \
@@ -88,7 +88,7 @@ DEFINE_SEEKER(boolean, bool);
 DEFINE_SEEKER(integer, int);
 DEFINE_SEEKER(string, std::string);
 
-std::optional<std::string> ConfigChecker::seek_file(Name name) {
+std::optional<std::string> Reader::seek_file(Name name) {
   const auto& filename{seek_string(name)};
   if (filename.has_value()) {
     check_file(filename.value());
@@ -117,7 +117,7 @@ std::ostream& operator<<(std::ostream& out, const Context& c) {
   return out;
 };
 
-AncestralState ConfigChecker::read_ancestral_state() {
+AncestralState Reader::read_ancestral_state() {
   AncestralState a{};
   // Require a node of several possible types..
   require_node("ancestral_states",
@@ -151,7 +151,7 @@ void AncestralState::set_all() {
 
 bool AncestralState::some() { return all || !states.empty(); };
 
-ReportType ConfigChecker::read_report_type() {
+ReportType Reader::read_report_type() {
   auto string{require_string("report")};
   if (string == "states") {
     return ReportType::States;
@@ -166,7 +166,7 @@ ReportType ConfigChecker::read_report_type() {
 }
 
 // TODO: iterate to generate the following ones?
-std::vector<double> ConfigChecker::read_periods() {
+std::vector<double> Reader::read_periods() {
   auto node{require_node("periods", {toml::node_type::array})};
   check_uniform_array(
       "periods", {toml::node_type::floating_point, toml::node_type::integer});
@@ -184,7 +184,7 @@ std::vector<double> ConfigChecker::read_periods() {
 }
 
 std::vector<std::string>
-ConfigChecker::read_unique_strings(Name name, const std::string& item_meaning) {
+Reader::read_unique_strings(Name name, const std::string& item_meaning) {
   auto node{require_node(name, {toml::node_type::array})};
   check_uniform_array(name, {toml::node_type::string});
   std::vector<std::string> result{};
@@ -205,7 +205,7 @@ ConfigChecker::read_unique_strings(Name name, const std::string& item_meaning) {
 }
 
 std::vector<std::string>
-ConfigChecker::read_unique_words(Name name, const std::string& item_meaning) {
+Reader::read_unique_words(Name name, const std::string& item_meaning) {
   auto words{require_string(name)};
   std::vector<std::string> result{};
   std::string current{};
@@ -245,8 +245,7 @@ ConfigChecker::read_unique_words(Name name, const std::string& item_meaning) {
 };
 
 std::vector<std::string>
-ConfigChecker::read_unique_identifiers(Name name,
-                                       const std::string& item_meaning) {
+Reader::read_unique_identifiers(Name name, const std::string& item_meaning) {
   const auto node{
       require_node(name, {toml::node_type::array, toml::node_type::string})};
   if (node.type() == toml::node_type::string) {
@@ -256,8 +255,8 @@ ConfigChecker::read_unique_identifiers(Name name,
 }
 
 std::vector<std::vector<int>>
-ConfigChecker::read_distributions(Name name,
-                                  const std::vector<std::string>& area_names) {
+Reader::read_distributions(Name name,
+                           const std::vector<std::string>& area_names) {
   auto node{require_node(name, {toml::node_type::array})};
   check_uniform_array(name, {toml::node_type::string});
   std::vector<std::vector<int>> distributions;
@@ -268,8 +267,8 @@ ConfigChecker::read_distributions(Name name,
 }
 
 std::vector<int>
-ConfigChecker::read_distribution(const toml::node& node,
-                                 const std::vector<std::string>& area_names) {
+Reader::read_distribution(const toml::node& node,
+                          const std::vector<std::string>& area_names) {
   focal = toml::node_view(node);
   if (node.type() != toml::node_type::string) {
     std::cerr << "Distribution should be specified as a string, not "
@@ -381,9 +380,8 @@ ConfigChecker::read_distribution(const toml::node& node,
   return result;
 }
 
-std::string
-ConfigChecker::read_area(Name name,
-                         const std::vector<std::string>& area_names) {
+std::string Reader::read_area(Name name,
+                              const std::vector<std::string>& area_names) {
   const std::string area{require_string(name)};
   // Check that the area name is known.
   bool found{false};
@@ -400,14 +398,13 @@ ConfigChecker::read_area(Name name,
   return area;
 };
 
-void ConfigChecker::read_mrcas(
-    std::map<std::string, std::vector<std::string>>& mrcas,
-    std::map<std::string, std::vector<int>>& fixnodes,
-    std::vector<std::string>& fossilnames,
-    std::vector<std::string>& fossiltypes,
-    std::vector<std::string>& fossilareas,
-    std::vector<double>& fossilages,
-    const std::vector<std::string>& area_names) {
+void Reader::read_mrcas(std::map<std::string, std::vector<std::string>>& mrcas,
+                        std::map<std::string, std::vector<int>>& fixnodes,
+                        std::vector<std::string>& fossilnames,
+                        std::vector<std::string>& fossiltypes,
+                        std::vector<std::string>& fossilareas,
+                        std::vector<double>& fossilages,
+                        const std::vector<std::string>& area_names) {
 
   // It may be that none is given.
   if (!into_optional_table("mrca")) {

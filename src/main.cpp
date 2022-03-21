@@ -68,7 +68,7 @@ int main(int argc, char* argv[]){
     std::cerr << "  " << err << std::endl;
     exit(2);
   }
-  ConfigChecker config{&parsed};
+  Reader config{&parsed};
 
   //============================================================================
   // The input parameters file has been refreshed below with TOML format,
