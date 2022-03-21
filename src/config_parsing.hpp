@@ -42,10 +42,20 @@ using Name = const std::string&; // Refer to a parameter name.
 // - files existence
 // .. but *not* logical interaction between parameters values,
 // deferred to later logic.
-// Context to keep track of nested visited tables
-// and produce more informative error messages.
-using Context = std::vector<std::pair<std::string, Table>>;
-std::ostream& operator<<(std::ostream& out, const Context& c);
+
+// TOML++ nodes seem not to know their parent,
+// but parents help much in constructing helpful error messages.
+// The corresponding tree is constructed and navigated
+// during execution of the reader's methods,
+// and dropped with the reader.
+struct Node {
+  View data;
+  std::string name;
+  std::optional<Node*> parent;
+
+  Node(View d, std::string n, std::optional<Node*> p) :
+      data(d), name(n), parent(p) {}
+};
 
 // Match node type against several ones.
 template <std::size_t N>
@@ -61,14 +71,20 @@ bool is_of_type(View view, Types<N> types) {
 
 class Reader {
 
-  Table root;
-  // Currently checked node.
-  View focal;
-  // Currently visited table and its context.
-  Table table;
-  Context context;
+  // Try something: any method call is responsible
+  // for setting this node to the correct location
+  // before termination.
+  // Any *public* method call is responsible
+  // for setting it to a user-facing *table*.
+  Node* focal;
+
+  // Set focus one step down into a new subnode.
+  void descend(View data, std::string name);
 
 public:
+  // Restore focus to parent node.
+  void step_up();
+
   Reader(){};
   Reader(Table r) : root(r), focal((View)r), table(r){};
 
@@ -169,9 +185,6 @@ public:
   // Same with non-required table.
   // Returns true if the table is present. Don't forget to step up then.
   bool into_optional_table(Name table_name);
-
-  // Take one step back up the context hierarchy.
-  void step_up();
 
   // Boilerplate type-specific cases.
   Table require_table(Name name);

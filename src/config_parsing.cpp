@@ -5,6 +5,22 @@
 
 namespace config {
 
+void Reader::descend(View data, std::string name) {
+  focal = new Node(data, name, focal);
+};
+
+void Reader::step_up() {
+  if (!focal->parent.has_value()) {
+    std::cerr << "Error in configuration parsing logic: "
+              << "cannot step up root context.";
+    exit(-1);
+  }
+  // Deallocate the node we are leaving.
+  const auto left{focal};
+  focal = *left->parent;
+  delete left;
+};
+
 const toml::source_region& Reader::focal_source() const {
   return focal.node()->source();
 }
@@ -21,21 +37,6 @@ void Reader::check_file(const std::string& filename) {
     std::cerr << "Configuration error: Could not find file " << filename
               << std::endl;
     source_and_exit();
-  }
-};
-
-void Reader::step_up() {
-  if (context.empty()) {
-    std::cerr << "Error in configuration parsing logic: "
-              << "cannot step up root context.";
-    exit(-1);
-  }
-  context.pop_back();
-  if (context.empty()) {
-    // We've stepped back to config file root.
-    table = root;
-  } else {
-    table = context.back().second;
   }
 };
 
@@ -95,26 +96,6 @@ std::optional<std::string> Reader::seek_file(Name name) {
     return filename;
   }
   return {};
-};
-
-// Display context.
-std::ostream& operator<<(std::ostream& out, const Context& c) {
-  switch (c.size()) {
-  case 0:
-    out << "root table";
-    break;
-  case 1:
-    out << "table '" << c[0].first << '\'';
-    break;
-  default:
-    out << "table '" << c[0].first;
-    for (int i{1}; i < c.size(); ++i) {
-      out << ':';
-      out << c[i].first;
-    }
-    out << "'";
-  }
-  return out;
 };
 
 AncestralState Reader::read_ancestral_state() {
