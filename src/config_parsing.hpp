@@ -86,7 +86,8 @@ public:
   void step_up();
 
   Reader(){};
-  Reader(Table r) : root(r), focal((View)r), table(r){};
+  Reader(Table root);
+  ~Reader();
 
   // Get focal node sources.
   const toml::source_region& focal_source() const;

@@ -5,6 +5,9 @@
 
 namespace config {
 
+// Core reader tree-logic and memory handling. = = = = = = = = = = = = = = = = =
+Reader::Reader(Table root) : focal(new Node((View)root, {}, {})){};
+
 void Reader::descend(View data, std::string name) {
   focal = new Node(data, name, focal);
 };
@@ -20,6 +23,17 @@ void Reader::step_up() {
   focal = *left->parent;
   delete left;
 };
+
+Reader::~Reader() {
+  if (focal->parent.has_value()) {
+    std::cerr << "Error in configuration parsing logic: "
+              << "destroying config reader before it reached back to root."
+              << std::endl;
+    exit(-1);
+  }
+  delete focal;
+}
+// = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 
 const toml::source_region& Reader::focal_source() const {
   return focal.node()->source();
