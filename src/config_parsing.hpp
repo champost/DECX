@@ -171,17 +171,16 @@ public:
     return {view};
   }
 
-  // Protect against missing or incorrect nodes.
+  // Same, but exit if the node cannot be found.
   template <size_t N>
-  View require_node(Name name, Types<N> expected_types) {
-    const auto& option{seek_node(name, expected_types)};
-    if (!option.has_value()) {
-      std::cerr << "Configuration error: parameter '" << name
-                << "' is required, but not given in " << context << " ("
-                << table->source() << ")." << std::endl;
-      exit(1);
+  View require_node(Name name, Types<N> expected_types, const bool descend) {
+    const auto& option{seek_node(name, expected_types, descend)};
+    if (option.has_value()) {
+      return *option;
     }
-    return focal;
+    std::cerr << "Configuration error: "
+              << "'" << name << "' is required, but not given. ";
+    source_and_exit();
   }
 
   // Just check for node presence.
