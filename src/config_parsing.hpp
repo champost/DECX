@@ -183,7 +183,8 @@ public:
     source_and_exit();
   }
 
-  // Just check for node presence.
+  // Assuming the focal node is a table,
+  // just check for subnode existence.
   bool has_node(Name name);
 
   // Raise error with current node info if file does not exist.

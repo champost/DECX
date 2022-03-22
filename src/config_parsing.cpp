@@ -78,7 +78,9 @@ void Reader::source_and_exit() const {
   exit(1);
 }
 
-bool Reader::has_node(Name name) { return table->contains(name); }
+bool Reader::has_node(Name name) {
+  return focal->data.as_table()->contains(name);
+}
 
 void Reader::check_file(const std::string& filename) {
   if (!std::filesystem::exists(filename)) {
