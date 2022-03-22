@@ -155,27 +155,29 @@ std::optional<Table> Reader::seek_table(Name name, const bool descend) {
 AncestralState Reader::read_ancestral_state() {
   AncestralState a{};
   // Require a node of several possible types..
-  require_node("ancestral_states",
-               {toml::node_type::array,
-                toml::node_type::boolean,
-                toml::node_type::string});
+  auto node{require_node("ancestral_states",
+                         {toml::node_type::array,
+                          toml::node_type::boolean,
+                          toml::node_type::string},
+                         true)};
   // Construct the value depending on the node type.
-  switch (focal.type()) {
+  switch (node.type()) {
   case toml::node_type::array:
-    check_uniform_array("ancestral_states", {toml::node_type::string});
-    for (auto& element : *focal.as_array()) {
+    check_uniform_array({toml::node_type::string});
+    for (auto& element : *node.as_array()) {
       a.states.emplace_back(*element.as_string());
     }
     break;
   case toml::node_type::boolean:
-    a.all = focal.as_boolean()->get();
+    a.all = node.as_boolean()->get();
     break;
   case toml::node_type::string:
-    a.states.emplace_back(focal.as_string()->get());
+    a.states.emplace_back(node.as_string()->get());
     break;
   default: // Alternate types have already been ruled out.
     break;
   }
+  step_up();
   return a;
 };
 
