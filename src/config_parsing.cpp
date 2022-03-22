@@ -249,7 +249,7 @@ Reader::read_unique_strings(Name name, const std::string_view item_meaning) {
 
 std::vector<std::string>
 Reader::read_unique_words(Name name, const std::string& item_meaning) {
-  auto words{require_string(name)};
+  auto words{require_string(name, true)};
   std::vector<std::string> result{};
   std::string current{};
   bool next{true};
@@ -284,6 +284,7 @@ Reader::read_unique_words(Name name, const std::string& item_meaning) {
     std::cerr << " for " << item_meaning << "." << std::endl;
     source_and_exit();
   }
+  step_up();
   return result;
 };
 

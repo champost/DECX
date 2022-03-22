@@ -219,8 +219,7 @@ public:
   // (item_meaning is used to make error message more informative).
   std::vector<std::string>
   read_unique_strings(Name name, const std::string_view item_meaning);
-
-  // Same principle as above, but with space-separated words,
+  // Same principle but with space-separated words,
   // so the user can type "A B C" instead of ["A", "B", "C"].
   // Multiple/prefix/trailing spaces are allowed.
   std::vector<std::string> read_unique_words(Name name,
