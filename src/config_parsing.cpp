@@ -82,10 +82,10 @@ bool Reader::has_node(Name name) {
   return focal->data.as_table()->contains(name);
 }
 
-void Reader::check_file(const std::string& filename) {
+void Reader::check_file(Name filename) {
   if (!std::filesystem::exists(filename)) {
-    std::cerr << "Configuration error: Could not find file " << filename
-              << std::endl;
+    std::cerr << "Configuration error: "
+              << "Could not find file '" << filename << "'. " << std::endl;
     source_and_exit();
   }
 };

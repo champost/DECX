@@ -187,7 +187,7 @@ public:
   // just check for subnode existence.
   bool has_node(Name name);
 
-  // Raise error with current node info if file does not exist.
+  // Error with focal info if file does not exist.
   void check_file(Name filename);
 
   // Get next required table, update context.
