@@ -290,8 +290,8 @@ Reader::read_unique_words(Name name, const std::string& item_meaning) {
 
 std::vector<std::string>
 Reader::read_unique_identifiers(Name name, const std::string& item_meaning) {
-  const auto node{
-      require_node(name, {toml::node_type::array, toml::node_type::string})};
+  const auto node{require_node(
+      name, {toml::node_type::array, toml::node_type::string}, false)};
   if (node.type() == toml::node_type::string) {
     return read_unique_words(name, item_meaning);
   }
