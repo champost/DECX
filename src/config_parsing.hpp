@@ -190,13 +190,15 @@ public:
   // Error with focal info if file does not exist.
   void check_file(Name filename);
 
-  // Boilerplate type-specific cases.
-  Table require_table(Name name);
-  std::string require_string(Name name);
-  bool require_bool(Name name);
-  int require_integer(Name name);
-  double require_float(Name name);
-  std::string require_file(Name name);
+  // Boilerplate type-specific cases.  = = = = = = = = = = = =
+  bool require_bool(Name name, const bool descend);
+  std::string require_file(Name name, const bool descend);
+  double require_float(Name name, const bool descend);
+  int require_integer(Name name, const bool descend);
+  std::string require_string(Name name, const bool descend);
+  Table require_table(Name name, const bool descend);
+  // = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+
   // (couldn't manage to return a const ref to string instead)
   std::optional<bool> seek_boolean(Name name);
   std::optional<int> seek_integer(Name name);

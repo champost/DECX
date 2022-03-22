@@ -91,25 +91,31 @@ void Reader::check_file(Name filename) {
 };
 
 #define DEFINE_REQUIRER(fnname, type, ret)                                     \
-  ret Reader::require_##fnname(Name name) {                                    \
-    return require_node(name, {toml::node_type::type}).as_##type()->get();     \
+  ret Reader::require_##fnname(Name name, const bool descend) {                \
+    return require_node(name, {toml::node_type::type}, descend)                \
+        .as_##type()                                                           \
+        ->get();                                                               \
   };
 
-DEFINE_REQUIRER(string, string, std::string);
 DEFINE_REQUIRER(bool, boolean, bool);
-DEFINE_REQUIRER(integer, integer, int);
 DEFINE_REQUIRER(float, floating_point, double);
-
-// This one's special because there's no ->get();
-Table Reader::require_table(Name name) {
-  return require_node(name, {toml::node_type::table}).as_table();
-};
+DEFINE_REQUIRER(integer, integer, int);
+DEFINE_REQUIRER(string, string, std::string);
 
 // This one's special because there is the file checking.
-std::string Reader::require_file(Name name) {
-  const auto& filename{require_string(name)};
+std::string Reader::require_file(Name name, const bool descend) {
+  // Always descend to get correct error messages about file..
+  const auto& filename{require_string(name, true)};
   check_file(filename);
+  // .. but restore if needed.
+  if (!descend) {
+    step_up();
+  }
   return filename;
+};
+
+Table Reader::require_table(Name name, const bool descend) {
+  return require_node(name, {toml::node_type::table}, descend).as_table();
 };
 
 #define DEFINE_SEEKER(type, ret)                                               \
