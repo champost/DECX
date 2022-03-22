@@ -199,11 +199,14 @@ public:
   Table require_table(Name name, const bool descend);
   // = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 
-  // (couldn't manage to return a const ref to string instead)
-  std::optional<bool> seek_boolean(Name name);
-  std::optional<int> seek_integer(Name name);
-  std::optional<std::string> seek_file(Name name);
-  std::optional<std::string> seek_string(Name name);
+  // Same logic with optional nodes. = = = = = = = = = = = = =
+  std::optional<bool> seek_bool(Name name, const bool descend);
+  std::optional<std::string> seek_file(Name name, const bool descend);
+  std::optional<double> seek_float(Name name, const bool descend);
+  std::optional<int> seek_integer(Name name, const bool descend);
+  std::optional<std::string> seek_string(Name name, const bool descend);
+  std::optional<Table> seek_table(Name name, const bool descend);
+  // = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 
   //---------------------------------------------------------------------------
   // More sophisticated parameters.

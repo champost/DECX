@@ -118,24 +118,36 @@ Table Reader::require_table(Name name, const bool descend) {
   return require_node(name, {toml::node_type::table}, descend).as_table();
 };
 
-#define DEFINE_SEEKER(type, ret)                                               \
-  std::optional<ret> Reader::seek_##type(Name name) {                          \
-    const auto& node{seek_node(name, {toml::node_type::type})};                \
+#define DEFINE_SEEKER(fnname, type, ret)                                       \
+  std::optional<ret> Reader::seek_##fnname(Name name, const bool descend) {    \
+    const auto& node{seek_node(name, {toml::node_type::type}, descend)};       \
     if (node.has_value()) {                                                    \
-      return {node.value().as_##type()->get()};                                \
+      return {node->as_##type()->get()};                                       \
     }                                                                          \
     return {};                                                                 \
   };
 
-DEFINE_SEEKER(boolean, bool);
-DEFINE_SEEKER(integer, int);
-DEFINE_SEEKER(string, std::string);
+DEFINE_SEEKER(bool, boolean, bool);
+DEFINE_SEEKER(float, floating_point, double);
+DEFINE_SEEKER(integer, integer, int);
+DEFINE_SEEKER(string, string, std::string);
 
-std::optional<std::string> Reader::seek_file(Name name) {
-  const auto& filename{seek_string(name)};
+std::optional<std::string> Reader::seek_file(Name name, const bool descend) {
+  const auto& filename{seek_string(name, true)};
   if (filename.has_value()) {
-    check_file(filename.value());
+    check_file(*filename);
+    if (!descend) {
+      step_up();
+    }
     return filename;
+  }
+  return {};
+};
+
+std::optional<Table> Reader::seek_table(Name name, const bool descend) {
+  auto node{seek_node(name, {toml::node_type::table}, descend)};
+  if (node.has_value()) {
+    return {node->as_table()};
   }
   return {};
 };
