@@ -429,7 +429,7 @@ Reader::read_distribution(const std::vector<std::string>& area_names) {
 
 std::string Reader::read_area(Name name,
                               const std::vector<std::string>& area_names) {
-  const std::string area{require_string(name)};
+  const std::string area{require_string(name, true)};
   // Check that the area name is known.
   bool found{false};
   for (const auto& known : area_names) {
@@ -439,9 +439,10 @@ std::string Reader::read_area(Name name,
     }
   }
   if (!found) {
-    std::cerr << "Unknown area '" << area << "' provided.";
+    std::cerr << "Unknown area '" << area << "' provided. ";
     source_and_exit();
   }
+  step_up();
   return area;
 };
 
