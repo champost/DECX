@@ -223,12 +223,13 @@ std::vector<double> Reader::read_periods() {
 }
 
 std::vector<std::string>
-Reader::read_unique_strings(Name name, const std::string& item_meaning) {
-  auto node{require_node(name, {toml::node_type::array})};
-  check_uniform_array(name, {toml::node_type::string});
+Reader::read_unique_strings(Name name, const std::string_view item_meaning) {
+  auto node{require_node(name, {toml::node_type::array}, true)};
+  check_uniform_array({toml::node_type::string});
   std::vector<std::string> result{};
+  size_t i{1};
   for (const auto& element : *node.as_array()) {
-    focal = toml::node_view(element);
+    descend((View)element, std::to_string(i));
     // Bruteforce check that no duplicate has been given.
     const std::string item{*element.as_string()};
     for (const auto& given : result) {
@@ -239,7 +240,10 @@ Reader::read_unique_strings(Name name, const std::string& item_meaning) {
       }
     }
     result.emplace_back(item);
+    step_up();
+    ++i;
   }
+  step_up();
   return result;
 }
 

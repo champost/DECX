@@ -215,10 +215,11 @@ public:
 
   // Read uniform array types.
   std::vector<double> read_periods();
-  // + check for unicity.
+  // Read + check for unicity.
   // (item_meaning is used to make error message more informative).
-  std::vector<std::string> read_unique_strings(Name name,
-                                               const std::string& item_meaning);
+  std::vector<std::string>
+  read_unique_strings(Name name, const std::string_view item_meaning);
+
   // Same principle as above, but with space-separated words,
   // so the user can type "A B C" instead of ["A", "B", "C"].
   // Multiple/prefix/trailing spaces are allowed.
