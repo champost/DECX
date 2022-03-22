@@ -189,17 +189,19 @@ void AncestralState::set_all() {
 bool AncestralState::some() { return all || !states.empty(); };
 
 ReportType Reader::read_report_type() {
-  auto string{require_string("report")};
+  auto string{require_string("report", true)};
+  ReportType result;
   if (string == "states") {
-    return ReportType::States;
+    result = ReportType::States;
   } else if (string == "splits") {
-    return ReportType::Splits;
+    result = ReportType::Splits;
   } else {
     std::cerr << "Unknown report type: '" << string << "'. "
               << "Supported types are 'states' and 'splits'." << std::endl;
     source_and_exit();
   }
-  exit(-1); // unreachable
+  step_up();
+  return result;
 }
 
 // TODO: iterate to generate the following ones?
