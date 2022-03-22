@@ -204,11 +204,10 @@ ReportType Reader::read_report_type() {
   return result;
 }
 
-// TODO: iterate to generate the following ones?
 std::vector<double> Reader::read_periods() {
-  auto node{require_node("periods", {toml::node_type::array})};
+  auto node{require_node("periods", {toml::node_type::array}, true)};
   check_uniform_array(
-      "periods", {toml::node_type::floating_point, toml::node_type::integer});
+      {toml::node_type::floating_point, toml::node_type::integer});
   std::vector<double> periods{};
   for (auto& element : *node.as_array()) {
     if (element.type() == toml::node_type::floating_point) {
@@ -219,6 +218,7 @@ std::vector<double> Reader::read_periods() {
       exit(-1); // unreachable.
     }
   }
+  step_up();
   return periods;
 }
 
