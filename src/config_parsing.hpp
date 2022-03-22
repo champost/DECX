@@ -190,12 +190,6 @@ public:
   // Error with focal info if file does not exist.
   void check_file(Name filename);
 
-  // Get next required table, update context.
-  void into_table(Name table_name);
-  // Same with non-required table.
-  // Returns true if the table is present. Don't forget to step up then.
-  bool into_optional_table(Name table_name);
-
   // Boilerplate type-specific cases.
   Table require_table(Name name);
   std::string require_string(Name name);

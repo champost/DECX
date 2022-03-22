@@ -90,20 +90,6 @@ void Reader::check_file(Name filename) {
   }
 };
 
-void Reader::into_table(Name table_name) {
-  table = require_table(table_name);
-  context.push_back({table_name, table});
-};
-
-bool Reader::into_optional_table(Name table_name) {
-  const auto& table{seek_node(table_name, {toml::node_type::table})};
-  if (table.has_value()) {
-    into_table(table_name);
-    return true;
-  }
-  return false;
-};
-
 #define DEFINE_REQUIRER(fnname, type, ret)                                     \
   ret Reader::require_##fnname(Name name) {                                    \
     return require_node(name, {toml::node_type::type}).as_##type()->get();     \
