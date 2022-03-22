@@ -301,22 +301,26 @@ Reader::read_unique_identifiers(Name name, const std::string& item_meaning) {
 std::vector<std::vector<int>>
 Reader::read_distributions(Name name,
                            const std::vector<std::string>& area_names) {
-  auto node{require_node(name, {toml::node_type::array})};
-  check_uniform_array(name, {toml::node_type::string});
+  auto node{require_node(name, {toml::node_type::array}, true)};
+  check_uniform_array({toml::node_type::string});
   std::vector<std::vector<int>> distributions;
+  size_t i{1};
   for (auto& element : *node.as_array()) {
-    distributions.push_back(read_distribution(element, area_names));
+    descend((View)element, std::to_string(i));
+    distributions.push_back(read_distribution(area_names));
+    step_up();
+    ++i;
   }
+  step_up();
   return distributions;
 }
 
 std::vector<int>
-Reader::read_distribution(const toml::node& node,
-                          const std::vector<std::string>& area_names) {
-  focal = toml::node_view(node);
+Reader::read_distribution(const std::vector<std::string>& area_names) {
+  const auto& node{focal->data};
   if (node.type() != toml::node_type::string) {
     std::cerr << "Distribution should be specified as a string, not "
-              << node.type() << "." << std::endl;
+              << node.type() << ". ";
     source_and_exit();
   }
 
@@ -355,7 +359,7 @@ Reader::read_distribution(const toml::node& node,
     words.push_back(current);
   }
   if (words.empty()) {
-    std::cerr << "Distributions cannot be empty." << std::endl;
+    std::cerr << "Distributions cannot be empty. ";
     source_and_exit();
   }
 
@@ -363,9 +367,9 @@ Reader::read_distribution(const toml::node& node,
     std::cerr << "Unknown area name in distribution: '" << word << "'"
               << " (known areas:";
     for (const auto& area : area_names) {
-      std::cout << " '" << area << "'";
+      std::cerr << " '" << area << "'";
     }
-    std::cout << ")." << std::endl;
+    std::cerr << "). ";
     source_and_exit();
   }};
 
@@ -391,8 +395,7 @@ Reader::read_distribution(const toml::node& node,
       std::cerr << "Ambiguous distribution specification : '" << word
                 << "' could either represent the single area '" << word
                 << "' or a binary set of other areas.."
-                << " now be honest: you did that on purpose, right?"
-                << std::endl;
+                << " now be honest: you did that on purpose, right? ";
       source_and_exit();
     }
 
@@ -407,7 +410,7 @@ Reader::read_distribution(const toml::node& node,
     } else if (word.size() != area_names.size()) {
       std::cerr << "Invalid binary specification of a distribution: '" << word
                 << "' contains " << word.size() << " digits but there are "
-                << area_names.size() << " areas." << std::endl;
+                << area_names.size() << " areas. ";
       source_and_exit();
     }
   } else {

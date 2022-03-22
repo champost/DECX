@@ -248,9 +248,9 @@ public:
                   const std::vector<std::string>& area_names);
 
 private:
+  // Interpret focal node as a areas distribution.
   std::vector<int>
-  read_distribution(const toml::node& node,
-                    const std::vector<std::string>& area_names);
+  read_distribution(const std::vector<std::string>& area_names);
 };
 
 } // namespace config
