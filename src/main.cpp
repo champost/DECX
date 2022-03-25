@@ -47,8 +47,6 @@ using namespace std;
 
 int main(int argc, char* argv[]){
 
-  using namespace config;
-
   // Get a few things out of the way.
   if (argc < 2) {
     std::cerr << "No configuration file provided. Exiting." << std::endl;
@@ -68,7 +66,7 @@ int main(int argc, char* argv[]){
     std::cerr << "  " << err << std::endl;
     exit(2);
   }
-  Reader config{&parsed};
+  config::Reader config{&parsed};
 
   //============================================================================
   // The input parameters file has been refreshed below with TOML format,
@@ -78,49 +76,65 @@ int main(int argc, char* argv[]){
   // the data structures used later in the program are left as-is.
 
   // Input files table. --------------------------------------------------------
-  config.into_table("input_files");
+  config.require_table("input_files", true);
 
-  const std::string treefile{config.require_file("tree")};
-  const std::string datafile{config.require_file("data")};
-  const std::string adjacencyfile{config.seek_file("adjacency").value_or("")};
+  const std::string treefile{config.require_file("tree", false)};
+  const std::string datafile{config.require_file("data", false)};
+  const std::string adjacencyfile{
+      config.seek_file("adjacency", false).value_or("")};
   const std::optional<std::string> rate_matrix_file{
-      config.seek_file("rate_matrix")};
+      config.seek_file("rate_matrix", false)};
+
+  config.step_up();
 
   // Parameters table ----------------------------------------------------------
-  config.step_up();
-  config.into_table("parameters");
-  AncestralState ancestral_states{config.read_ancestral_state()};
-  ReportType report_type(config.read_report_type());
+  config.require_table("parameters", true);
+
+  config::AncestralState ancestral_states{config.read_ancestral_state()};
+  config::ReportType report_type(config.read_report_type());
   const bool classic_vicariance{
-      config.seek_boolean("classic_vicariance").value_or(false)};
+      config.seek_bool("classic_vicariance", false).value_or(false)};
   const bool rapid_anagenesis{
-      config.seek_boolean("rapid_anagenesis").value_or(false)};
+      config.seek_bool("rapid_anagenesis", false).value_or(false)};
   std::vector<double> periods{config.read_periods()};
 
-  // Geographical parameters ---------------------------------------------------
   config.step_up();
-  config.into_table("areas");
+
+  // Geographical parameters ---------------------------------------------------
+  config.require_table("areas", true);
+
   std::vector<std::string> area_names{
       config.read_unique_identifiers("names", "Area")};
 
   int max_areas{1};
   std::vector<std::vector<int>> includedists;
   std::vector<std::vector<int>> excludedists;
-  if (config.into_optional_table("distributions")) {
-    std::string constraint_spec{
-        config.seek_string("constraint").value_or("include")};
-    if (constraint_spec == "exclude") {
-      std::cerr << "The feature `constraint = \"exclude\"` is not "
-                   "supported by DECX anymore."
-                << std::endl;
-      config.source_and_exit();
-    } else if (constraint_spec != "include") {
-      std::cerr << "Invalid distribution constraint: \"" << constraint_spec
-                << "\". Valid constraints are: \"include\" and \"exclude\"."
-                << std::endl;
-      config.source_and_exit();
-    }
-    const auto& max_spec{config.seek_integer("max")};
+  if (config.seek_table("distributions", true).has_value()) {
+
+    // Constraint type.
+    const auto& spec{config.seek_string("constraint", true)};
+    std::string constraint_spec;
+    if (spec.has_value()) {
+      if (*spec == "exclude") {
+        std::cerr << "The feature `constraint = \"exclude\"` is not "
+                     "supported by DECX anymore."
+                  << std::endl;
+        config.source_and_exit();
+      } else if (*spec != "include") {
+        std::cerr << "Invalid distribution constraint: \"" << constraint_spec
+                  << "\". Valid constraints are: \"include\" and \"exclude\"."
+                  << std::endl;
+        config.source_and_exit();
+      }
+      constraint_spec = *spec;
+      config.step_up();
+    } else {
+      // Default value.
+      constraint_spec = "include";
+    };
+
+    // Constraint value.
+    const auto& max_spec{config.seek_integer("max", false)};
     if (max_spec.has_value()) {
       if (config.has_node("set")) {
         std::cerr << "Incompatible distributions specification: "
@@ -157,10 +171,12 @@ int main(int argc, char* argv[]){
                     area_names);
 
   // Output settings -----------------------------------------------------------
+  config.require_table("output", true);
 
   // Output files suffix.
-  config.into_table("output");
-  const std::string fileTag{config.require_string("file_tag")};
+  const std::string fileTag{config.require_string("file_tag", false)};
+
+  config.step_up();
   //============================================================================
 
   // The following variables have been kept from original code,
@@ -270,7 +286,8 @@ int main(int argc, char* argv[]){
 					}else if(!strcmp(tokens[0].c_str(),  "numthreads")){
 						numthreads = atoi(tokens[1].c_str());
 					}else if(!strcmp(tokens[0].c_str(), "stochastic_time")){
-						report_type = ReportType::States; // requires ancestral states
+            // Require ancestral states.
+						report_type = config::ReportType::States;
             ancestral_states.set_all();
 						vector<string> searchtokens;
 						Tokenize(tokens[1], searchtokens, ", 	");
@@ -286,7 +303,8 @@ int main(int argc, char* argv[]){
 							stochastic_time_dists.push_back(dist);
 						}
 					}else if(!strcmp(tokens[0].c_str(), "stochastic_number")){
-						report_type = ReportType::States; // requires ancestral states
+            // Require ancestral states.
+						report_type = config::ReportType::States;
             ancestral_states.set_all();
 						vector<string> searchtokens;
 						Tokenize(tokens[1], searchtokens, ", 	");
@@ -1019,7 +1037,7 @@ int main(int argc, char* argv[]){
               }
 						}
 					}
-					if(report_type == ReportType::Splits && !readTrueStates){
+					if(report_type == config::ReportType::Splits && !readTrueStates){
 						if (intrees.size() > 1) {
 							outTreeFile.open((treefile+fileTag+".bgsplits.tre").c_str(),ios::app);
             }
@@ -1039,7 +1057,7 @@ int main(int argc, char* argv[]){
 								delete intrees[i]->getNode(j)->getObject("split");
 						}
 					}
-					if(report_type == ReportType::States){
+					if(report_type == config::ReportType::States){
 						if (!readTrueStates) {
 							if (intrees.size() > 1)
 								outTreeFile.open((treefile+fileTag+".bgstates.tre").c_str(),ios::app);
