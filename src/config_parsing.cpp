@@ -455,47 +455,46 @@ void Reader::read_mrcas(std::map<std::string, std::vector<std::string>>& mrcas,
                         const std::vector<std::string>& area_names) {
 
   // It may be that none is given.
-  if (!into_optional_table("mrca")) {
+  if (!seek_table("mrca", true).has_value()) {
     return;
   }
 
   // Every given MRCA is a sub-table.
-  const auto& table{*focal.as_table()};
-  for (const auto& mrca : table) {
-    const auto& name{mrca.first};
-    into_table(name);
-    // Got it.
+  for (const auto& mrca : *focal->data.as_table()) {
+    const auto& mrca_name{mrca.first};
+    require_table(mrca_name, true);
 
     // All need to have a list of species.
     const std::vector<std::string> species{
         read_unique_identifiers("species", "Species")};
-    mrcas.insert({name, species});
+    mrcas.insert({mrca_name, species});
 
     // The rest will depend on their type.
-    const std::string type{require_string("type")};
+    const std::string type{require_string("type", true)};
 
     if (type == "fixed node") {
+      step_up();
       // Then a distribution is given.
-      const std::vector<int> distribution{read_distribution(
-          *require_node("distribution", {toml::node_type::string}).node(),
-          area_names)};
-
-      fixnodes.insert({name, distribution});
+      require_string("distribution", true);
+      const std::vector<int> distribution{read_distribution(area_names)};
+      fixnodes.insert({mrca_name, distribution});
+      step_up();
     } else {
       if (type == "fossil node") {
+        step_up();
         fossiltypes.push_back("N");
         fossilages.push_back(0.);
       } else if (type == "fossil branch") {
+        step_up();
         fossiltypes.push_back("B");
-        fossilages.push_back(require_float("age"));
+        fossilages.push_back(require_float("age", false));
       } else {
         std::cerr << "Unknown MRCA type: '" << type << "'.";
         std::cerr << " Supported types are ";
-        std::cerr << "'fixed node', 'fossil node' and 'fossil branch'";
-        std::cerr << "." << std::endl;
+        std::cerr << "'fixed node', 'fossil node' and 'fossil branch'. ";
         source_and_exit();
       }
-      fossilnames.push_back(name);
+      fossilnames.push_back(mrca_name);
       // Then only one area is supported.
       const auto& area{read_area("area", area_names)};
       fossilareas.push_back(area);
@@ -507,4 +506,5 @@ void Reader::read_mrcas(std::map<std::string, std::vector<std::string>>& mrcas,
   // Step out of MRCA table.
   step_up();
 };
+
 } // namespace config
