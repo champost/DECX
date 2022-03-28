@@ -68,6 +68,8 @@ Reader::seek_node(Name name, Types<N> expected_types, const bool descend) {
     return {};
   }
   const auto& view{(*table)[name]};
+  // Consider this named parameter to be 'used' if sought this way.
+  focal->unused_names.erase(name);
   this->descend(view, name);
   check_type(expected_types);
   if (!descend) {

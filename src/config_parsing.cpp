@@ -18,6 +18,30 @@ void Reader::step_up() {
               << "cannot step up root context.";
     exit(-1);
   }
+  // Disallow unused parameters.
+  if (!focal->unused_names.empty()) {
+    std::cerr << "Configuration error: table contains unexpected parameter";
+    auto it{focal->unused_names.begin()};
+    size_t i{focal->unused_names.size()};
+    switch (i) {
+    case 1:
+      std::cerr << " '" << *it << "'";
+      break;
+    default:
+      std::cerr << "s '" << *it << "'";
+      while (++it != focal->unused_names.end()) {
+        --i;
+        if (i > 1) {
+          std::cerr << ", '";
+        } else {
+          std::cerr << " and '";
+        }
+        std::cerr << *it << "'";
+      }
+    }
+    std::cerr << ". ";
+    source_and_exit();
+  }
   // Deallocate the node we are leaving.
   const auto left{focal};
   focal = *left->parent;
@@ -115,7 +139,16 @@ std::string Reader::require_file(Name name, const bool descend) {
 };
 
 Table Reader::require_table(Name name, const bool descend) {
-  return require_node(name, {toml::node_type::table}, descend).as_table();
+  const auto& table{
+      require_node(name, {toml::node_type::table}, descend).as_table()};
+  if (descend) {
+    // Collect all names to check that no one is present in the file
+    // but unused by the program.
+    for (const auto& pair : *table) {
+      focal->unused_names.insert(pair.first);
+    }
+  }
+  return table;
 };
 
 #define DEFINE_SEEKER(fnname, type, ret)                                       \

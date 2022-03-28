@@ -6,6 +6,7 @@
 
 #include <iostream>
 #include <toml++/toml.h>
+#include <unordered_set>
 
 namespace config {
 
@@ -54,6 +55,12 @@ struct Node {
   View data;
   std::optional<std::string> name;
   std::optional<Node*> parent;
+
+  // Special-case focal *table* nodes:
+  // collect contained names/keys here and remove them on every access.
+  // Then, in order to disallow unused parameters,
+  // error on step-up if there are names left in this collection.
+  std::unordered_set<std::string_view> unused_names;
 
   Node(View d, std::string n, std::optional<Node*> p) :
       data(d), name(n), parent(p) {}
