@@ -1,5 +1,6 @@
 #include "distrib_parsing.hpp"
 
+#include <boost/lexical_cast.hpp>
 #include <fstream>
 #include <iostream>
 
@@ -42,7 +43,19 @@ Map parse_file(const std::string_view filename, const Areas& areas) {
     std::cerr << "a\\s unimplemented." << std::endl;
     exit(-1);
   }
-  return legacy_parse(lexer, areas);
+  // Unrecognized token is interpreted as a number of species.
+  size_t n_species;
+  try {
+    n_species = boost::lexical_cast<size_t>(*first.token);
+  } catch (boost::bad_lexical_cast) {
+    std::cerr << "Error: could not interpret '" << *first.token
+              << "' as a number of species or a transposition specification "
+                 "(s\\a or a\\s)."
+              << std::endl;
+    first.source_and_exit();
+  }
+  // In this case, defer to legacy parsing.
+  return legacy_parse(lexer, n_species, areas);
 };
 
 Lexer::Step Lexer::step() {
@@ -112,6 +125,12 @@ std::ostream& operator<<(std::ostream& out, const Lexer::StepType& t) {
   }
   return out;
 };
+
+void Lexer::Step::source_and_exit() const {
+  std::cerr << "(line " << line << " column " << column << " in '" << filename
+            << "')" << std::endl;
+  exit(EXIT_ERROR);
+}
 
 std::ostream& operator<<(std::ostream& out, const Lexer::Step& s) {
   out << s.type << '(';

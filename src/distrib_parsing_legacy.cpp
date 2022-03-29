@@ -4,9 +4,8 @@
 
 namespace distribution {
 
-Map legacy_parse(Lexer& lexer, const Areas& areas) {
-  // Interpret token as a number of species.
-  std::cerr << "legacy style unimplemented." << std::endl;
+Map legacy_parse(Lexer& lexer, const size_t n_species, const Areas& areas) {
+  std::cerr << "legacy style only implemented up to this point." << std::endl;
   exit(-1);
 }
 
