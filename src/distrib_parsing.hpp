@@ -45,6 +45,9 @@ namespace distribution {
 using Map = std::map<std::string, std::vector<int>>;
 using Areas = std::vector<std::string>;
 
+// Dedicate this code to errors with distribution file.
+constexpr int EXIT_ERROR{2};
+
 Map parse_file(const std::string_view filename, const Areas& areas);
 
 auto read_file(std::string_view path) -> std::string;

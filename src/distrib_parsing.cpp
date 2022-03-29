@@ -21,14 +21,30 @@ auto read_file(std::string_view path) -> std::string {
 
 Map parse_file(const std::string_view filename, const Areas& areas) {
   const auto file{read_file(filename)};
-
   Lexer lexer{filename};
 
-  auto step{lexer.step()};
-  std::cout << step << std::endl;
-  while (!step.is_eof()) {
-    step = lexer.step();
-    std::cout << step << std::endl;
+  // Lex to first token.
+  auto first{lexer.step()};
+  while (first.is_eol()) { // Ignore leading blank/comment lines.
+    first = lexer.step();
+  }
+  if (first.is_eof()) {
+    std::cerr << "Error: distribution file '" << filename
+              << "' is blank (or it contains only comments)." << std::endl;
+    exit(EXIT_ERROR);
+  }
+
+  // Use first token to decide which parser to use.
+  if (first.token == "s\\a") {
+    std::cerr << "s\\a unimplemented." << std::endl;
+    exit(-1);
+  } else if (first.token == "a\\s") {
+    std::cerr << "a\\s unimplemented." << std::endl;
+    exit(-1);
+  } else {
+    // Interpret token as a number of species.
+    std::cerr << "legacy style unimplemented." << std::endl;
+    exit(-1);
   }
 
   return {};
