@@ -36,6 +36,7 @@
 // In this situation, the header becomes mandatory.
 
 #include <map>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -45,5 +46,44 @@ using Map = std::map<std::string, std::vector<int>>;
 using Areas = std::vector<std::string>;
 
 Map parse_file(const std::string_view filename, const Areas& areas);
+
+auto read_file(std::string_view path) -> std::string;
+
+// Use this automaton to split input into lines and tokens.
+// The lexer owns the input, and returns views to it.
+class Lexer {
+  const std::string input;
+  // The focus always stands once after the last interesting part.
+  // (which may be once after the end of input).
+  // On every step, we analyze what's under focus,
+  // then move it right after whatever we've found.
+  size_t focus;
+
+public:
+
+  Lexer(const std::string_view filename) :
+      input(read_file(filename)), focus(0){};
+
+  enum StepType {
+    Token,
+    EndOfLine,
+    EndOfFile,
+  };
+  struct Step {
+    StepType type;
+    std::optional<std::string_view> token;
+    bool has_value() const { return type == StepType::Token; };
+    bool is_eol() const { return type == StepType::EndOfLine; };
+    bool is_eof() const { return type == StepType::EndOfFile; };
+  };
+
+  // Query for next token.
+  Step step();
+
+private:
+  // Basic queries about current situation.
+  bool no_input_left() const;
+  bool newline() const;
+};
 
 } // namespace distribution
