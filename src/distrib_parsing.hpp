@@ -104,6 +104,11 @@ private:
   bool newline() const;
 };
 
+// The various types of distribution files
+// are parsed differently.
+// Separate the associated parsers into dedicated files.
+Map legacy_parse(Lexer& lexer, const Areas& areas);
+
 // Useful print options to debug.
 std::ostream& operator<<(std::ostream& out, const Lexer::StepType& t);
 std::ostream& operator<<(std::ostream& out, const Lexer::Step& s);

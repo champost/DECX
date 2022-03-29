@@ -41,13 +41,8 @@ Map parse_file(const std::string_view filename, const Areas& areas) {
   } else if (first.token == "a\\s") {
     std::cerr << "a\\s unimplemented." << std::endl;
     exit(-1);
-  } else {
-    // Interpret token as a number of species.
-    std::cerr << "legacy style unimplemented." << std::endl;
-    exit(-1);
   }
-
-  return {};
+  return legacy_parse(lexer, areas);
 };
 
 Lexer::Step Lexer::step() {
