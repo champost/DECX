@@ -40,53 +40,6 @@ void InputReader::readMultipleTreeFile(string filename, vector<Tree *> & ret){
 	}
 }
 
-map<string,vector<int> > InputReader::readStandardInputData(string filename){
-	ifstream ifs( filename.c_str() );
-	string temp;
-	bool first = false;
-	nareas=0;
-	nspecies=0;
-	map<string,vector<int> > data;
-	string line;
-	vector<string> tokens;
-	string del("\t ");
-	while(getline(ifs,line)){
-		if (first == false){
-			first = true;
-			tokens.clear();
-			Tokenize(line, tokens, del);
-			for(unsigned int j=0;j<tokens.size();j++){
-				TrimSpaces(tokens[j]);
-			}
-			nspecies = atoi(tokens[0].c_str());
-			nareas = atoi(tokens[1].c_str());
-		}else{
-			tokens.clear();
-			Tokenize(line, tokens, del);
-			for(unsigned int j=0;j<tokens.size();j++){
-				TrimSpaces(tokens[j]);
-			}
-			cout << "Reading species: " << tokens[0] << " ";
-			vector<int> speciesdata(nareas,0);
-			for(int i=0;i<nareas;i++){
-				char spot;
-				if (tokens.size() == nareas + 1)
-					//	CBR (23.11.2012), in case the specified areas are tab/white spaced
-					spot = tokens[1 + i][0];
-				else
-					spot = tokens[1][i];
-				if (spot == '1')
-					speciesdata[i] = 1;
-				cout << spot - '0';
-			}
-			cout << endl;
-			data[tokens[0]] = speciesdata;
-		}
-	}
-	ifs.close();
-	return data;
-}
-
 void InputReader::checkData(map<string,vector<int> > data ,vector<Tree *> trees){
 	vector<string> dataspecies;
 	map<string,vector<int> >::const_iterator itr;

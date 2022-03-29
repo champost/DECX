@@ -38,6 +38,7 @@ using namespace std;
 #include "superdouble.h"
 #include "string_node_object.h"
 #include "config_parsing.hpp"
+#include "distrib_parsing.hpp"
 
 #ifdef XYZ
 #include "gmpfrxx/gmpfrxx.h"
@@ -396,7 +397,7 @@ int main(int argc, char* argv[]){
 		ir.readMultipleTreeFile(treefile,intrees);
 		if (!simulate) {
 			cout << "reading data..." << endl;
-			data = ir.readStandardInputData(datafile);
+			data = distribution::parse_file(datafile, area_names);
 
       // Highjack here for testing purpose.
       if (check_distribution_file) {
@@ -414,6 +415,10 @@ int main(int argc, char* argv[]){
         }
         exit(0);
       }
+
+      // Artificial reinjection into legacy 'InputReader' logic.
+      ir.nspecies = data.size();
+      ir.nareas = area_names.size();
 
 			cout << "checking data..." << endl;
 			ir.checkData(data,intrees);

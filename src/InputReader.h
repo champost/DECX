@@ -18,7 +18,6 @@ class InputReader{
 	public:
 	InputReader();
 		void readMultipleTreeFile(string filename,vector<Tree *>&);
-		map<string,vector<int> > readStandardInputData(string filename);
 		void checkData(map<string,vector<int> >,vector<Tree *>);
 		int nareas;
 		int nspecies;

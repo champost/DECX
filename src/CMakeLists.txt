@@ -18,6 +18,7 @@ add_executable(
   RateModel.cpp
   Utils.cpp
   config_parsing.cpp
+  distrib_parsing.cpp
   node.cpp
   superdouble.cpp
   tree.cpp
