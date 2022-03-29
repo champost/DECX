@@ -14,7 +14,7 @@ void Reader::descend(View data, Name name) {
 
 void Reader::step_up() {
   if (!focal->parent.has_value()) {
-    std::cerr << "Error in configuration parsing logic: "
+    std::cerr << "Error in configuration parsing logic (source code): "
               << "cannot step up root context.";
     exit(-1);
   }
@@ -26,7 +26,7 @@ void Reader::step_up() {
 
 Reader::~Reader() {
   if (focal->parent.has_value()) {
-    std::cerr << "Error in configuration parsing logic: "
+    std::cerr << "Error in configuration parsing logic (source code): "
               << "destroying config reader before it reached back to root."
               << std::endl;
     exit(-1);
@@ -75,7 +75,7 @@ const toml::source_region& Reader::focal_source() const {
 void Reader::source_and_exit() const {
   std::cerr << "(" << ColonHierarchy{focal} << " " << focal_source() << ")"
             << std::endl;
-  exit(1);
+  exit(EXIT_ERROR);
 }
 
 bool Reader::has_node(Name name) {

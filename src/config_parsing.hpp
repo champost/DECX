@@ -35,6 +35,9 @@ template <std::size_t N> // Useful for a static collection of types.
 using Types = const Type (&)[N];
 using Name = std::string_view; // Refer to a parameter name.
 
+// Dedicate this code to errors with config file.
+constexpr int EXIT_ERROR{1};
+
 // Use this object to scroll the TOML parsed config and check:
 // - mandatory parameters presence
 // - parameters types
