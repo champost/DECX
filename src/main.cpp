@@ -47,13 +47,22 @@ using namespace std;
 
 int main(int argc, char* argv[]){
 
+  // Raise these flags for dry-run-like checks of input interpretation.
+  bool check_distribution_file{false};
+
   // Get a few things out of the way.
   if (argc < 2) {
     std::cerr << "No configuration file provided. Exiting." << std::endl;
     exit(1);
   } else if (argc > 2) {
-    std::cerr << "Too many arguments. Exiting." << std::endl;
-    exit(1);
+    // Hidden arguments for testing purpose only.
+    if (strcmp(argv[2], "--check-distribution-file-parsing") == 0) {
+      std::cout << "Dry run to check distribution file.." << std::endl;
+      check_distribution_file = true;
+    } else {
+      std::cerr << "Too many arguments. Exiting." << std::endl;
+      exit(1);
+    }
   }
 
   // Parse TOML configuration file.
@@ -388,6 +397,24 @@ int main(int argc, char* argv[]){
 		if (!simulate) {
 			cout << "reading data..." << endl;
 			data = ir.readStandardInputData(datafile);
+
+      // Highjack here for testing purpose.
+      if (check_distribution_file) {
+        std::cout << datafile << ":";
+        for (const auto& area : area_names) {
+          std::cout << " " << area;
+        }
+        std::cout << std::endl;
+        for (const auto& entry : data) {
+          std::cout << std::right << std::setw(15) << entry.first << ": ";
+          for (const auto& p : entry.second) {
+            std::cout << p << " ";
+          }
+          std::cout << std::endl;
+        }
+        exit(0);
+      }
+
 			cout << "checking data..." << endl;
 			ir.checkData(data,intrees);
 		}
