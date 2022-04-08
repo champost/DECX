@@ -38,12 +38,14 @@ Lexer::Step Lexer::step() {
 
 #define CHECK_EOF()                                                            \
   if (no_input_left()) {                                                       \
-    return {StepType::EndOfFile, {}};                                          \
+    return {StepType::EndOfFile, {}, filename, line, focus - llf};             \
   }
 #define CHECK_EOL()                                                            \
   if (newline()) {                                                             \
     ++focus; /* Consume it. */                                                 \
-    return {StepType::EndOfLine, {}};                                          \
+    const auto col{focus - llf};                                               \
+    llf = focus;                                                               \
+    return {StepType::EndOfLine, {}, filename, line++, col};                   \
   }
 
   // What's under focus?
@@ -74,7 +76,10 @@ Lexer::Step Lexer::step() {
     }
   }
   return {StepType::Token,
-          std::string_view(input).substr(start, focus - start)};
+          std::string_view(input).substr(start, focus - start),
+          filename,
+          line,
+          start - llf + 1};
 };
 bool Lexer::no_input_left() const { return focus == input.size(); };
 bool Lexer::newline() const { return input[focus] == '\n'; };
@@ -98,10 +103,11 @@ std::ostream& operator<<(std::ostream& out, const Lexer::StepType& t) {
 };
 
 std::ostream& operator<<(std::ostream& out, const Lexer::Step& s) {
-  out << s.type;
+  out << s.type << '(';
   if (s.has_value()) {
-    out << '(' << *s.token << ')';
+    out << *s.token << ", ";
   }
+  out << s.filename << ':' << s.line << ':' << s.column << ')';
   return out;
 };
 

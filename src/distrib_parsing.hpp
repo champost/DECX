@@ -59,19 +59,34 @@ class Lexer {
   // then move it right after whatever we've found.
   size_t focus;
 
-public:
+  // Keep track of linecol location within file.
+  const std::string_view filename;
+  size_t line;
+  size_t llf; // Focus value at the end of Last Line.
 
+public:
   Lexer(const std::string_view filename) :
-      input(read_file(filename)), focus(0){};
+      input(read_file(filename)),
+      filename(filename),
+      focus(0),
+      line(1),
+      llf(0){};
 
   enum StepType {
     Token,
     EndOfLine,
     EndOfFile,
   };
+
   struct Step {
     StepType type;
     std::optional<std::string_view> token;
+
+    // Source information.
+    std::string_view filename{};
+    size_t line{0};
+    size_t column{0};
+
     bool has_value() const { return type == StepType::Token; };
     bool is_eol() const { return type == StepType::EndOfLine; };
     bool is_eof() const { return type == StepType::EndOfFile; };
