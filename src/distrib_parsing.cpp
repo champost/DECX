@@ -25,20 +25,11 @@ Map parse_file(const std::string_view filename, const Areas& areas) {
   Lexer lexer{filename};
 
   auto step{lexer.step()};
-  if (step.is_eol()) {
-    std::cout << "EOL" << std::endl;
-  } else if (step.token.has_value()) {
-    std::cout << "Token: '" << step.token.value() << "'" << std::endl;
-  }
+  std::cout << step << std::endl;
   while (!step.is_eof()) {
     step = lexer.step();
-    if (step.is_eol()) {
-      std::cout << "EOL" << std::endl;
-    } else if (step.token.has_value()) {
-      std::cout << "Token: '" << step.token.value() << "'" << std::endl;
-    }
+    std::cout << step << std::endl;
   }
-  std::cout << "EOF" << std::endl;
 
   return {};
 };
@@ -78,5 +69,31 @@ Lexer::Step Lexer::step() {
 };
 bool Lexer::no_input_left() const { return focus == input.size(); };
 bool Lexer::newline() const { return input[focus] == '\n'; };
+
+std::ostream& operator<<(std::ostream& out, const Lexer::StepType& t) {
+  switch (t) {
+  case Lexer::StepType::Token: {
+    out << "Token";
+    break;
+  }
+  case Lexer::StepType::EndOfLine: {
+    out << "EOL";
+    break;
+  }
+  case Lexer::StepType::EndOfFile: {
+    out << "EOF";
+    break;
+  }
+  }
+  return out;
+};
+
+std::ostream& operator<<(std::ostream& out, const Lexer::Step& s) {
+  out << s.type;
+  if (s.has_value()) {
+    out << '(' << *s.token << ')';
+  }
+  return out;
+};
 
 } // namespace distribution

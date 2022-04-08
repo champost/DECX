@@ -86,4 +86,8 @@ private:
   bool newline() const;
 };
 
+// Useful print options to debug.
+std::ostream& operator<<(std::ostream& out, const Lexer::StepType& t);
+std::ostream& operator<<(std::ostream& out, const Lexer::Step& s);
+
 } // namespace distribution
