@@ -56,6 +56,15 @@ Lexer::Step Lexer::step() {
     CHECK_EOL();
   }
 
+  // Skip comments.
+  if (input[focus] == '#') {
+    while (true) {
+      ++focus;
+      CHECK_EOF();
+      CHECK_EOL();
+    }
+  }
+
   // We've come accross a token: collect.
   const auto start{focus};
   while (!isspace(input[focus])) {
