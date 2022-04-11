@@ -20,6 +20,7 @@ add_executable(
   config_parsing.cpp
   distrib_parsing.cpp
   distrib_parsing_legacy.cpp
+  distrib_parsing_species.cpp
   node.cpp
   superdouble.cpp
   tree.cpp

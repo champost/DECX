@@ -37,8 +37,7 @@ Map parse_file(const std::string_view filename, const Areas& areas) {
 
   // Use first token to decide which parser to use.
   if (first.token == "s\\a") {
-    std::cerr << "s\\a unimplemented." << std::endl;
-    exit(-1);
+    return species_parse(lexer, areas);
   } else if (first.token == "a\\s") {
     std::cerr << "a\\s unimplemented." << std::endl;
     exit(-1);
