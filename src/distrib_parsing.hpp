@@ -94,7 +94,9 @@ public:
     bool is_eol() const { return type == StepType::EndOfLine; };
     bool is_eof() const { return type == StepType::EndOfFile; };
 
-    [[noreturn]] void source_and_exit() const;
+    // Exit with error message pointing to current focus
+    // + possible shift within current token.
+    [[noreturn]] void source_and_exit(const size_t shift = 0) const;
   };
 
   // Query for next token.

@@ -5,6 +5,8 @@
 
 namespace distribution {
 
+// Parse legacy format.
+// Only the order of areas matter (the one given in the config file).
 Map legacy_parse(Lexer& lexer, const size_t n_species, const Areas& areas) {
 
   Map map{};
@@ -54,15 +56,66 @@ Map legacy_parse(Lexer& lexer, const size_t n_species, const Areas& areas) {
   // Loop on species lines,
   // assuming that every iteration starts on a valid first token in line.
   while (!next.is_eof()) {
-    const auto& species{*next.token};
+
+    if (map.size() == n_species) {
+      std::cerr << "Error: more species found than specified at the beginning "
+                   "of the file: expected "
+                << n_species << ", got at least " << n_species + 1 << "."
+                << std::endl;
+      next.source_and_exit();
+    }
+
+    const std::string species{*next.token};
     const auto distribution{lexer.step()};
+
     if (!distribution.has_value()) {
       std::cerr << "Error: no distribution specified for species " << species
                 << "." << std::endl;
       distribution.source_and_exit();
     }
-    std::cout << "species: " << species << '(' << *distribution.token << ')'
-              << std::endl;
+
+    if (map.count(species)) {
+      std::cerr << "Error: distribution for species " << species
+                << " specified more than once." << std::endl;
+      next.source_and_exit();
+    }
+
+    // Parse distribution.
+    size_t i{0};
+    std::vector<int> d{};
+    d.reserve(areas.size());
+    for (const char c : *distribution.token) {
+      switch (c) {
+      case '0':
+        d.emplace_back(0);
+        break;
+      case '1':
+        d.emplace_back(1);
+        break;
+      default:
+        std::cerr
+            << "Error: unexpected char in legacy species distribution format: "
+            << c << std::endl;
+        distribution.source_and_exit(i);
+      }
+      if (i >= areas.size()) {
+        std::cerr
+            << "Error: too many digits in legacy species distribution format: "
+            << "expected " << areas.size() << ", got "
+            << distribution.token->size() << "." << std::endl;
+        distribution.source_and_exit(i);
+      }
+      ++i;
+    }
+    if (i != areas.size()) {
+      std::cerr
+          << "Error: not enough digits in legacy species distribution format: "
+          << "expected " << areas.size() << ", got " << i << "." << std::endl;
+      distribution.source_and_exit(i - 1);
+    }
+
+    // Record.
+    map.insert({species, d});
 
     // Go check next species line.
     next = lexer.step();
@@ -76,12 +129,19 @@ Map legacy_parse(Lexer& lexer, const size_t n_species, const Areas& areas) {
     }
   }
 
-  std::cerr << "legacy style only implemented up to this point." << std::endl;
-  exit(-1);
+  if (map.size() < n_species) {
+    std::cerr << "Error: not as many species lines than specified at the "
+                 "beginning of the file: expected "
+              << n_species << ", got only " << map.size() << "." << std::endl;
+    next.source_and_exit();
+  }
+
+  return map;
 
 nospecies:
   std::cerr << "Error: no species lines provided in distribution file."
             << std::endl;
   next.source_and_exit();
 }
+
 } // namespace distribution

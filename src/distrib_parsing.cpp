@@ -126,9 +126,9 @@ std::ostream& operator<<(std::ostream& out, const Lexer::StepType& t) {
   return out;
 };
 
-void Lexer::Step::source_and_exit() const {
-  std::cerr << "(line " << line << " column " << column << " in '" << filename
-            << "')" << std::endl;
+void Lexer::Step::source_and_exit(const size_t shift) const {
+  std::cerr << "(line " << line << " column " << column + shift << " in '"
+            << filename << "')" << std::endl;
   exit(EXIT_ERROR);
 }
 
