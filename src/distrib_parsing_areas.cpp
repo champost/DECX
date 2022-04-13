@@ -224,7 +224,48 @@ Map areas_parse(Lexer& lexer, const Areas& config_areas) {
     }
   }
 
-  return tmap;
+  // Check for missing areas.
+  if (tmap.size() < config_areas.size()) {
+    std::vector<std::string_view> missing{};
+    for (const auto& a : config_areas) {
+      if (!tmap.count(a)) {
+        missing.push_back(a);
+      }
+    }
+    std::cerr << "Error: not all areas defined in configuration file "
+              << " have been specified. Missing:";
+    for (const auto& a : missing) {
+      std::cerr << " " << a;
+    }
+    std::cerr << std::endl;
+    next.source_and_exit();
+  }
+
+  // Transpose the map from {area: 10101} entries to {species: 1010}.
+  // Brutal: fill an empty map first,
+  // then linear-search the areas list to get the correct index every time.
+  Map map;
+  for (const auto& s : species) {
+    std::vector<int> zeroes(config_areas.size(), 0);
+    map.insert({s, zeroes});
+  }
+  for (const auto& tentry : tmap) {
+    const auto& [area, community] = tentry;
+    size_t i_area{0};
+    for (const auto& a : config_areas) {
+      if (a == area) {
+        break;
+      }
+      ++i_area;
+    }
+    size_t i_species{0};
+    for (const auto& s : species) {
+      map[s][i_area] = community[i_species];
+      ++i_species;
+    }
+  }
+
+  return map;
 }
 
 } // namespace distribution
