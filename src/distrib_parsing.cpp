@@ -39,8 +39,7 @@ Map parse_file(const std::string_view filename, const Areas& areas) {
   if (first.token == "s\\a") {
     return species_parse(lexer, areas);
   } else if (first.token == "a\\s") {
-    std::cerr << "a\\s unimplemented." << std::endl;
-    exit(-1);
+    return areas_parse(lexer, areas);
   }
   // Unrecognized token is interpreted as a number of species.
   size_t n_species;

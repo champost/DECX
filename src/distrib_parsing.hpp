@@ -112,7 +112,8 @@ private:
 // are parsed differently.
 // Separate the associated parsers into dedicated files.
 Map legacy_parse(Lexer& lexer, const size_t n_species, const Areas& areas);
-Map species_parse(Lexer& lexer, const Areas& config_areas);
+Map species_parse(Lexer& lexer, const Areas& config_areas); // s\a
+Map areas_parse(Lexer& lexer, const Areas& config_areas); // a\s
 
 // Useful print options to debug.
 std::ostream& operator<<(std::ostream& out, const Lexer::StepType& t);

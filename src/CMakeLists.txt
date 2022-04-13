@@ -19,6 +19,7 @@ add_executable(
   Utils.cpp
   config_parsing.cpp
   distrib_parsing.cpp
+  distrib_parsing_areas.cpp
   distrib_parsing_legacy.cpp
   distrib_parsing_species.cpp
   node.cpp
