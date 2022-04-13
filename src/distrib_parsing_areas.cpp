@@ -58,8 +58,66 @@ Map areas_parse(Lexer& lexer, const Areas& config_areas) {
     std::vector<int> community{};
     community.reserve(species.size());
 
-    std::cout << "area: " << area << std::endl;
-    break;
+    // There are several types of specification lines.
+    // Infer the correct type based on first next token.
+    next = lexer.step();
+    if (!next.has_value()) {
+      std::cerr << "Error: no community information provided for area " << area
+                << "." << std::endl;
+      next.source_and_exit();
+    }
+
+    // When given + or -, the next tokens are area names counted within or
+    // without the distribution from a uniform 0 or 1 base. Factorize procedure.
+    auto plus_minus = [&species, &community, &next, &lexer](int base) {
+      // (treat brutally: fill with zeroes then linear-search every
+      // remaining token on the line to flip corresponding element in
+      // distribution to 1).
+      for (size_t i{0}; i < species.size(); ++i) {
+        community.emplace_back(base);
+      }
+      next = lexer.step();
+      while (next.has_value()) {
+        const auto& single_species{*next.token};
+        size_t i_species{0};
+        bool found{false};
+        for (const auto& s : species) {
+          if (s == single_species) {
+            found = true;
+            break;
+          }
+          ++i_species;
+        }
+        if (!found) {
+          std::cerr << "Error: unrecognized species name: "
+                    << "'" << single_species << "'"
+                    << " (not found in file header)" << std::endl;
+          next.source_and_exit();
+        }
+        community[i_species] = 1 - base;
+        next = lexer.step();
+      }
+    };
+
+    // Use incoming token to determine the line style.
+    const auto determinant{*next.token};
+    if (determinant == "+") {
+      plus_minus(0);
+    } else if (determinant == "-") {
+      plus_minus(1);
+    } else {
+      std::cerr << "unimplemented determinant: " << determinant << ""
+                << std::endl;
+      exit(-1);
+    }
+
+    // Record.
+    tmap.insert({area, community});
+
+    // Go to next species line.
+    while (next.is_eol()) {
+      next = lexer.step();
+    }
   }
 
   return tmap;
