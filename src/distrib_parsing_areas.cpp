@@ -1,5 +1,6 @@
 #include "distrib_parsing.hpp"
 
+#include <functional>
 #include <iostream>
 
 namespace distribution {
@@ -51,6 +52,12 @@ Map areas_parse(Lexer& lexer, const Areas& config_areas) {
     if (!found) {
       std::cerr << "Error: area '" << area
                 << "' not found in configuration file." << std::endl;
+      next.source_and_exit();
+    }
+    // Also, it must not already be in the map.
+    if (tmap.count(area)) {
+      std::cerr << "Error: area '" << area << "' is specified twice."
+                << std::endl;
       next.source_and_exit();
     }
 
@@ -106,9 +113,106 @@ Map areas_parse(Lexer& lexer, const Areas& config_areas) {
     } else if (determinant == "-") {
       plus_minus(1);
     } else {
-      std::cerr << "unimplemented determinant: " << determinant << ""
-                << std::endl;
-      exit(-1);
+      // In this case, expect only ones and zeroes.
+      for (const auto c : determinant) {
+        if (c != '0' && c != '1') {
+          std::cerr << "Error: could not interpret token '" << determinant
+                    << "' as an area community specification. "
+                    << "Consider using ones and zeroes, "
+                    << "or '+' or '-' to explicitly name species." << std::endl;
+          next.source_and_exit();
+        }
+      }
+
+      // Fill with zeroes then flip only elements at the correct indexes.
+      for (size_t i{0}; i < species.size(); ++i) {
+        community.emplace_back(0);
+      }
+
+      // Either we are reading one token like 0010101,
+      // or it's split into 0 0 1 0 1 0 1.
+      // In any case, the "reading" procedure is the same.
+      auto read = [&community, &next, &species](std::function<char()> step,
+                                                const bool split) {
+        size_t i_digit{0};
+        while (true) {
+          const auto digit{step()}; // `step` also checks digits correctness.
+          if (digit == '\0') {
+            // No more digits to read.
+            break;
+          }
+          if (i_digit == species.size()) {
+            std::cerr << "Error: too many digits in community specification: "
+                      << "expected " << species.size() << ", got at least "
+                      << i_digit + 1 << "." << std::endl;
+            next.source_and_exit((split) ? 0 : i_digit);
+          }
+          // Only flip relevant digits in the right places.
+          if (digit == '1') {
+            community[i_digit] = 1;
+          }
+          ++i_digit;
+        }
+        if (i_digit != species.size()) {
+          std::cerr << "Error: not enough digits in community specification: "
+                    << "expected " << species.size() << ", got only " << i_digit
+                    << "." << std::endl;
+          next.source_and_exit((split) ? 0 : i_digit);
+        }
+      };
+
+      // Then, depending on the situation,
+      // use the right way to "step" from one digit to the next.
+      if (determinant.size() > 1) {
+        // The distribution is one single token with all digits inside.
+        size_t i{0};
+        auto step = [&next, &determinant, &i]() -> char {
+          if (i < determinant.size()) {
+            const auto& c{determinant[i]};
+            if (c != '1' && c != '0') {
+              std::cerr << "Error: expected 1 or 0, got '" << c << "'."
+                        << std::endl;
+              next.source_and_exit(i - 1);
+            }
+            ++i;
+            return c;
+          }
+          return '\0';
+        };
+        read(step, false);
+        // There should be nothing left on this line.
+        next = lexer.step();
+        if (next.has_value()) {
+          std::cerr << "Error: unexpected token " << *next.token << "."
+                    << std::endl;
+          next.source_and_exit();
+        }
+      } else {
+        // The distribution is split into several tokens.
+        bool first{true}; // Remain on the token read, so don't step at first.
+        auto step = [&next, &lexer, &first]() -> char {
+          if (!first) {
+            next = lexer.step();
+          }
+          first = false;
+          if (next.has_value()) {
+            char res;
+            if (*next.token == "1") {
+              res = '1';
+            } else if (*next.token == "0") {
+              res = '0';
+            } else {
+              std::cerr << "Error: expected 1 or 0, got '" << *next.token
+                        << "'." << std::endl;
+              next.source_and_exit();
+            }
+            return res;
+          }
+          return '\0';
+        };
+        read(step, true);
+        next = lexer.step(); // Step off the last token read.
+      }
     }
 
     // Record.
