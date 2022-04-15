@@ -1,0 +1,12 @@
+s\a   WP EP WN EN CA SA AF MD IN WA AU # Areas.. may reorder.
+ Amis 1  1  0  1  0  1  1  0  1  0  0  # comment if needed
+ Asin 0  1  0  1  0  0  1  0  1  0  1
+Ccroc 1  1  0  1  0  1  0  0  1  0  1
+
+# Compact
+Clat 11000000100
+Cyac 01100000101
+
+# Inclusion/Exclusion
+Gav + WP EP IN
+Tom - CA SA MD WA

@@ -1,0 +1,57 @@
+# Here is a dummy config file to check parsing and error messages.
+# A copy of it will be regularly edited to introduce mistakes
+# during input testing procedures.
+
+[input_files]
+tree = "newick.tre"
+data = "distrib_legacy.txt"
+adjacency = "adjacency.txt"
+# rate_matrix = "area_connectivity.rm"
+
+[parameters]
+ancestral_states = true # (means "all"), or specify one node name like "ROOT"
+report = "states" # or "splits"
+classic_vicariance = false
+rapid_anagenesis = false
+
+periods = [5.33, 17.7, 10.87, 22.1, 14.0]
+
+# --- Geographical parameters --------------------------------------------------
+[areas]
+# names = ["WP", "EP", "WN", "EN", "CA", "SA", "AF", "MD", "IN", "WA", "AU"]
+names = "WP EP WN EN CA SA AF MD IN WA AU"
+
+[areas.distributions]
+# max = 2 # Don't include distributions with more than 4 areas.
+# constraint = "include" # or "exclude", but it is not supported anymore.
+set = [
+  "WP EP WN",
+  "EN CA SA",
+  "11010110101",
+  "AF MD IN WA",
+] # The distributions to include or exclude.
+
+# --- MRCA specification: ------------------------------------------------------
+# Name and characterize one node:
+[mrca.Gavialidae]
+type = "fossil branch" # or "fixed node" or "fossil node"
+species = "Gav Tom"
+area = "CA"
+age = 15.8 # Only accepted, and needed, when type is "fossil branch".
+
+[mrca.Caiman]
+type = "fixed node"
+species = ["Cyac", "Ccroc", "Clat"]
+distribution = "11010110101" # Only possible for fixed node.
+
+[mrca.Alligator]
+type = "fossil node"
+species = ["Amis", "Asin"]
+area = "WP"
+
+# etc..
+
+# ------------------------------------------------------------------------------
+
+[output]
+file_tag = "_11areas_DEC_adjacency"

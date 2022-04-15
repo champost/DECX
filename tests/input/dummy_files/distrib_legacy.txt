@@ -1,0 +1,15 @@
+7 11 # numbers of species and areas
+
+Amis 11010110100
+Asin 01010010101 # Comments are allowed.
+
+# Blank lines as well.
+
+Ccroc 11010100101
+Clat 11000000100
+
+Cyac 01100000101
+Gav  01110110100 # Extra whitespace as well, for alignment.
+Tom  11110010101
+
+# But the areas order must strictly match the one in configuration file.

@@ -1,0 +1,16 @@
+a\s   Amis Asin Ccroc Clat  Cyac Gav  Tom  # species header
+WP    1    0    1     0     0    1    1    # matrix lines
+EP    1    1    1     1     1    1    1
+WN    0    1    0     1     0    0    1
+
+# traditional lines
+EN    1110101
+CA    0000000
+AF    1100101
+
+# Relative lines.
+SA + Amis Asin Ccroc
+MD + # all zero
+IN - # all one
+WA +
+AU - Amis Asin Gav
