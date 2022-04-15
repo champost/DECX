@@ -6,7 +6,7 @@ extract the matrix displayed during dry-run to compare to hardcoded one.
 When expecting failure:
 extract error code and stderr to compare to expected error message.
 """
-from subprocess import Popen
+from popen import popen
 
 expected_header = "WP EP WN EN CA SA AF MD IN WA AU"  # Areas in config file.
 expected_body = """
@@ -20,11 +20,15 @@ Ccroc: 1 1 0 1 0 1 0 0 1 0 1
 """
 
 
-def expect_success(p: Popen):
+def expect_success(cmd: str):
 
-    if code := p.returncode:
-        print(p.stderr.read().decode())
-        raise Exception(f"DECX failed while expecting a success (error code {code}).")
+    p = popen(cmd)
+
+    if code := p.wait():
+        message = p.stderr.read().decode()
+        raise Exception(
+            f"DECX failed while expecting a success (error code {code}):\n{message}",
+        )
 
     # Extract matrix from output.
     output = p.stdout.read().decode()

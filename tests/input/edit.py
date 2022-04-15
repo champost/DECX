@@ -1,5 +1,7 @@
 """Introduce modifications to input files.
 """
+from popen import popen
+
 from pathlib import Path
 import shutil as shu
 

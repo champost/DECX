@@ -5,28 +5,16 @@ Assume it's run from the repo.
 """
 from expect import expect_success
 from edit import edit
+from popen import popen
 
-from subprocess import Popen, PIPE, STDOUT
 from multiprocessing import cpu_count
 from pathlib import Path
 import shutil as shu
 import os
 
-def popen(cmd):
-    """Capture shell command output."""
-    return Popen(
-        cmd,
-        shell=True,
-        stdin=PIPE,
-        stdout=PIPE,
-        stderr=PIPE,
-        close_fds=True,
-    )
-
-
 # Navigate to repo root.
 p = popen("git rev-parse --show-toplevel")
-if p.returncode:
+if p.wait():
     raise Exception("Cannot find repo root folder.")
 root_folder = Path(p.stdout.read().decode().strip())
 os.chdir(root_folder)
@@ -69,11 +57,11 @@ for file in input_files:
 config = input_files[0]
 flag = "--check-distribution-file-parsing"
 cmd = f"{binary} {config} {flag}"
-expect_success(popen(cmd))
+expect_success(cmd)
 
 # Modify input file.
 diff = ('data = "distrib_legacy.txt"', 'data = "unexistent.txt"')
-edit('config.toml', diff)
+edit("config.toml", diff)
 
 # Fail.
 os.system(cmd)
