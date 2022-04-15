@@ -4,6 +4,7 @@ and check that its behaviour on stdout and stderr is consistent with expectation
 Assume it's run from the repo.
 """
 from expect import expect_success
+from edit import edit
 
 from subprocess import Popen, PIPE, STDOUT
 from multiprocessing import cpu_count
@@ -69,6 +70,13 @@ config = input_files[0]
 flag = "--check-distribution-file-parsing"
 cmd = f"{binary} {config} {flag}"
 expect_success(popen(cmd))
+
+# Modify input file.
+diff = ('data = "distrib_legacy.txt"', 'data = "unexistent.txt"')
+edit('config.toml', diff)
+
+# Fail.
+os.system(cmd)
 
 print("Success.")
 
