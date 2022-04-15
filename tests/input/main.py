@@ -3,7 +3,7 @@
 and check that its behaviour on stdout and stderr is consistent with expectations.
 Assume it's run from the repo.
 """
-from expect import expect_success
+from expect import expect_success, expect_error
 from edit import edit
 from popen import popen
 from folders import test_folder, dummy_input_files_folder, temp_folder, build_folder
@@ -62,7 +62,12 @@ diff = ('data = "distrib_legacy.txt"', 'data = "unexistent.txt"')
 edit("config.toml", diff)
 
 # Fail.
-os.system(cmd)
+expect_error(
+    cmd,
+    1,
+    "Configuration error: Could not find file 'unexistent.txt'.\n"
+    "('input_files:data' line 7, column 8 of 'config.toml')",
+)
 
 print("Success.")
 

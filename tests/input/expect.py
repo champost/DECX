@@ -51,3 +51,23 @@ def expect_success(cmd: str):
                 "Unexpected distribution line.\n"
                 f"Expected: {' '.join(expected)}\nActual: {' '.join(actual)}\n"
             )
+
+
+def expect_error(cmd, code, message):
+
+    p = popen(cmd)
+
+    if p.wait() == 0:
+        raise Exception("DECX Succeeded while expecting a failure.")
+    if p.returncode != code:
+        raise Exception(
+            "DECX errored out with the wrong code: "
+            f"expected {code}, got {p.returncode}."
+        )
+
+    err = p.stderr.read().decode()
+    if err.strip().split() != message.strip().split():
+        raise Exception(
+            "DECX errored with the wrong message, "
+            f"expected:\n{message}\ngot:\n{err}\n"
+        )
