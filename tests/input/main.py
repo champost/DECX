@@ -6,6 +6,7 @@ Assume it's run from the repo.
 from expect import expect_success
 from edit import edit
 from popen import popen
+from folders import test_folder, dummy_input_files_folder, temp_folder, build_folder
 
 from multiprocessing import cpu_count
 from pathlib import Path
@@ -20,7 +21,6 @@ root_folder = Path(p.stdout.read().decode().strip())
 os.chdir(root_folder)
 
 # Compile project.
-build_folder = "build"
 build_folder = Path(root_folder, build_folder)
 build_folder.mkdir(exist_ok=True)
 os.chdir(build_folder)
@@ -31,14 +31,12 @@ if os.system(f"make -j {cpu_count()}"):
 binary = Path(build_folder, "decx")
 
 # Check that base test input files exist.
-test_folder = ["tests", "input"]
 test_folder = Path(root_folder, *test_folder)
 if not test_folder.exists():
     raise Exception(f"Could not find input tests folder {test_folder}.")
 os.chdir(test_folder)
 
 # Construct temporary test environment.
-temp_folder = "temp"
 temp_folder = Path(test_folder, temp_folder)
 if temp_folder.exists():
     raise Exception(f"Temporary folder {temp_folder} already exists: won't replace.")
@@ -48,7 +46,7 @@ os.chdir(temp_folder)
 # Construct copies to be modified during tests.
 input_files = ["config.toml", "newick.tre", "distrib_legacy.txt", "adjacency.txt"]
 for file in input_files:
-    path = Path(test_folder, "dummy_files", file)
+    path = Path(test_folder, dummy_input_files_folder, file)
     if not os.path.isfile(path):
         raise Exception(f"Could not find test input file {path}.")
     shu.copy(path, temp_folder)

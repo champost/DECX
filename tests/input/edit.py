@@ -1,6 +1,7 @@
 """Introduce modifications to input files.
 """
 from popen import popen
+from folders import dummy_input_files_folder
 
 from pathlib import Path
 import shutil as shu
@@ -9,7 +10,7 @@ import shutil as shu
 def edit(file, diff):
 
     # First, get a fresh copy from upstairs.
-    source = Path(Path.cwd().parent, "dummy_files", file)
+    source = Path(Path.cwd().parent, dummy_input_files_folder, file)
     target = Path(Path.cwd(), file)
     shu.copyfile(source, target)
 
