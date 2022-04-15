@@ -3,12 +3,13 @@
 and check that its behaviour on stdout and stderr is consistent with expectations.
 Assume it's run from the repo.
 """
+from expect import expect_success
+
 from subprocess import Popen, PIPE, STDOUT
 from multiprocessing import cpu_count
 from pathlib import Path
 import shutil as shu
 import os
-
 
 def popen(cmd):
     """Capture shell command output."""
@@ -67,7 +68,9 @@ for file in input_files:
 config = input_files[0]
 flag = "--check-distribution-file-parsing"
 cmd = f"{binary} {config} {flag}"
-os.system(cmd)
+expect_success(popen(cmd))
+
+print("Success.")
 
 # Remove temporary test environment.
 os.chdir(root_folder)
