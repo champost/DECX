@@ -20,3 +20,19 @@ diff (config.toml): # ..with the following modifications..
 error (1): # .. resulting in this error code and the following message:
     Configuration error: Could not find file 'unexistent.tre'.
     ('input_files:tree' line 6, column 8 of 'config.toml')
+
+Failure: Unexistent distribution file.
+diff (config.toml):
+    data = "distrib_legacy.txt"
+    data = "unexistent.txt"
+error (1):
+    Configuration error: Could not find file 'unexistent.txt'.
+    ('input_files:data' line 7, column 8 of 'config.toml')
+
+Failure: Unexistent adjacency file.
+diff (config.toml):
+    adjacency = "adjacency.txt"
+    adjacency = "unexistent.txt"
+error (1):
+    Configuration error: Could not find file 'unexistent.txt'.
+    ('input_files:adjacency' line 8, column 13 of 'config.toml')
