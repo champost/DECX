@@ -1,0 +1,22 @@
+# Test main config file parsing.
+
+Success: Base parsing of dummy config file.
+Matrix:
+           WP EP WN EN CA SA AF MD IN WA AU
+     Amis: 1  1  0  1  0  1  1  0  1  0  0
+     Asin: 0  1  0  1  0  0  1  0  1  0  1
+    Ccroc: 1  1  0  1  0  1  0  0  1  0  1
+     Clat: 1  1  0  0  0  0  0  0  1  0  0
+     Cyac: 0  1  1  0  0  0  0  0  1  0  1
+      Gav: 0  1  1  1  0  1  1  0  1  0  0
+      Tom: 1  1  1  1  0  0  1  0  1  0  1
+
+
+# Expect error..
+Failure: Unexistent tree file.
+diff (config.toml): # ..with the following modifications..
+    tree = "newick.tre"     # <- original line
+    tree = "unexistent.tre" # <- changed line
+error (1): # .. resulting in this error code and the following message:
+    Configuration error: Could not find file 'unexistent.tre'.
+    ('input_files:tree' line 6, column 8 of 'config.toml')
