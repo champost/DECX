@@ -7,6 +7,7 @@ from expect import expect_success, expect_error
 from edit import edit
 from popen import popen
 from folders import test_folder, dummy_input_files_folder, temp_folder, build_folder
+from manager import Manager
 
 from multiprocessing import cpu_count
 from pathlib import Path
@@ -55,19 +56,12 @@ for file in input_files:
 config = input_files[0]
 flag = "--check-distribution-file-parsing"
 cmd = f"{binary} {config} {flag}"
-expect_success(cmd)
 
-# Modify input file.
-diff = ('data = "distrib_legacy.txt"', 'data = "unexistent.txt"')
-edit("config.toml", diff)
-
-# Fail.
-expect_error(
-    cmd,
-    1,
-    "Configuration error: Could not find file 'unexistent.txt'.\n"
-    "('input_files:data' line 7, column 8 of 'config.toml')",
-)
+# Read and execute tests from a dedicated test file.
+tests_file = Path(test_folder, "tests")
+m = Manager(cmd, tests_file)
+while m.step():
+    pass
 
 print("Success.")
 

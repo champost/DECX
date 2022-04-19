@@ -8,19 +8,8 @@ extract error code and stderr to compare to expected error message.
 """
 from popen import popen
 
-expected_header = "WP EP WN EN CA SA AF MD IN WA AU"  # Areas in config file.
-expected_body = """
- Amis: 1 1 0 1 0 1 1 0 1 0 0
- Asin: 0 1 0 1 0 0 1 0 1 0 1
-Ccroc: 1 1 0 1 0 1 0 0 1 0 1
- Clat: 1 1 0 0 0 0 0 0 1 0 0
- Cyac: 0 1 1 0 0 0 0 0 1 0 1
-  Gav: 0 1 1 1 0 1 1 0 1 0 0
-  Tom: 1 1 1 1 0 0 1 0 1 0 1
-"""
 
-
-def expect_success(cmd: str):
+def expect_success(cmd: str, expected_header: str, expected_body: str):
 
     p = popen(cmd)
 
@@ -34,10 +23,15 @@ def expect_success(cmd: str):
     output = p.stdout.read().decode()
     _, matrix = output.rsplit(".txt: ", 1)
     header, body = matrix.split("\n", 1)
-    if header != expected_header:
+
+    # Compare headers without whitespaces.
+    expected = header.strip().split()
+    actual = expected_header.strip().split()
+    if expected != actual:
         raise Exception(
-            "Unexpected distribution header.\n"
-            f"Expected: {expected_header}\nActual: {header}\n"
+            "Unexpected distribution header.\nExpected: {}\nActual: {}\n",
+            " ".join(expected),
+            " ".join(actual),
         )
 
     # Compare bodies without whitespaces.
@@ -48,8 +42,9 @@ def expect_success(cmd: str):
         expected = expected.strip().split()
         if actual != expected:
             raise Exception(
-                "Unexpected distribution line.\n"
-                f"Expected: {' '.join(expected)}\nActual: {' '.join(actual)}\n"
+                "Unexpected distribution line.\nExpected: {}\nActual: {}\n",
+                " ".join(expected),
+                " ".join(actual),
             )
 
 
