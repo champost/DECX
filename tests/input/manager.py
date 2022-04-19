@@ -3,8 +3,16 @@ and report errors in a contextualized way from a simple textual tests file.
 """
 from edit import edit
 from expect import expect_success, expect_error, TestFailure
+from folders import (
+    dummy_input_files_folder,
+    test_folder as test_folder_path,
+    temp_folder as temp_folder_path,
+)
 
+from pathlib import Path
+import os
 import re
+import shutil as shu
 
 # Small patterns to interpret key lines in tests file.
 comments = re.compile(r"#.*")
@@ -16,7 +24,9 @@ error_line = re.compile(r"error \((.*?)\):")
 
 
 class Manager(object):
-    """Read and run test file."""
+    """Read and run test file.
+    Happens within a dedicated temporary folder.
+    """
 
     # Escape codes for coloring output.
     red = "\x1b[31m"
@@ -24,13 +34,32 @@ class Manager(object):
     green = "\x1b[32m"
     reset = "\x1b[0m"
 
-    def __init__(self, cmd, filename):
+    def __init__(self, cmd, filename, root_folder):
         """Initialize the test manager and parse test file.
         cmd: The shell call whose output to collect.
         filename: Path to the test file.
         """
+        self.root_folder = root_folder
+
+        # Check that base test input files exist.
+        self.test_folder = Path(root_folder, *test_folder_path)
+        if not self.test_folder.exists():
+            raise Exception(f"Could not find input tests folder {self.test_folder}.")
+        os.chdir(self.test_folder)
+
+        # Construct temporary test environment.
+        self.temp_folder = Path(self.test_folder, temp_folder_path)
+        if self.temp_folder.exists():
+            raise Exception(
+                f"Temporary folder {self.temp_folder} already exists: won't replace."
+            )
+        self.temp_folder.mkdir()
+        os.chdir(self.temp_folder)
+
+        self.reset_config_files()
+
         self.command = cmd
-        with open(filename, "r") as file:
+        with open(Path(self.test_folder, filename), "r") as file:
             file = file.read()
 
         # Strip comments.
@@ -48,6 +77,16 @@ class Manager(object):
         self.expected_error_message = None
         self.failures = []  # Collect [(test name, error message)]
 
+    def reset_config_files(self):
+        """Fill up temp folder (again) with dummy configuration files."""
+        # Construct copies to be modified during tests.
+        prefix = Path("..", dummy_input_files_folder)
+        for file in os.listdir(prefix):
+            path = Path(prefix, file)
+            if not os.path.isfile(path):
+                raise Exception(f"Could not find test input file {path}.")
+            shu.copy(path, self.temp_folder)
+
     def step(self) -> bool:
         """Read and interpret next test chunk.
         Throw when a test is failing.
@@ -57,6 +96,9 @@ class Manager(object):
             chunk = self.chunks.pop(0).strip()
         except IndexError:
             return False
+
+        # Clean slate.
+        self.reset_config_files()
 
         # Record the data we expect to read on stdout.
         if chunk.startswith("Matrix:"):
@@ -146,3 +188,8 @@ class Manager(object):
                 print(f"{self.blue}{name}{self.reset}\n{message}")
             return
         print(f"{self.green}✔{self.reset} Success.")
+
+    def clean(self):
+        "Remove temporary test environment."
+        os.chdir(self.root_folder)
+        shu.rmtree(self.temp_folder)
