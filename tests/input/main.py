@@ -3,7 +3,6 @@
 and check that its behaviour on stdout and stderr is consistent with expectations.
 Assume it's run from the repo.
 """
-from expect import expect_success, expect_error
 from edit import edit
 from popen import popen
 from folders import test_folder, dummy_input_files_folder, temp_folder, build_folder
@@ -63,7 +62,7 @@ m = Manager(cmd, tests_file)
 while m.step():
     pass
 
-print("Success.")
+m.summary()
 
 # Remove temporary test environment.
 os.chdir(root_folder)

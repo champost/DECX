@@ -9,14 +9,20 @@ extract error code and stderr to compare to expected error message.
 from popen import popen
 
 
+class TestFailure(Exception):
+    def __init__(self, message):
+        super().__init__(message)
+        self.message = message
+
+
 def expect_success(cmd: str, expected_header: str, expected_body: str):
 
     p = popen(cmd)
 
     if code := p.wait():
         message = p.stderr.read().decode()
-        raise Exception(
-            f"DECX failed while expecting a success (error code {code}):\n{message}",
+        raise TestFailure(
+            f"DECX failed while expecting a success (error code {code}):\n{message}"
         )
 
     # Extract matrix from output.
@@ -28,10 +34,10 @@ def expect_success(cmd: str, expected_header: str, expected_body: str):
     expected = header.strip().split()
     actual = expected_header.strip().split()
     if expected != actual:
-        raise Exception(
-            "Unexpected distribution header.\nExpected: {}\nActual: {}\n",
-            " ".join(expected),
-            " ".join(actual),
+        raise TestFailure(
+            "Unexpected distribution header.\nExpected: {}\nActual: {}\n".format(
+                " ".join(expected), " ".join(actual)
+            )
         )
 
     # Compare bodies without whitespaces.
@@ -41,10 +47,10 @@ def expect_success(cmd: str, expected_header: str, expected_body: str):
         actual = actual.strip().split()
         expected = expected.strip().split()
         if actual != expected:
-            raise Exception(
-                "Unexpected distribution line.\nExpected: {}\nActual: {}\n",
-                " ".join(expected),
-                " ".join(actual),
+            raise TestFailure(
+                "Unexpected distribution line.\nExpected: {}\n  Actual: {}\n".format(
+                    " ".join(expected), " ".join(actual)
+                )
             )
 
 
@@ -53,16 +59,16 @@ def expect_error(cmd, code, message):
     p = popen(cmd)
 
     if p.wait() == 0:
-        raise Exception("DECX Succeeded while expecting a failure.")
+        raise TestFailure("DECX Succeeded while expecting a failure.")
     if p.returncode != code:
-        raise Exception(
+        raise TestFailure(
             "DECX errored out with the wrong code: "
             f"expected {code}, got {p.returncode}."
         )
 
     err = p.stderr.read().decode()
     if err.strip().split() != message.strip().split():
-        raise Exception(
-            "DECX errored with the wrong message, "
-            f"expected:\n{message}\ngot:\n{err}\n"
+        raise TestFailure(
+            "  DECX errored with the wrong message, "
+            f"expected:\n{message}\n  got:\n{err}\n"
         )

@@ -2,7 +2,7 @@
 and report errors in a contextualized way from a simple textual tests file.
 """
 from edit import edit
-from expect import expect_success, expect_error
+from expect import expect_success, expect_error, TestFailure
 
 import re
 
@@ -20,6 +20,7 @@ class Manager(object):
 
     # Escape codes for coloring output.
     red = "\x1b[31m"
+    blue = "\x1b[34m"
     green = "\x1b[32m"
     reset = "\x1b[0m"
 
@@ -45,6 +46,7 @@ class Manager(object):
         self.expected_matrix = None
         self.expected_error_code = None
         self.expected_error_message = None
+        self.failures = []  # Collect [(test name, error message)]
 
     def step(self) -> bool:
         """Read and interpret next test chunk.
@@ -131,7 +133,16 @@ class Manager(object):
                 expect_error(
                     self.command, self.expected_error_code, self.expected_error_message
                 )
-        except Exception as e:
+        except TestFailure as e:
             print(f" {self.red}FAIL{self.reset}")
-            raise e
+            self.failures.append((self.test_name, e.message))
+            return
         print(f" {self.green}PASS{self.reset}")
+
+    def summary(self):
+        if self.failures:
+            print(f"{self.red}🗙{self.reset} The following tests failed:")
+            for name, message in self.failures:
+                print(f"{self.blue}{name}{self.reset}\n{message}")
+            return
+        print(f"{self.green}✔{self.reset} Success.")
