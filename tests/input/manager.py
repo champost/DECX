@@ -134,32 +134,41 @@ class Manager(object):
             self.run_test()
             return True
 
-        diffs = []  # [(file, before, after)]
-        message = ""
+        diffs = []  # [(file, difflines)]
+        difflines = []
+        message = []  # stored by lines
         state = None
         for line in chunk.split("\n"):
+            line = line.strip()
             # Collect required diffs.
             if m := diff_line.match(line):
                 file = m.group(1)
-                state = "before"
-            elif state == "before":
-                before = line
-                state = "after"
-            elif state == "after":
-                after = line
-                diffs.append((file, before, after))
-                state = None
+                difflines = []
+                state = "diff"
+                continue
             # Collect expected error.
-            elif m := error_line.match(line):
+            if m := error_line.match(line):
+                # Out from state "diff"
+                diffs.append((file, difflines))
+                difflines = []
+                # Into state "message"
                 self.expected_error_code = int(m.group(1))
                 state = "message"
-            elif state == "message":
-                message += line.strip() + "\n"
-        self.expected_error_message = message.strip()
+                continue
+            if state == "message":
+                message.append(line)
+                continue
+            if state == "diff":
+                difflines.append(line)
+                continue
+        if difflines:
+            diffs.append((file, difflines))
+            difflines = []
+        self.expected_error_message = "\n".join(m.strip() for m in message)
 
         # Perform required diffs.
-        for file, before, after in diffs:
-            edit(file, (before.strip(), after.strip()))
+        for file, difflines in diffs:
+            edit(file, difflines)
 
         # Ready to run the test now.
         self.run_test()
