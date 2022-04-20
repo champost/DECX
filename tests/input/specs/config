@@ -12,6 +12,8 @@ Matrix:
       Tom: 1  1  1  1  0  0  1  0  1  0  1
 
 
+# Input files ==================================================================
+
 # Expect error..
 Failure: Unexistent tree file.
 diff (config.toml): # ..with the following modifications..
@@ -20,6 +22,13 @@ diff (config.toml): # ..with the following modifications..
 error (1): # .. resulting in this error code and the following message:
     Configuration error: Could not find file 'unexistent.tre'.
     ('input_files:tree' line 6, column 8 of 'config.toml')
+
+Failure: No input files table given.
+diff (config.toml):
+    COMMENT [input_files]
+error (1):
+    Configuration error: 'input_files' is required, but not given.
+    (root table line 1, column 1 of 'config.toml')
 
 Failure: Unexistent distribution file.
 diff (config.toml):
@@ -36,3 +45,138 @@ diff (config.toml):
 error (1):
     Configuration error: Could not find file 'unexistent.txt'.
     ('input_files:adjacency' line 8, column 13 of 'config.toml')
+
+Success: Adjacency file is optional.
+diff (config.toml):
+    COMMENT adjacency = "adjacency.txt"
+
+# Parameters ===================================================================
+
+Failure: No ancestral states.
+diff (config.toml):
+    COMMENT ancestral_states = true
+error (1):
+    Configuration error: 'ancestral_states' is required, but not given.
+    ('parameters' line 11, column 1 of 'config.toml')
+
+Failure: Wrong type for ancestral states.
+diff (config.toml):
+    ancestral_states = true
+    ancestral_states = 15
+error (1):
+    Configuration error: node should either be of type
+    array or boolean or string, not integer.
+    ('parameters:ancestral_states' line 12, column 20 of 'config.toml')
+
+Failure: Wrong report.
+diff (config.toml):
+    report = "states"
+    report = "dummy"
+error (1):
+    Unknown report type: 'dummy'. Supported types are 'states' and 'splits'.
+    ('parameters:report' line 13, column 10 of 'config.toml')
+
+Failure: Wrong type for rapid anagenesis.
+diff (config.toml):
+    rapid_anagenesis = false
+    rapid_anagenesis = []
+error (1):
+    Configuration error: node should be of type boolean, not array.
+    ('parameters:rapid_anagenesis' line 15, column 20 of 'config.toml')
+
+Failure: Wrong type for single period.
+diff (config.toml):
+    periods = [5.33, 17.7, 10.87, 22.1, 14.0]
+    periods = [5.33, '17.7', 10.87, 22.1, 14.0]
+error (1):
+    Configuration error: node should either be of type
+    floating-point or integer, not string.
+    ('parameters:periods:2' line 17, column 18 of 'config.toml')
+
+# Areas ========================================================================
+
+Failure: No areas table.
+diff (config.toml):
+    COMMENT [areas]
+error (1):
+    Configuration error: table contains unexpected parameter 'names'.
+    ('parameters' line 11, column 1 of 'config.toml')
+
+Success: Areas as table or space-separated words.
+diff (config.toml):
+    COMMENT names = "WP EP WN EN CA SA AF MD IN WA AU"
+    UNCOMMENT names = ["WP", "EP", "WN", "EN", "CA", "SA", "AF", "MD", "IN", "WA", "AU"]
+
+# Distributions ================================================================
+
+Success: Indifferent whitespace in areas.
+diff (config.toml):
+    names = "WP EP WN EN CA SA AF MD IN WA AU"
+    names = "  WP    EP WN EN CA SA AF   MD IN WA AU  "
+
+Failure: Catch invalid area names in distribution.
+diff (config.toml):
+    "WP EP WN",
+    "WP wrong WN",
+error (1):
+    Unknown area name in distribution: 'wrong'
+    (known areas: 'WP' 'EP' 'WN' 'EN' 'CA' 'SA' 'AF' 'MD' 'IN' 'WA' 'AU').
+    ('areas:distributions:set:1' line 28, column 3 of 'config.toml')
+
+Failure: Catch missing area in binary distribution.
+diff (config.toml):
+    "11010110101",
+    "1101011010",
+error (1):
+    Invalid binary specification of a distribution:
+    '1101011010' contains 10 digits but there are 11 areas.
+    ('areas:distributions:set:3' line 30, column 3 of 'config.toml')
+
+Failure: Catch extra area in binary distribution.
+diff (config.toml):
+    "11010110101",
+    "110101101011",
+error (1):
+    Invalid binary specification of a distribution:
+    '110101101011' contains 12 digits but there are 11 areas.
+    ('areas:distributions:set:3' line 30, column 3 of 'config.toml')
+
+Failure: Catch the ambiguous case.
+diff (config.toml):
+    names = "WP EP WN EN CA SA AF MD IN WA AU"
+    names = "101 B C"
+    "WP EP WN",
+    "101",
+error (1):
+    Ambiguous distribution specification :
+    '101' could either represent the single area '101'
+    or a binary set of other areas..
+    now be honest: you did that on purpose, right?
+    ('areas:distributions:set:1' line 28, column 3 of 'config.toml')
+
+# MRCAs ========================================================================
+
+Failure: Age required for fossil branches.
+diff (config.toml):
+    COMMENT age = 15.8
+error (1):
+    Configuration error: 'age' is required, but not given.
+    ('mrca:Gavialidae' line 36, column 1 of 'config.toml')
+
+Failure: Catch invalid area.
+diff (config.toml):
+    area = "CA"
+    area = "wrong"
+error (1):
+    Unknown area 'wrong' provided.
+    ('mrca:Gavialidae:area' line 39, column 8 of 'config.toml')
+
+Failure: Catch invalid MRCA type specification.
+diff (config.toml):
+    type = "fixed node"
+    type = "fixed branch"
+error (1):
+    Unknown MRCA type: 'fixed branch'.
+    Supported types are 'fixed node', 'fossil node' and 'fossil branch'.
+    ('mrca:Caiman:type' line 43, column 8 of 'config.toml')
+
