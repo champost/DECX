@@ -8,6 +8,9 @@ from folders import dummy_input_files_folder
 
 from pathlib import Path
 import shutil as shu
+import re
+
+indent = re.compile(r"\s*")
 
 
 def edit(file, difflines):
@@ -47,13 +50,16 @@ def edit(file, difflines):
             for i, line in enumerate(content):
                 if line.strip().startswith(before):
                     found = True
+                    # Collect original leading whitespace
+                    # to reset it after transformation.
+                    blank = indent.match(line).group()
                     break
             if not found:
                 raise Exception(
                     "Error in test file: "
                     f"could not find the following line in {file}:\n{before}"
                 )
-            content[i] = after + "\n"
+            content[i] = blank + after + "\n"
             pair = []
 
     with open(file, "w") as handle:
