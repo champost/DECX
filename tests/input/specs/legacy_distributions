@@ -1,0 +1,99 @@
+# Test legacy distribution file parsing.
+
+Success: Base parsing of dummy legacy distribution file.
+Matrix:
+           WP EP WN EN CA SA AF MD IN WA AU
+     Amis: 1  1  0  1  0  1  1  0  1  0  0
+     Asin: 0  1  0  1  0  0  1  0  1  0  1
+    Ccroc: 1  1  0  1  0  1  0  0  1  0  1
+     Clat: 1  1  0  0  0  0  0  0  1  0  0
+     Cyac: 0  1  1  0  0  0  0  0  1  0  1
+      Gav: 0  1  1  1  0  1  1  0  1  0  0
+      Tom: 1  1  1  1  0  0  1  0  1  0  1
+
+
+Failure: Catch invalid format specifier.
+diff (distrib_legacy.txt):
+    7 11
+    wrong 11
+error (2):
+    Error: could not interpret 'wrong'
+    as a number of species or a transposition specification (s\a or a\s).
+    (line 1 column 1 in 'distrib_legacy.txt')
+
+Failure: Catch extra species.
+diff (distrib_legacy.txt):
+    7 11
+    6 11
+error (2):
+    Error: more species found than specified at the beginning of the file:
+    expected 6, got at least 7.
+    (line 13 column 1 in 'distrib_legacy.txt')
+
+Failure: Catch missing species.
+diff (distrib_legacy.txt):
+    7 11
+    8 11
+error (2):
+    Error: not as many species lines than specified at the beginning of the file:
+    expected 8, got only 7.
+    (line 16 column 0 in 'distrib_legacy.txt')
+
+Failure: Catch wrong number of areas.
+diff (distrib_legacy.txt):
+    7 11
+    7 10
+error (2):
+    Error: inconsistent number of areas:
+    10 in distributions file but 11 in configuration file.
+    (line 1 column 3 in 'distrib_legacy.txt')
+
+Failure: Catch missing distributions.
+diff (distrib_legacy.txt):
+    Amis 11010110100
+    Amis
+error (2):
+    Error: no distribution specified for species Amis.
+    (line 3 column 5 in 'distrib_legacy.txt')
+
+Failure: Catch invalid distributions.
+diff (distrib_legacy.txt):
+    Amis 11010110100
+    Amis 11X10110100
+error (2):
+    Error: unexpected char in legacy species distribution format: X
+    (line 3 column 8 in 'distrib_legacy.txt')
+
+Failure: Catch distributions with extra digits.
+diff (distrib_legacy.txt):
+    Amis 11010110100
+    Amis 1101011010011
+error (2):
+    Error: too many digits in legacy species distribution format:
+    expected 11, got 13.
+    (line 3 column 17 in 'distrib_legacy.txt')
+
+Failure: Catch distributions with missing digits.
+diff (distrib_legacy.txt):
+    Amis 11010110100
+    Amis 110101101
+error (2):
+    Error: not enough digits in legacy species distribution format:
+    expected 11, got 9.
+    (line 3 column 14 in 'distrib_legacy.txt')
+
+Failure: Catch extra tokens.
+diff (distrib_legacy.txt):
+    Amis 11010110100
+    Amis 11010110100 extra
+error (2):
+    Error: unexpected token on species line : 'extra'
+    (line 3 column 18 in 'distrib_legacy.txt')
+
+Failure: Catch duplicated species name.
+diff (distrib_legacy.txt):
+    Ccroc 11010100101
+    Amis  11010100101
+error (2):
+    Error: distribution for species Amis specified more than once.
+    (line 8 column 1 in 'distrib_legacy.txt')
