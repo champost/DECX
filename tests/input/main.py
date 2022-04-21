@@ -34,7 +34,7 @@ flag = "--check-distribution-file-parsing"
 cmd = f"{binary} config.toml {flag}"
 
 # Setup temporary test folder and read tests from the tests file.
-m = Manager(cmd, "tests", root_folder)
+m = Manager(cmd, root_folder)
 while m.step():
     pass
 

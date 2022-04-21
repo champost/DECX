@@ -7,6 +7,7 @@ from folders import (
     dummy_input_files_folder,
     test_folder as test_folder_path,
     temp_folder as temp_folder_path,
+    specs_folder,
 )
 
 from pathlib import Path
@@ -24,7 +25,7 @@ error_line = re.compile(r"error \((.*?)\):")
 
 
 class Manager(object):
-    """Read and run test file.
+    """Read and run test files in the specs folder.
     Happens within a dedicated temporary folder.
     """
 
@@ -34,10 +35,9 @@ class Manager(object):
     green = "\x1b[32m"
     reset = "\x1b[0m"
 
-    def __init__(self, cmd, filename, root_folder):
+    def __init__(self, cmd, root_folder):
         """Initialize the test manager and parse test file.
         cmd: The shell call whose output to collect.
-        filename: Path to the test file.
         """
         self.root_folder = root_folder
 
@@ -59,14 +59,27 @@ class Manager(object):
         self.reset_config_files()
 
         self.command = cmd
-        with open(Path(self.test_folder, filename), "r") as file:
-            file = file.read()
 
-        # Strip comments.
-        file = comments.sub("", file).strip()
+        self.files = os.listdir(Path(self.test_folder, specs_folder))
 
-        # Separate into testing units.
-        self.chunks = chunk_separator.split(file)
+        self.failures = []  # Collect [(test file, test name, error message)]
+
+        self.next_file()
+
+    def next_file(self):
+        """Go read next test files.
+        Return false if none left.
+        """
+        try:
+            self.test_file = self.files.pop(0)
+        except IndexError:
+            return False
+
+        print(f"\nRead tests from {self.blue}{self.test_file}{self.reset}:")
+
+        self.chunks = self.file_to_chunks(
+            Path(self.test_folder, specs_folder, self.test_file)
+        )
 
         # Filled along during chunks reading.
         self.test_name = None  # (the current test name)
@@ -75,7 +88,18 @@ class Manager(object):
         self.expected_matrix = None
         self.expected_error_code = None
         self.expected_error_message = None
-        self.failures = []  # Collect [(test name, error message)]
+
+        return True
+
+    def file_to_chunks(self, path):
+        with open(path, "r") as file:
+            file = file.read()
+
+        # Strip comments.
+        file = comments.sub("", file).strip()
+
+        # Separate into testing units.
+        return chunk_separator.split(file)
 
     def reset_config_files(self):
         """Fill up temp folder (again) with dummy configuration files."""
@@ -95,6 +119,8 @@ class Manager(object):
         try:
             chunk = self.chunks.pop(0).strip()
         except IndexError:
+            if self.next_file():
+                return self.step()
             return False
 
         # Clean slate.
@@ -186,17 +212,20 @@ class Manager(object):
                 )
         except TestFailure as e:
             print(f" {self.red}FAIL{self.reset}")
-            self.failures.append((self.test_name, e.message))
+            self.failures.append((self.test_file, self.test_name, e.message))
             return
         print(f" {self.green}PASS{self.reset}")
 
     def summary(self):
         if self.failures:
-            print(f"{self.red}🗙{self.reset} The following tests failed:")
-            for name, message in self.failures:
-                print(f"{self.blue}{name}{self.reset}\n{message}")
+            print(f"\n{self.red}🗙{self.reset} The following tests failed:")
+            for test_file, name, message in self.failures:
+                print(
+                    f"{self.blue}{name}{self.reset}"
+                    f" ('{test_file}' test file)\n{message}"
+                )
             return
-        print(f"{self.green}✔{self.reset} Success.")
+        print(f"\n{self.green}✔{self.reset} Success.")
 
     def clean(self):
         "Remove temporary test environment."
