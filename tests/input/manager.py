@@ -20,6 +20,7 @@ comments = re.compile(r"#.*")
 chunk_separator = re.compile(r"\n\n+")
 success_line = re.compile(r"Success: ?(.*)")
 failure_line = re.compile(r"Failure: ?(.*)")
+matrix_line = re.compile(r"Matrix:")
 diff_line = re.compile(r"diff \((.*?)\):\s*(PERSIST)?")
 error_line = re.compile(r"error \((.*?)\):")
 
@@ -84,13 +85,13 @@ class Manager(object):
         # Filled along during chunks reading.
         self.test_name = None  # (the current test name)
         self.expect_success = None  # (boolean)
-        self.expected_header = None
-        self.expected_matrix = None
         self.expected_error_code = None
         self.expected_error_message = None
         # The scope of some diffs extend beyond the chunk
         # and until the end of the file.
-        self.persistent_diffs = [] # [(file, difflines)]
+        self.persistent_diffs = []  # [(file, difflines)]
+        # The expected output in case of success may also persists.
+        self.expected_matrix = None
 
         return True
 
@@ -129,14 +130,7 @@ class Manager(object):
         # Clean slate.
         self.reset_config_files()
 
-        # Record the data we expect to read on stdout.
-        if chunk.startswith("Matrix:"):
-            _, header, matrix = chunk.split("\n", 2)
-            self.expected_header = header
-            self.expected_matrix = matrix
-            return True
-
-        # Or perform the test.
+        # Prepare the test.
         if m := success_line.match(chunk):
             self.expect_success = True
         elif m := failure_line.match(chunk):
@@ -163,13 +157,16 @@ class Manager(object):
             self.run_test()
             return True
 
-        diffs = [*self.persistent_diffs] # [(file, difflines)]
+        diffs = [*self.persistent_diffs]  # [(file, difflines)]
         difflines = []
         persist = False
         message = []  # stored by lines
-        state = None
-        chunk = chunk.split('\n')
-        for i, line in enumerate(chunk + ["ENDOFCHUNK"]): # Loop once after termination.
+        state = None  # "diff", "message", "matrix"
+        chunk = chunk.split("\n")
+        matrix = []  # Zero or (the last) one per chunk.
+        for i, line in enumerate(
+            chunk + ["ENDOFCHUNK"]
+        ):  # Loop once after termination.
             line = line.strip()
             # Are we entering a new state, and which one?
             change = True
@@ -179,10 +176,14 @@ class Manager(object):
                 persist = bool(m.group(2))
                 difflines = []
                 state = "diff"
-            elif m:= error_line.match(line):
+            elif m := error_line.match(line):
                 # Entering message state.
                 self.expected_error_code = int(m.group(1))
                 state = "message"
+            elif m := matrix_line.match(line):
+                # Entering matrix state.
+                matrix = []
+                state = "matrix"
             else:
                 change = False
 
@@ -193,6 +194,9 @@ class Manager(object):
                     if persist:
                         self.persistent_diffs.append((file, difflines))
                 difflines = []
+                # Out from previous "matrix" state.
+                if matrix:
+                    self.expected_matrix = matrix
                 # The current line has already been processed.
                 continue
 
@@ -201,6 +205,8 @@ class Manager(object):
                 message.append(line)
             elif state == "diff":
                 difflines.append(line)
+            elif state == "matrix":
+                matrix.append(line)
 
         # Gather into one message.
         self.expected_error_message = "\n".join(m.strip() for m in message)
@@ -218,7 +224,7 @@ class Manager(object):
         print(f"Test: {self.test_name}..", end="")
         try:
             if self.expect_success:
-                expect_success(self.command, self.expected_header, self.expected_matrix)
+                expect_success(self.command, self.expected_matrix)
             else:
                 expect_error(
                     self.command, self.expected_error_code, self.expected_error_message

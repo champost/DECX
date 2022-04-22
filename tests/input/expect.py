@@ -15,7 +15,7 @@ class TestFailure(Exception):
         self.message = message
 
 
-def expect_success(cmd: str, expected_header: str, expected_body: str):
+def expect_success(cmd: str, expected_matrix_lines: [str]):
 
     p = popen(cmd)
 
@@ -28,22 +28,10 @@ def expect_success(cmd: str, expected_header: str, expected_body: str):
     # Extract matrix from output.
     output = p.stdout.read().decode()
     _, matrix = output.rsplit(".txt: ", 1)
-    header, body = matrix.split("\n", 1)
+    actual_lines = matrix.splitlines()
 
-    # Compare headers without whitespaces.
-    expected = header.strip().split()
-    actual = expected_header.strip().split()
-    if expected != actual:
-        raise TestFailure(
-            "Unexpected distribution header.\nExpected: {}\nActual: {}\n".format(
-                " ".join(expected), " ".join(actual)
-            )
-        )
-
-    # Compare bodies without whitespaces.
-    body = body.strip().splitlines()
-    ebody = expected_body.strip().splitlines()
-    for actual, expected in zip(body, ebody):
+    # Compare matrices line by line without whitespace.
+    for actual, expected in zip(actual_lines, expected_matrix_lines):
         actual = actual.strip().split()
         expected = expected.strip().split()
         if actual != expected:
@@ -52,6 +40,20 @@ def expect_success(cmd: str, expected_header: str, expected_body: str):
                     " ".join(expected), " ".join(actual)
                 )
             )
+    a = len(actual_lines)
+    e = len(expected_matrix_lines)
+    if a > e:
+        raise TestFailure(
+            "Unexpected distribution trailing lines:\n{}".format(
+                "\n".join(actual_lines[e:])
+            )
+        )
+    if e > a:
+        raise TestFailure(
+            "Missing distribution lines:\n{}".format(
+                "\n".join(expected_matrix_lines[a:])
+            )
+        )
 
 
 def expect_error(cmd, code, message):
