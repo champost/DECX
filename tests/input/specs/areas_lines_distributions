@@ -1,0 +1,109 @@
+# Test areas lines distributions file parsing.
+
+Success: Base parsing of dummy areas lines distributions file.
+diff (config.toml): PERSIST
+    data = "distrib_legacy.txt"
+    data = "distrib_areas_lines.txt"
+Matrix:
+           WP EP WN EN CA SA AF MD IN WA AU
+     Amis: 1  1  0  1  0  1  1  0  1  0  0
+     Asin: 0  1  1  1  0  1  1  0  1  0  0
+    Ccroc: 1  1  0  1  0  1  0  0  1  0  1
+     Clat: 0  1  1  0  0  0  0  0  1  0  1
+     Cyac: 0  1  0  1  0  0  1  0  1  0  1
+      Gav: 1  1  0  0  0  0  0  0  1  0  0
+      Tom: 1  1  1  1  0  0  1  0  1  0  1
+
+Failure: Catch invalid area name.
+diff (distrib_areas_lines.txt):
+    WP    1    0    1     0     0    1    1
+    wrong 1    0    1     0     0    1    1
+error (2):
+    Error: area 'wrong' not found in configuration file.
+    (line 2 column 1 in 'distrib_areas_lines.txt')
+
+Failure: Catch missing area name.
+diff (distrib_areas_lines.txt):
+    COMMENT WP    1    0    1     0     0    1    1
+    COMMENT EP    1    1    1     1     1    1    1
+error (2):
+    Error: not all areas defined in configuration file  have been specified.
+    Missing: WP EP
+    (line 17 column 0 in 'distrib_areas_lines.txt')
+
+Failure: Catch duplicated area name.
+diff (distrib_areas_lines.txt):
+    EP    1    1    1     1     1    1    1
+    WP    1    1    1     1     1    1    1
+error (2):
+    Error: area 'WP' is specified twice.
+    (line 3 column 1 in 'distrib_areas_lines.txt')
+
+Failure: Catch invalid binary digit in whitespace separated line.
+diff (distrib_areas_lines.txt):
+    WP    1    0    1     0     0    1    1
+    WP    1    X    1     0     0    1    1
+error (2):
+    Error: expected 1 or 0, got 'X'.
+    (line 2 column 12 in 'distrib_areas_lines.txt')
+
+Failure: Catch extra binary digit in whitespace separated line.
+diff (distrib_areas_lines.txt):
+    WP    1    0    1     0     0    1    1
+    WP    1    0    1     0     0    1    1   1
+error (2):
+    Error: too many digits in community specification:
+    expected 7, got at least 8.
+    (line 2 column 43 in 'distrib_areas_lines.txt')
+
+Failure: Catch missing binary digit in whitespace separated line.
+diff (distrib_areas_lines.txt):
+    WP    1    0    1     0     0    1    1
+    WP    1    0    1     0     0    1
+error (2):
+    Error: not enough digits in community specification:
+    expected 7, got only 6.
+    (line 2 column 35 in 'distrib_areas_lines.txt')
+
+Failure: Catch invalid binary digit in legacy line.
+diff (distrib_areas_lines.txt):
+    EN    1110101
+    EN    1X10101
+error (2):
+    Error: could not interpret token '1X10101' as an area community specification.
+    Consider using ones and zeroes, or '+' or '-' to explicitly name species.
+    (line 7 column 7 in 'distrib_areas_lines.txt')
+
+Failure: Catch extra binary digit in legacy line.
+diff (distrib_areas_lines.txt):
+    EN    1110101
+    EN    11101010
+error (2):
+    Error: too many digits in community specification:
+    expected 7, got at least 8.
+    (line 7 column 14 in 'distrib_areas_lines.txt')
+
+Failure: Catch missing binary digit in legacy line.
+diff (distrib_areas_lines.txt):
+    EN    1110101
+    EN    111010
+error (2):
+    Error: not enough digits in community specification:
+    expected 7, got only 6.
+    (line 7 column 13 in 'distrib_areas_lines.txt')
+
+Failure: Catch wrong species name in inclusion line.
+diff (distrib_areas_lines.txt):
+    SA + Amis Asin Ccroc
+    SA + Amis wrong Ccroc
+error (2):
+    Error: unrecognized species name: 'wrong' (not found in file header)
+    (line 12 column 11 in 'distrib_areas_lines.txt')
+
+Failure: Catch wrong species name in exclusion line.
+diff (distrib_areas_lines.txt):
+    AU - Amis Asin Gav
+    AU - Amis Asin wrong
+error (2):
+    Error: unrecognized species name: 'wrong' (not found in file header)
+    (line 16 column 16 in 'distrib_areas_lines.txt')
