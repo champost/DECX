@@ -16,11 +16,11 @@ bdeps() {
 
 #==== Dependencies =============================================================
 # Build-time only dependencies.
-bdeps git             # To get source code.
-bdeps cmake make      # Build tools.
-bdeps gcc gcc-fortran # Compilers
-bdeps boost           # Template lib.
-bdeps pacman-contrib  # For paccache.
+bdeps git               # To get source code.
+bdeps cmake make python # Build tools.
+bdeps gcc gcc-fortran   # Compilers
+bdeps boost             # Template lib.
+bdeps pacman-contrib    # For paccache.
 
 # Runtime dependencies.
 deps openblas lapack gsl
@@ -47,6 +47,9 @@ read -r -d '' COMPILATION_LAYER <<-'EOF'
     cd build
     cmake -DCMAKE_BUILD_TYPE=Release ..
     make -j $(nproc)
+
+    # Test
+    ../tests/input/main.py
     #---------------------------------------------------------------------------
 EOF
 
