@@ -20,7 +20,7 @@ comments = re.compile(r"#.*")
 chunk_separator = re.compile(r"\n\n+")
 success_line = re.compile(r"Success: ?(.*)")
 failure_line = re.compile(r"Failure: ?(.*)")
-diff_line = re.compile(r"diff \((.*?)\):")
+diff_line = re.compile(r"diff \((.*?)\):\s*(PERSIST)?")
 error_line = re.compile(r"error \((.*?)\):")
 
 
@@ -88,6 +88,9 @@ class Manager(object):
         self.expected_matrix = None
         self.expected_error_code = None
         self.expected_error_message = None
+        # The scope of some diffs extend beyond the chunk
+        # and until the end of the file.
+        self.persistent_diffs = [] # [(file, difflines)]
 
         return True
 
@@ -160,36 +163,46 @@ class Manager(object):
             self.run_test()
             return True
 
-        diffs = []  # [(file, difflines)]
+        diffs = [*self.persistent_diffs] # [(file, difflines)]
         difflines = []
+        persist = False
         message = []  # stored by lines
         state = None
-        for line in chunk.split("\n"):
+        chunk = chunk.split('\n')
+        for i, line in enumerate(chunk + ["ENDOFCHUNK"]): # Loop once after termination.
             line = line.strip()
-            # Collect required diffs.
+            # Are we entering a new state, and which one?
+            change = True
             if m := diff_line.match(line):
+                # Entering diff state.
                 file = m.group(1)
+                persist = bool(m.group(2))
                 difflines = []
                 state = "diff"
-                continue
-            # Collect expected error.
-            if m := error_line.match(line):
-                # Out from state "diff"
-                diffs.append((file, difflines))
-                difflines = []
-                # Into state "message"
+            elif m:= error_line.match(line):
+                # Entering message state.
                 self.expected_error_code = int(m.group(1))
                 state = "message"
+            else:
+                change = False
+
+            if change or i == len(chunk):
+                # Out from previous "diff" state (maybe into a different "diff" state)
+                if difflines:
+                    diffs.append((file, difflines))
+                    if persist:
+                        self.persistent_diffs.append((file, difflines))
+                difflines = []
+                # The current line has already been processed.
                 continue
+
+            # Collect expected error.
             if state == "message":
                 message.append(line)
-                continue
-            if state == "diff":
+            elif state == "diff":
                 difflines.append(line)
-                continue
-        if difflines:
-            diffs.append((file, difflines))
-            difflines = []
+
+        # Gather into one message.
         self.expected_error_message = "\n".join(m.strip() for m in message)
 
         # Perform required diffs.
