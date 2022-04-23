@@ -2,6 +2,18 @@
 
 This is the git version of the http://code.google.com/p/lagrange c++ version
 
+#### 🚧 🚧 🚧 Project status (2022-04-23) 🚧 🚧 🚧
+
+In October 2021, DECX was running fine,
+but it was difficult to install and to configure.
+I am currently in the process
+of easing installation and configuration of the software,
+adding tests, documentation, and easing output retrieval.
+Should you have any trouble using it,
+or should you like to contribute,
+please don't hesitate to file issue/PRs on this repo
+and to ping me @iago-lito :)
+
 ## Usage
 
 To be written...
@@ -55,16 +67,18 @@ docker run --rm -it -v ${PWD}:/home/decx decx my_config.file.toml
 
 Install the following dependencies on your system:
 - [GFortran]
-- [GSL]
 - [Boost]
-- [LAPACK]
 - [CMake]
+- [OpenBlas]
+- [GSL]
+- [LAPACK]
 
 [gfortran]: https://gcc.gnu.org/wiki/GFortran
-[gsl]: https://www.gnu.org/software/gsl/
 [boost]: https://www.boost.org/
-[LAPACK]: http://www.netlib.org/lapack/
 [CMake]: https://cmake.org/
+[OpenBlas]: https://www.openblas.net/
+[gsl]: https://www.gnu.org/software/gsl/
+[LAPACK]: http://www.netlib.org/lapack/
 
 Then, build DECX with:
 
@@ -73,13 +87,13 @@ Then, build DECX with:
 git clone --recursive https://github.com/champost/DECX
 
 # Choose a build directory.
-cd decx/
+cd DECX/
 mkdir build
 cd build
 
 # Configure compilation with CMake.
 # This step is supposed to fail if a dependency cannot be found on your system.
-cmake ../src
+cmake -DCMAKE_BUILD_TYPE=Release ..
 
 # Compile.
 make -j $(nproc)
