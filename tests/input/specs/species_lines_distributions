@@ -19,6 +19,13 @@ diff (distrib_species_lines.txt):
     s\a   WP EP WN EN CA SA AF MD IN WA AU
     s\a # Implicitly relies on order defined in configuration file.
 
+Success: Authorize blank and comments before header line.
+diff (distrib_species_lines.txt):
+    INSERT ABOVE s\a   WP EP WN EN CA SA AF MD IN WA AU
+    A comment above header.
+    COMMENT A comment above header.
+    INDENT s\a   WP EP WN EN CA SA AF MD IN WA AU
+
 Success: Change order in header.
 diff (distrib_species_lines.txt):
     s\a   WP EP WN EN CA SA AF MD IN WA AU

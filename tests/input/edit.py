@@ -26,7 +26,13 @@ def edit(file, difflines):
 
     # Process diff lines one by one, and perform one edit on every pair collected.
     pair = []
-    for d in difflines:
+    itd = iter(difflines)
+    insert = False
+    while True:
+        try:
+            d = next(itd)
+        except StopIteration:
+            break
         # Spot and process keywords first.
         kw = "COMMENT"
         if d.startswith(kw + " "):
@@ -40,6 +46,22 @@ def edit(file, difflines):
             before = "# " + after
             pair = [before, after]
 
+        kw = "INDENT"  # (+ 4 leading spaces)
+        if d.startswith(kw + " "):
+            before = d.replace(kw, "", 1).strip()
+            after = 4 * " " + before
+            pair = [before, after]
+
+        kw = "INSERT ABOVE"
+        if d.startswith(kw + " "):
+            after = d.replace(kw, "", 1).strip()
+            try:
+                before = next(itd)
+            except StopIteration:
+                raise Exception(f"No line provided to insert above '{after}'.")
+            pair = [before, after]
+            insert = True
+
         if len(pair) < 2:
             pair.append(d)
 
@@ -47,8 +69,9 @@ def edit(file, difflines):
             # Resolve the pair.
             found = False
             before, after = pair
+            sought = after if insert else before
             for i, line in enumerate(content):
-                if line.strip().startswith(before):
+                if line.strip().startswith(sought):
                     found = True
                     # Collect original leading whitespace
                     # to reset it after transformation.
@@ -57,9 +80,13 @@ def edit(file, difflines):
             if not found:
                 raise Exception(
                     "Error in test file: "
-                    f"could not find the following line in {file}:\n{before}"
+                    f"could not find the following line in {file}:\n{sought}"
                 )
-            content[i] = blank + after + "\n"
+            if insert:
+                content.insert(i, before)
+                insert = False
+            else:
+                content[i] = blank + after + "\n"
             pair = []
 
     with open(file, "w") as handle:

@@ -11,6 +11,12 @@ Matrix:
       Gav: 0  1  1  1  0  1  1  0  1  0  0
       Tom: 1  1  1  1  0  0  1  0  1  0  1
 
+Success: Authorize blank and comments before header line.
+diff (distrib_legacy.txt):
+    INSERT ABOVE 7 11
+    A comment above header.
+    COMMENT A comment above header.
+    INDENT 7 11
 
 Failure: Catch invalid format specifier.
 diff (distrib_legacy.txt):
