@@ -127,6 +127,15 @@ EOF
 RUN mkdir -p /home/decx
 WORKDIR /home/decx
 
+# Construct non-root user to use the program.
+ARG UNAME=decx-user
+ARG GNAME=decx-user
+ARG UID=1000
+ARG GID=1000
+RUN groupadd -g \$GID -o \$GNAME \\
+ && useradd -m -u \$UID -g \$GID -o -s /bin/bash \$UNAME
+USER \$UNAME
+
 ENTRYPOINT ["decx"]
 DEOF
 echo "Generated $FILENAME"

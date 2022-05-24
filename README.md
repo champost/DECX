@@ -51,7 +51,12 @@ provided you have [Docker] installed.
 First, build the container image:
 ```
 # Build image from distant file.
-docker buildx build -t decx \
+docker buildx build           \
+  --build-arg GID=$(id -g)    \
+  --build-arg UID=$(id -u)    \
+  --build-arg GNAME=$(id -gn) \
+  --build-arg UNAME=$(id -un) \
+  -t decx                     \
   https://github.com/champost/DECX/releases/latest/download/Dockerfile
 ```
 
