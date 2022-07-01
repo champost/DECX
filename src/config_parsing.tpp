@@ -8,6 +8,10 @@ namespace config {
 template <std::size_t N>
 bool is_of_type(View view, Types<N> types) {
   static_assert(N > 0, "You should expect at least 1 type.");
+  // Use special type 'none' as a wildcard.
+  if (N == 1 && types[0] == toml::node_type::none)  {
+    return true;
+  }
   for (auto& t : types) {
     if (view.type() == t) {
       return true;

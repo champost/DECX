@@ -102,6 +102,17 @@ void Reader::source_and_exit() const {
   exit(EXIT_ERROR);
 }
 
+std::optional<View> Reader::seek_node_any(Name name, const bool descend) {
+  // Use the special none type as a wildcard.
+  return seek_node(name, {toml::node_type::none}, descend);
+}
+
+// Same, but exit if the node cannot be found.
+View Reader::require_node_any(Name name, const bool descend) {
+  // Use the special none type as a wildcard.
+  return require_node(name, {toml::node_type::none}, descend);
+}
+
 bool Reader::has_node(Name name) {
   return focal->data.as_table()->contains(name);
 }
@@ -517,7 +528,7 @@ void Reader::read_mrcas(std::map<std::string, std::vector<std::string>>& mrcas,
     if (type == "fixed node") {
       step_up();
       // Then a distribution is given.
-      require_string("distribution", true);
+      require_node_any("distribution", true);
       const std::vector<int> distribution{read_distribution(area_names)};
       fixnodes.insert({mrca_name, distribution});
       step_up();

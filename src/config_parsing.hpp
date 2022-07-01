@@ -77,6 +77,7 @@ struct ColonHierarchy {
 std::ostream& operator<<(std::ostream& out, const ColonHierarchy& d);
 
 // Match node type against several ones.
+// Use empty array as a wildcard to always get true.
 template <std::size_t N>
 bool is_of_type(View view, Types<N> types);
 
@@ -122,10 +123,13 @@ public:
   template <size_t N>
   std::optional<View>
   seek_node(Name name, Types<N> expected_types, const bool descend);
+  // Same with no type-checking.
+  std::optional<View> seek_node_any(Name name, const bool descend);
 
   // Same, but exit if the node cannot be found.
   template <size_t N>
   View require_node(Name name, Types<N> expected_types, const bool descend);
+  View require_node_any(Name name, const bool descend);
 
   // Assuming the focal node is a table,
   // just check for subnode existence.
