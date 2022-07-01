@@ -22,6 +22,7 @@ add_executable(
   distrib_parsing_areas.cpp
   distrib_parsing_legacy.cpp
   distrib_parsing_species.cpp
+  lexer.cpp
   node.cpp
   superdouble.cpp
   tree.cpp
