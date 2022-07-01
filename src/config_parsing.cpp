@@ -495,6 +495,15 @@ void Reader::read_mrcas(std::map<std::string, std::vector<std::string>>& mrcas,
   // Every given MRCA is a sub-table.
   for (const auto& mrca : *focal->data.as_table()) {
     const auto& mrca_name{mrca.first};
+    if (mrca.second.type() != toml::node_type::table) {
+      std::cerr << "All values in `mrca` table should be tables themselves ";
+      std::cerr << "but the value '" << mrca_name << "' ";
+      std::cerr << "is of type '" << mrca.second.type() << "'. ";
+      std::cerr << "Is your MRCA correctly specified ";
+      std::cerr << "as a [mrca." << mrca_name << "] table?" << std::endl;
+      descend((View)mrca.second, mrca_name);
+      source_and_exit();
+    }
     require_table(mrca_name, true);
 
     // All need to have a list of species.
