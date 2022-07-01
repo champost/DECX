@@ -39,6 +39,7 @@ using namespace std;
 #include "string_node_object.h"
 #include "config_parsing.hpp"
 #include "distrib_parsing.hpp"
+#include "adj_parsing.hpp"
 
 #ifdef XYZ
 #include "gmpfrxx/gmpfrxx.h"
@@ -503,11 +504,28 @@ int main(int argc, char* argv[]){
 		* if there is a adjacencymatrixfile then it will be processed
 		*/
 		if (adjacencyfile.size() > 0) {
-			rm.setup_adjacency(adjacencyfile, area_names);
+      rm.setup_adjacency(adjacencyfile, area_names);
 
       if (check_adjacency_file) {
+        // New file format parsing.
+        const auto& am{
+            adjacency::parse_file(adjacencyfile, area_names, periods.size())};
+        rm.set_adj_bool(false); // To be reinjected into the program's logic.
+
+        // Compare with legacy one.
         std::cout << "Legacy Parsing: " << rm.default_adjacency << std::endl;
-        for (const auto& period : rm.adjMat) {
+        for (size_t p{0}; p < periods.size(); ++p) {
+          for (size_t i{0}; i < area_names.size(); ++i) {
+            for (size_t j{0}; j < area_names.size(); ++j) {
+              if (rm.adjMat[p][i][j] != am[p][i][j]) {
+                std::cerr << "LEGACY/NEW NOMATCH!" << std::endl;
+                std::exit(1);
+              }
+            }
+          }
+        }
+        // Display new one.
+        for (const auto& period : am) {
           for (const auto& row : period) {
             for (const auto& val : row) {
               std::cout << val << " ";
@@ -518,7 +536,6 @@ int main(int argc, char* argv[]){
         }
         exit(0);
       }
-
     }
 		else {
 			cout << "\nUsing the default adjacency matrix for all time slices..." << endl;

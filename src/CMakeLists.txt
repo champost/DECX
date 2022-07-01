@@ -17,6 +17,7 @@ add_executable(
   RateMatrixUtils.cpp
   RateModel.cpp
   Utils.cpp
+  adj_parsing.cpp
   config_parsing.cpp
   distrib_parsing.cpp
   distrib_parsing_areas.cpp
