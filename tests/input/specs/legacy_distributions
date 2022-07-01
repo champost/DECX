@@ -18,6 +18,14 @@ diff (distrib_legacy.txt):
     COMMENT A comment above header.
     INDENT 7 11
 
+Failure: Reject empty files.
+diff (config.toml):
+    data = "distrib_legacy.txt"
+    data = "distrib_blank.txt"
+error (3):
+    Error: distribution file 'distrib_blank.txt' is blank
+    (or it contains only comments).
+
 Failure: Catch invalid format specifier.
 diff (distrib_legacy.txt):
     7 11
