@@ -36,8 +36,10 @@ private:
 	bool rapid_anagenesis;
 
 	//	adjacency conditioned data types
+public: // TEMP HACKING
 	bool default_adjacency;
 	vector<vector<vector<bool> > > adjMat;
+private:
 	vector<vector<vector<int> > > incldists_per_period;
 	vector<vector<int> > incldistsint_per_period;
 	vector<vector<vector<int> > > excldists_per_period;

@@ -50,6 +50,7 @@ int main(int argc, char* argv[]){
 
   // Raise these flags for dry-run-like checks of input interpretation.
   bool check_distribution_file{false};
+  bool check_adjacency_file{false};
 
   // Get a few things out of the way.
   if (argc < 2) {
@@ -60,6 +61,9 @@ int main(int argc, char* argv[]){
     if (strcmp(argv[2], "--check-distribution-file-parsing") == 0) {
       std::cout << "Dry run to check distribution file.." << std::endl;
       check_distribution_file = true;
+    } else if (strcmp(argv[2], "--check-adjacency-file-parsing") == 0) {
+      std::cout << "Dry run to check adjacency file.." << std::endl;
+      check_adjacency_file = true;
     } else {
       std::cerr << "Too many arguments. Exiting." << std::endl;
       exit(1);
@@ -498,8 +502,24 @@ int main(int argc, char* argv[]){
 	    /*
 		* if there is a adjacencymatrixfile then it will be processed
 		*/
-		if (adjacencyfile.size() > 0)
+		if (adjacencyfile.size() > 0) {
 			rm.setup_adjacency(adjacencyfile, area_names);
+
+      if (check_adjacency_file) {
+        std::cout << "Legacy Parsing: " << rm.default_adjacency << std::endl;
+        for (const auto& period : rm.adjMat) {
+          for (const auto& row : period) {
+            for (const auto& val : row) {
+              std::cout << val << " ";
+            }
+            std::cout << std::endl;
+          }
+          std::cout << "---" << std::endl;
+        }
+        exit(0);
+      }
+
+    }
 		else {
 			cout << "\nUsing the default adjacency matrix for all time slices..." << endl;
 			for (unsigned int j = 0; j < area_names.size(); j++)
