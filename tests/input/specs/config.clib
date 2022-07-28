@@ -1,0 +1,192 @@
+# Test main config file parsing.
+# stdout expectation is set to the matrix in including 'main.clib',
+# do not erase/change it.
+
+# Edit with successes..
+
+test: Adjacency file is optional.
+edit (config.toml):
+    PREFIX (#1) 'adjacency = "adjacency.txt"'
+RUNTEST
+
+test: Areas as table or space-separated words.
+edit (config.toml):
+    PREFIX (#1) 'names = "WP EP WN EN CA SA AF MD IN WA AU"'
+    UNPREF (#1) 'names = ["WP", "EP", "WN", "EN", "CA", "SA", "AF", "MD", "IN", "WA", "AU"]'
+RUNTEST
+
+test: Indifferent whitespace in areas.
+edit (config.toml):
+  DIFF 'names = "WP EP WN EN CA SA AF MD IN WA AU"'
+  ~    'names = "  WP    EP WN EN CA SA AF   MD IN WA AU  "'
+RUNTEST
+
+# Edit with errors..
+
+# Parameters ===================================================================
+
+test: Unexistent tree file.
+edit (config.toml):
+    DIFF 'tree = "newick.tre"'
+    ~    'tree = "unexistent.tre"'
+failure (1):: EOE
+    Configuration error: Could not find file 'unexistent.tre'.
+    ('input_files:tree' line 6, column 8 of 'config.toml')
+EOE
+
+test: No input files table given.
+edit (config.toml):
+    PREFIX (#1) [input_files]
+failure (1):: EOE
+    Configuration error: 'input_files' is required, but not given.
+    (root table line 1, column 1 of 'config.toml')
+EOE
+
+test: Unexistent distribution file.
+edit (config.toml):
+    DIFF 'data = "distrib_legacy.txt"'
+    ~    'data = "unexistent.txt"'
+failure (1):: EOE
+    Configuration error: Could not find file 'unexistent.txt'.
+    ('input_files:data' line 7, column 8 of 'config.toml')
+EOE
+
+test: Unexistent adjacency file.
+edit (config.toml):
+    DIFF 'adjacency = "adjacency.txt"'
+    ~    'adjacency = "unexistent.txt"'
+failure (1):: EOE
+    Configuration error: Could not find file 'unexistent.txt'.
+    ('input_files:adjacency' line 8, column 13 of 'config.toml')
+EOE
+
+test: No ancestral states.
+edit (config.toml):
+    REPLACE (ancestral_states = true) BY r'# \1'
+failure (1):: EOE
+    Configuration error: 'ancestral_states' is required, but not given.
+    ('parameters' line 11, column 1 of 'config.toml')
+EOE
+
+test: Wrong type for ancestral states.
+edit (config.toml):
+    REPLACE (ancestral_states) = true BY r'\1 = 15'
+failure (1):: EOE
+    Configuration error: node should either be of type array or boolean or string, not integer.
+    ('parameters:ancestral_states' line 12, column 20 of 'config.toml')
+EOE
+
+test: Wrong report.
+edit (config.toml):
+    DIFF 'report = "states" # or "splits"'
+    ~    'report = "dummy"'
+failure (1):: EOE
+    Unknown report type: 'dummy'. Supported types are 'states' and 'splits'.
+    ('parameters:report' line 13, column 10 of 'config.toml')
+EOE
+
+test: Wrong type for rapid anagenesis.
+edit (config.toml):
+    DIFF rapid_anagenesis = false
+    ~    rapid_anagenesis = []
+failure (1):: EOE
+    Configuration error: node should be of type boolean, not array.
+    ('parameters:rapid_anagenesis' line 15, column 20 of 'config.toml')
+EOE
+
+test: Wrong type for single period.
+edit (config.toml):
+    DIFF "periods = [5.33, 17.7, 10.87, 22.1, 14.0]"
+    ~    "periods = [5.33, '17.7', 10.87, 22.1, 14.0]"
+failure (1):: EOE
+    Configuration error: node should either be of type floating-point or integer, not string.
+    ('parameters:periods:2' line 17, column 18 of 'config.toml')
+EOE
+
+# Areas ========================================================================
+
+test: No areas table.
+edit (config.toml):
+    PREFIX (#1) [areas]
+failure (1):: EOE
+    Configuration error: table contains unexpected parameter 'names'.
+    ('parameters' line 11, column 1 of 'config.toml')
+EOE
+
+# Distributions ================================================================
+
+test: Catch invalid area names in distribution.
+edit (config.toml):
+    DIFF '"WP EP WN",'
+    ~    '"WP wrong WN",'
+failure (1):: EOE
+    Unknown area name in distribution: 'wrong'.
+    (known areas: 'WP' 'EP' 'WN' 'EN' 'CA' 'SA' 'AF' 'MD' 'IN' 'WA' 'AU')
+    ('areas:distributions:set:1' line 28, column 3 of 'config.toml')
+EOE
+
+test: Catch missing area in binary distribution.
+edit (config.toml):
+    DIFF '"11010110101",'
+    ~    '"1101011010",'
+failure (1):: EOE
+    Invalid binary specification of a distribution:
+    '1101011010' contains 10 digits but there are 11 areas.
+    ('areas:distributions:set:3' line 30, column 3 of 'config.toml')
+EOE
+
+test: Catch extra area in binary distribution.
+edit (config.toml):
+    DIFF '"11010110101",'
+    ~    '"110101101011",'
+failure (1):: EOE
+    Invalid binary specification of a distribution:
+    '110101101011' contains 12 digits but there are 11 areas.
+    ('areas:distributions:set:3' line 30, column 3 of 'config.toml')
+EOE
+
+test: Catch the ambiguous case.
+edit (config.toml):
+    DIFF 'names = "WP EP WN EN CA SA AF MD IN WA AU"'
+    ~    'names = "101 B C"'
+    DIFF '"WP EP WN",'
+    ~    '"101",'
+failure (1):: EOE
+    Ambiguous distribution specification:
+    '101' could either represent the single area '101' or a binary set of other areas..
+    Now be honest: you did that on purpose, right?
+    ('areas:distributions:set:1' line 28, column 3 of 'config.toml')
+EOE
+
+# MRCAs ========================================================================
+
+test: Age required for fossil branches.
+edit (config.toml):
+    REPLACE (age = 15.8) BY r'# \1'
+failure (1):: EOE
+    Configuration error: 'age' is required, but not given.
+    ('mrca:Gavialidae' line 36, column 1 of 'config.toml')
+EOE
+
+test: Catch invalid area.
+edit (config.toml):
+    DIFF 'area = "CA"'
+    ~    'area = "wrong"'
+failure (1):: EOE
+    Unknown area 'wrong' provided.
+    ('mrca:Gavialidae:area' line 39, column 8 of 'config.toml')
+EOE
+
+test: Catch invalid MRCA type specification.
+edit (config.toml):
+    DIFF 'type = "fixed node"'
+    ~    'type = "fixed branch"'
+failure (1):: EOE
+    Unknown MRCA type: 'fixed branch'.
+    Supported types are 'fixed node', 'fossil node' and 'fossil branch'.
+    ('mrca:Caiman:type' line 43, column 8 of 'config.toml')
+EOE
+
+# Clear for later tests specs.
+stderr:: *
+EXITCODE 0

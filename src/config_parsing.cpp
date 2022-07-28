@@ -14,8 +14,8 @@ void Reader::descend(View data, Name name) {
 
 void Reader::step_up() {
   if (!focal->parent.has_value()) {
-    std::cerr << "Error in configuration parsing logic (source code): "
-              << "cannot step up root context.";
+    std::cerr << "Error in configuration parsing logic (source code): ";
+    std::cerr << "cannot step up root context." << std::endl;
     exit(-1);
   }
   // Disallow unused parameters.
@@ -39,7 +39,7 @@ void Reader::step_up() {
         std::cerr << *it << "'";
       }
     }
-    std::cerr << ". ";
+    std::cerr << "." << std::endl;
     source_and_exit();
   }
   // Deallocate the node we are leaving.
@@ -50,9 +50,9 @@ void Reader::step_up() {
 
 Reader::~Reader() {
   if (focal->parent.has_value()) {
-    std::cerr << "Error in configuration parsing logic (source code): "
-              << "destroying config reader before it reached back to root."
-              << std::endl;
+    std::cerr << "Error in configuration parsing logic (source code): ";
+    std::cerr << "destroying config reader ";
+    std::cerr << "before it reached back to root." << std::endl;
     exit(-1);
   }
   delete focal;
@@ -97,8 +97,8 @@ const toml::source_region& Reader::focal_source() const {
 }
 
 void Reader::source_and_exit() const {
-  std::cerr << "(" << ColonHierarchy{focal} << " " << focal_source() << ")"
-            << std::endl;
+  std::cerr << "(" << ColonHierarchy{focal} << " ";
+  std::cerr << focal_source() << ")" << std::endl;
   exit(EXIT_ERROR);
 }
 
@@ -119,8 +119,8 @@ bool Reader::has_node(Name name) {
 
 void Reader::check_file(Name filename) {
   if (!std::filesystem::exists(filename)) {
-    std::cerr << "Configuration error: "
-              << "Could not find file '" << filename << "'. " << std::endl;
+    std::cerr << "Configuration error: ";
+    std::cerr << "Could not find file '" << filename << "'." << std::endl;
     source_and_exit();
   }
 };
@@ -240,8 +240,8 @@ ReportType Reader::read_report_type() {
   } else if (string == "splits") {
     result = ReportType::Splits;
   } else {
-    std::cerr << "Unknown report type: '" << string << "'. "
-              << "Supported types are 'states' and 'splits'." << std::endl;
+    std::cerr << "Unknown report type: '" << string << "'. ";
+    std::cerr << "Supported types are 'states' and 'splits'." << std::endl;
     source_and_exit();
   }
   step_up();
@@ -278,8 +278,8 @@ Reader::read_unique_strings(Name name, const std::string_view item_meaning) {
     const std::string item{*element.as_string()};
     for (const auto& given : result) {
       if (item == given) {
-        std::cerr << item_meaning << " name '" << item << "' given twice."
-                  << std::endl;
+        std::cerr << item_meaning << " name '" << item << "' ";
+        std::cerr << "given twice." << std::endl;
         source_and_exit();
       }
     }
@@ -306,8 +306,8 @@ Reader::read_unique_words(Name name, const std::string& item_meaning) {
         // Check against others for unicity.
         for (const auto& other : result) {
           if (other == current) {
-            std::cerr << item_meaning << " name '" << current
-                      << "' given twice." << std::endl;
+            std::cerr << item_meaning << " name '" << current << "' ";
+            std::cerr << "given twice." << std::endl;
             source_and_exit();
           }
         }
@@ -324,8 +324,8 @@ Reader::read_unique_words(Name name, const std::string& item_meaning) {
     result.push_back(current);
   }
   if (result.empty()) {
-    std::cerr << "No identifiers provided";
-    std::cerr << " for " << item_meaning << "." << std::endl;
+    std::cerr << "No identifiers provided for ";
+    std::cerr << item_meaning << "." << std::endl;
     source_and_exit();
   }
   step_up();
@@ -363,8 +363,8 @@ std::vector<int>
 Reader::read_distribution(const std::vector<std::string>& area_names) {
   const auto& node{focal->data};
   if (node.type() != toml::node_type::string) {
-    std::cerr << "Distribution should be specified as a string, not "
-              << node.type() << ". ";
+    std::cerr << "Distribution should be specified ";
+    std::cerr << "as a string, not " << node.type() << ".";
     source_and_exit();
   }
 
@@ -403,17 +403,18 @@ Reader::read_distribution(const std::vector<std::string>& area_names) {
     words.push_back(current);
   }
   if (words.empty()) {
-    std::cerr << "Distributions cannot be empty. ";
+    std::cerr << "Distributions cannot be empty.";
     source_and_exit();
   }
 
   auto unknown_area_error{[&](const std::string& word) {
-    std::cerr << "Unknown area name in distribution: '" << word << "'"
-              << " (known areas:";
+    std::cerr << "Unknown area name ";
+    std::cerr << "in distribution: '" << word << "'." << std::endl;
+    std::cerr << "(known areas:";
     for (const auto& area : area_names) {
       std::cerr << " '" << area << "'";
     }
-    std::cerr << "). ";
+    std::cerr << ")" << std::endl;
     source_and_exit();
   }};
 
@@ -436,10 +437,12 @@ Reader::read_distribution(const std::vector<std::string>& area_names) {
     // Forbid the ambiguous case.
     if (is_binary && index.has_value() && word.size() == area_names.size() &&
         !(result.size() == 1 && result[0] == index.value())) {
-      std::cerr << "Ambiguous distribution specification : '" << word
-                << "' could either represent the single area '" << word
-                << "' or a binary set of other areas.."
-                << " now be honest: you did that on purpose, right? ";
+      std::cerr << "Ambiguous distribution specification:" << std::endl;
+      std::cerr << "'" << word << "' could either represent ";
+      std::cerr << "the single area '" << word << "' or ";
+      std::cerr << "a binary set of other areas.." << std::endl;
+      std::cerr << "Now be honest: ";
+      std::cerr << "you did that on purpose, right?" << std::endl;
       source_and_exit();
     }
 
@@ -452,9 +455,11 @@ Reader::read_distribution(const std::vector<std::string>& area_names) {
         unknown_area_error(word);
       }
     } else if (word.size() != area_names.size()) {
-      std::cerr << "Invalid binary specification of a distribution: '" << word
-                << "' contains " << word.size() << " digits but there are "
-                << area_names.size() << " areas. ";
+      std::cerr << "Invalid binary specification ";
+      std::cerr << "of a distribution:" << std::endl;
+      std::cerr << "'" << word << "' contains " << word.size() << " digits ";
+      std::cerr << "but there are " << area_names.size();
+      std::cerr << " areas." << std::endl;
       source_and_exit();
     }
   } else {
@@ -483,7 +488,7 @@ std::string Reader::read_area(Name name,
     }
   }
   if (!found) {
-    std::cerr << "Unknown area '" << area << "' provided. ";
+    std::cerr << "Unknown area '" << area << "' provided." << std::endl;
     source_and_exit();
   }
   step_up();
@@ -542,9 +547,10 @@ void Reader::read_mrcas(std::map<std::string, std::vector<std::string>>& mrcas,
         fossiltypes.push_back("B");
         fossilages.push_back(require_float("age", false));
       } else {
-        std::cerr << "Unknown MRCA type: '" << type << "'.";
-        std::cerr << " Supported types are ";
-        std::cerr << "'fixed node', 'fossil node' and 'fossil branch'. ";
+        std::cerr << "Unknown MRCA type: '" << type << "'." << std::endl;
+        std::cerr << "Supported types are ";
+        std::cerr << "'fixed node', 'fossil node' ";
+        std::cerr << "and 'fossil branch'." << std::endl;
         source_and_exit();
       }
       fossilnames.push_back(mrca_name);

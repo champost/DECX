@@ -1,0 +1,180 @@
+# Test species lines distributions file parsing.
+
+copy: distrib_species_lines.txt
+edit* (config.toml):
+    DIFF 'data = "distrib_legacy.txt"'
+    ~    'data = "distrib_species_lines.txt"'
+
+test: Base parsing of dummy species lines distributions file.
+distribution:
+           WP EP WN EN CA SA AF MD IN WA AU
+     Amis: 1  1  0  1  0  1  1  0  1  0  0
+     Asin: 0  1  0  1  0  0  1  0  1  0  1
+    Ccroc: 1  1  0  1  0  1  0  0  1  0  1
+     Clat: 1  1  0  0  0  0  0  0  1  0  0
+     Cyac: 0  1  1  0  0  0  0  0  1  0  1
+      Gav: 1  1  0  0  0  0  0  0  1  0  0 # differ from legacy to test inclusion
+      Tom: 1  1  1  1  0  0  1  0  1  0  1
+RUNTEST
+
+test: Missing header is allowed.
+edit (distrib_species_lines.txt):
+    REPLACE s\\a   WP EP WN EN CA SA AF MD IN WA AU
+    BY      s\\a
+RUNTEST
+
+test: Authorize blank and comments before header line.
+edit (distrib_species_lines.txt):
+    INSERT   + r'# A comment above header.'
+               r's\a   WP EP WN EN CA SA AF MD IN WA AU # Areas.. may reorder.'
+    PREFIX (4) r's\a   WP EP WN EN CA SA AF MD IN WA AU # Areas.. may reorder.'
+RUNTEST
+
+test: Change order in header.
+edit (distrib_species_lines.txt):
+    REPLACE s\\a   WP EP WN EN CA SA AF MD IN WA AU
+    BY      s\\a   WP EP WN EN CA SA AF MD AU IN WA # rotate last three columns
+distribution:
+           WP EP WN EN CA SA AF MD IN WA AU
+     Amis: 1  1  0  1  0  1  1  0  0  0  1
+     Asin: 0  1  0  1  0  0  1  0  0  1  1
+    Ccroc: 1  1  0  1  0  1  0  0  0  1  1
+     Clat: 1  1  0  0  0  0  0  0  0  0  1
+     Cyac: 0  1  1  0  0  0  0  0  0  1  1
+      Gav: 1  1  0  0  0  0  0  0  1  0  0 # unchanged because by inclusion
+      Tom: 1  1  1  1  0  0  1  0  1  0  1 # unchanged because by exclusion
+RUNTEST
+
+test: Include no areas in species line.
+edit (distrib_species_lines.txt):
+    DIFF Gav + WP EP IN
+    ~    Gav +
+distribution:
+           WP EP WN EN CA SA AF MD IN WA AU
+     Amis: 1  1  0  1  0  1  1  0  1  0  0
+     Asin: 0  1  0  1  0  0  1  0  1  0  1
+    Ccroc: 1  1  0  1  0  1  0  0  1  0  1
+     Clat: 1  1  0  0  0  0  0  0  1  0  0
+     Cyac: 0  1  1  0  0  0  0  0  1  0  1
+      Gav: 0  0  0  0  0  0  0  0  0  0  0 # whole line set to zero
+      Tom: 1  1  1  1  0  0  1  0  1  0  1
+RUNTEST
+
+test: Exclude no areas in species line.
+edit (distrib_species_lines.txt):
+    DIFF Tom - CA SA MD WA
+    ~    Tom -
+distribution:
+           WP EP WN EN CA SA AF MD IN WA AU
+     Amis: 1  1  0  1  0  1  1  0  1  0  0
+     Asin: 0  1  0  1  0  0  1  0  1  0  1
+    Ccroc: 1  1  0  1  0  1  0  0  1  0  1
+     Clat: 1  1  0  0  0  0  0  0  1  0  0
+     Cyac: 0  1  1  0  0  0  0  0  1  0  1
+      Gav: 1  1  0  0  0  0  0  0  1  0  0
+      Tom: 1  1  1  1  1  1  1  1  1  1  1 # whole line set to one
+RUNTEST
+
+test: Catch incomplete header.
+edit (distrib_species_lines.txt):
+    REPLACE s\\a   WP EP WN EN CA SA AF MD IN WA AU
+    BY      s\\a   WP EP WN    CA SA    MD IN WA AU
+failure (2):: EOE
+    Error: the number of areas in the distribution file header (9) does not match the number of areas given in the configuration file (11).
+    (line 1 column 62 in 'distrib_species_lines.txt')
+EOE
+
+test: Catch invalid area name.
+edit (distrib_species_lines.txt):
+    REPLACE s\\a   WP EP WN EN CA SA AF MD IN WA AU
+    BY      s\\a   WP EP WN XX CA SA AF MD IN WA AU
+failure (2):: EOE
+    Error: area name 'XX' found in distribution file does not match any area name given in configuration file.
+    (line 1 column 16 in 'distrib_species_lines.txt')
+EOE
+
+test: Catch invalid binary digit in whitespace separated lines.
+edit (distrib_species_lines.txt):
+    REPLACE Amis 1  1  0  1  0  1  1  0  1  0  0
+    BY      Amis 1  2a 0  1  0  1  1  0  1  0  0
+failure (2):: EOE
+    Error: expected 1 or 0, got '2a'.
+    (line 2 column 10 in 'distrib_species_lines.txt')
+EOE
+
+test: Catch extra digit in whitespace separated lines.
+edit (distrib_species_lines.txt):
+    REPLACE Amis 1  1  0  1  0  1  1  0  1  0  0
+    BY      Amis 1  1  0  1  0  1  1  0  1  0  0  1
+failure (2):: EOE
+    Error: too many digits in distribution specification: expected 11, got at least 12.
+    (line 2 column 40 in 'distrib_species_lines.txt')
+EOE
+
+test: Catch missing digit in whitespace separated lines.
+edit (distrib_species_lines.txt):
+    REPLACE Amis 1  1  0  1  0  1  1  0  1  0  0
+    BY      Amis 1  1  0  1  0  1  1  0  1  0
+failure (2):: EOE
+    Error: not enough digits in distribution specification: expected 11, got only 10.
+    (line 2 column 56 in 'distrib_species_lines.txt')
+EOE
+
+test: Catch invalid binary digit in legacy lines.
+edit (distrib_species_lines.txt):
+    DIFF Clat 11000000100
+    ~    Clat 11a00000100
+failure (2):: EOE
+    Error: could not interpret token '11a00000100' as a species distribution specification.
+    Consider using (only) ones and zeroes, or '+' or '-' to explicitly name areas.
+    (line 7 column 6 in 'distrib_species_lines.txt')
+EOE
+
+test: Catch extra digit in legacy lines.
+edit (distrib_species_lines.txt):
+    DIFF Clat 11000000100
+    ~    Clat 110000001001
+failure (2):: EOE
+    Error: too many digits in distribution specification: expected 11, got at least 12.
+    (line 7 column 17 in 'distrib_species_lines.txt')
+EOE
+
+test: Catch missing digit in legacy lines.
+edit (distrib_species_lines.txt):
+    DIFF Clat 11000000100
+    ~    Clat 1100000010
+failure (2):: EOE
+    Error: not enough digits in distribution specification: expected 11, got only 10.
+    (line 7 column 16 in 'distrib_species_lines.txt')
+EOE
+
+test: Catch invalid area name in inclusion.
+edit (distrib_species_lines.txt):
+    DIFF Gav + WP EP IN
+    ~    Gav + WP wrong IN
+failure (2):: EOE
+    Error: unrecognized area name: 'wrong'.
+    (line 11 column 10 in 'distrib_species_lines.txt')
+EOE
+
+test: Catch invalid area name in exclusion.
+edit (distrib_species_lines.txt):
+    DIFF Tom - CA SA MD WA
+    ~    Tom - CA SA MD wrong
+failure (2):: EOE
+    Error: unrecognized area name: 'wrong'.
+    (line 12 column 16 in 'distrib_species_lines.txt')
+EOE
+
+test: Catch duplicated species name.
+edit (distrib_species_lines.txt):
+    DIFF Clat 11000000100
+    ~    Amis 11000000100
+failure (2):: EOE
+    Error: species 'Amis' is specified twice.
+    (line 7 column 1 in 'distrib_species_lines.txt')
+EOE
+
+# Clear for later tests specs.
+stderr:: *
+EXITCODE 0

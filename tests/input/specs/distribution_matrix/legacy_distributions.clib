@@ -1,0 +1,115 @@
+# Test legacy distribution file parsing.
+# stdout expectation is set to the matrix in including 'main.clib',
+# do not erase/change it.
+
+test: Authorize blank and comments before header line.
+edit (distrib_legacy.txt):
+    INSERT + '# A comment above header.'
+             '7 11 # numbers of species and areas'
+    PREFIX (4) '7 11 # numbers of species and areas'
+RUNTEST
+
+
+test: Reject empty files.
+file (distrib_blank.txt):: EOF
+
+# Empty file should error out.
+
+EOF
+edit (config.toml):
+    DIFF 'data = "distrib_legacy.txt"'
+    ~    'data = "distrib_blank.txt"'
+failure (3):: EOE
+    Error: distribution file 'distrib_blank.txt' is blank (or it contains only comments).
+EOE
+
+
+test: Catch invalid format specifier.
+edit (distrib_legacy.txt):
+    REPLACE '7 11' BY 'wrong 11'
+failure (2):: EOE
+    Error: could not interpret 'wrong' as a number of species or a transposition specification (s\a or a\s).
+    (line 1 column 1 in 'distrib_legacy.txt')
+EOE
+
+test: Catch extra species.
+edit (distrib_legacy.txt):
+    REPLACE '7 11' BY '6 11'
+failure (2):: EOE
+    Error: more species found than specified at the beginning of the file: expected 6, got at least 7.
+    (line 13 column 1 in 'distrib_legacy.txt')
+EOE
+
+test: Catch missing species.
+edit (distrib_legacy.txt):
+    REPLACE '7 11' BY '8 11'
+failure (2):: EOE
+    Error: not as many species lines than specified at the beginning of the file: expected 8, got only 7.
+    (line 16 column 0 in 'distrib_legacy.txt')
+EOE
+
+test: Catch wrong number of areas.
+edit (distrib_legacy.txt):
+    REPLACE '7 11' BY '7 10'
+failure (2):: EOE
+    Error: inconsistent number of areas: 10 in distributions file but 11 in configuration file.
+    (line 1 column 3 in 'distrib_legacy.txt')
+EOE
+
+test: Catch missing distributions.
+edit (distrib_legacy.txt):
+    DIFF Amis 11010110100
+    ~    Amis
+failure (2):: EOE
+    Error: no distribution specified for species Amis.
+    (line 3 column 5 in 'distrib_legacy.txt')
+EOE
+
+test: Catch invalid distributions.
+edit (distrib_legacy.txt):
+    DIFF Amis 11010110100
+    ~    Amis 11X10110100
+failure (2):: EOE
+    Error: unexpected char in legacy species distribution format: X
+    (line 3 column 8 in 'distrib_legacy.txt')
+EOE
+
+test: Catch distributions with extra digits.
+edit (distrib_legacy.txt):
+    DIFF Amis 11010110100
+    ~    Amis 1101011010011
+failure (2):: EOE
+    Error: too many digits in legacy species distribution format: expected 11, got 13.
+    (line 3 column 17 in 'distrib_legacy.txt')
+EOE
+
+test: Catch distributions with missing digits.
+edit (distrib_legacy.txt):
+    DIFF Amis 11010110100
+    ~    Amis 110101101
+failure (2):: EOE
+    Error: not enough digits in legacy species distribution format: expected 11, got 9.
+    (line 3 column 14 in 'distrib_legacy.txt')
+EOE
+
+test: Catch extra tokens.
+edit (distrib_legacy.txt):
+    DIFF Amis 11010110100
+    ~    Amis 11010110100 extra
+failure (2):: EOE
+    Error: unexpected token on species line : 'extra'
+    (line 3 column 18 in 'distrib_legacy.txt')
+EOE
+
+test: Catch duplicated species name.
+edit (distrib_legacy.txt):
+    DIFF Ccroc 11010100101
+    ~    Amis  11010100101
+failure (2):: EOE
+    Error: distribution for species Amis specified more than once.
+    (line 8 column 1 in 'distrib_legacy.txt')
+EOE
+
+# Clear for later tests specs.
+stderr:: *
+EXITCODE 0

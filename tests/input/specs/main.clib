@@ -1,0 +1,29 @@
+# Basic success with dummy config file.
+
+# This configuration is also shared with the "distributions" part of tests.
+# TODO: separate the two so they are more autonomous.
+copy: config.toml decx
+      newick.tre
+      distrib_legacy.txt
+      adjacency.txt
+
+command: ./decx config.toml --check-distribution-file-parsing
+
+readers (distribution_matrix/distribution_reader.py): + DistributionReader
+
+test: Base parsing of dummy config file.
+distribution:
+           WP EP WN EN CA SA AF MD IN WA AU
+     Amis: 1  1  0  1  0  1  1  0  1  0  0
+     Asin: 0  1  0  1  0  0  1  0  1  0  1
+    Ccroc: 1  1  0  1  0  1  0  0  1  0  1
+     Clat: 1  1  0  0  0  0  0  0  1  0  0
+     Cyac: 0  1  1  0  0  0  0  0  1  0  1
+      Gav: 0  1  1  1  0  1  1  0  1  0  0
+      Tom: 1  1  1  1  0  0  1  0  1  0  1
+stderr::*
+EXITCODE 0
+RUNTEST
+
+include(config): Main config file parsing.
+include(distribution_matrix/main): Distribution matrix parsing.

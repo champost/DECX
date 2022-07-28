@@ -1,0 +1,130 @@
+# Test areas lines distributions file parsing.
+
+copy: distrib_areas_lines.txt
+edit* (config.toml):
+    DIFF 'data = "distrib_species_lines.txt"'
+    ~    'data = "distrib_areas_lines.txt"'
+
+test: Base parsing of dummy areas lines distributions file.
+distribution:
+           WP EP WN EN CA SA AF MD IN WA AU
+     Amis: 1  1  0  1  0  1  1  0  1  0  0
+     Asin: 0  1  1  1  0  1  1  0  1  0  0
+    Ccroc: 1  1  0  1  0  1  0  0  1  0  1
+     Clat: 0  1  1  0  0  0  0  0  1  0  1
+     Cyac: 0  1  0  1  0  0  1  0  1  0  1
+      Gav: 1  1  0  0  0  0  0  0  1  0  0
+      Tom: 1  1  1  1  0  0  1  0  1  0  1
+RUNTEST
+
+test: Authorize blank and comments before header line.
+edit (distrib_areas_lines.txt):
+    INSERT   + r'# A comment above header.'
+               r'a\s   Amis Asin Ccroc Clat  Cyac Gav  Tom  # species header'
+    PREFIX (4) r'a\s   Amis Asin Ccroc Clat  Cyac Gav  Tom  # species header'
+RUNTEST
+
+test: Catch invalid area name.
+edit (distrib_areas_lines.txt):
+    REPLACE WP    1    0    1     0     0    1    1
+    BY      wrong 1    0    1     0     0    1    1
+failure (2):: EOE
+    Error: area 'wrong' not found in configuration file.
+    (line 2 column 1 in 'distrib_areas_lines.txt')
+EOE
+
+test: Catch missing area name.
+edit (distrib_areas_lines.txt):
+    PREFIX (#1) 'WP    1    0    1     0     0    1    1    # matrix lines'
+    PREFIX (#1) 'EP    1    1    1     1     1    1    1'
+failure (2):: EOE
+    Error: not all areas defined in configuration file have been specified.
+    Missing: WP EP
+    (line 17 column 0 in 'distrib_areas_lines.txt')
+EOE
+
+test: Catch duplicated area name.
+edit (distrib_areas_lines.txt):
+    DIFF EP    1    1    1     1     1    1    1
+    ~    WP    1    1    1     1     1    1    1
+failure (2):: EOE
+    Error: area 'WP' is specified twice.
+    (line 3 column 1 in 'distrib_areas_lines.txt')
+EOE
+
+test: Catch invalid binary digit in whitespace separated line.
+edit (distrib_areas_lines.txt):
+    REPLACE WP    1    0    1     0     0    1    1
+    BY      WP    1    X    1     0     0    1    1
+failure (2):: EOE
+    Error: expected 1 or 0, got 'X'.
+    (line 2 column 12 in 'distrib_areas_lines.txt')
+EOE
+
+test: Catch extra binary digit in whitespace separated line.
+edit (distrib_areas_lines.txt):
+    REPLACE WP    1    0    1     0     0    1    1
+    BY      WP    1    0    1     0     0    1    1   1
+failure (2):: EOE
+    Error: too many digits in community specification: expected 7, got at least 8.
+    (line 2 column 43 in 'distrib_areas_lines.txt')
+EOE
+
+test: Catch missing binary digit in whitespace separated line.
+edit (distrib_areas_lines.txt):
+    REPLACE WP    1    0    1     0     0    1    1
+    BY      WP    1    0    1     0     0    1
+failure (2):: EOE
+    Error: not enough digits in community specification: expected 7, got only 6.
+    (line 2 column 53 in 'distrib_areas_lines.txt')
+EOE
+
+test: Catch invalid binary digit in legacy line.
+edit (distrib_areas_lines.txt):
+    DIFF EN    1110101
+    ~    EN    1X10101
+failure (2):: EOE
+    Error: could not interpret token '1X10101' as an area community specification.
+    Consider using ones and zeroes, or '+' or '-' to explicitly name species.
+    (line 7 column 7 in 'distrib_areas_lines.txt')
+EOE
+
+test: Catch extra binary digit in legacy line.
+edit (distrib_areas_lines.txt):
+    DIFF EN    1110101
+    ~    EN    11101010
+failure (2):: EOE
+    Error: too many digits in community specification: expected 7, got at least 8.
+    (line 7 column 14 in 'distrib_areas_lines.txt')
+EOE
+
+test: Catch missing binary digit in legacy line.
+edit (distrib_areas_lines.txt):
+    DIFF EN    1110101
+    ~    EN    111010
+failure (2):: EOE
+    Error: not enough digits in community specification: expected 7, got only 6.
+    (line 7 column 13 in 'distrib_areas_lines.txt')
+EOE
+
+test: Catch wrong species name in inclusion line.
+edit (distrib_areas_lines.txt):
+    DIFF SA + Amis Asin Ccroc
+    ~    SA + Amis wrong Ccroc
+failure (2):: EOE
+    Error: unrecognized species name: 'wrong' (not found in file header)
+    (line 12 column 11 in 'distrib_areas_lines.txt')
+EOE
+
+test: Catch wrong species name in exclusion line.
+edit (distrib_areas_lines.txt):
+    DIFF AU - Amis Asin Gav
+    ~    AU - Amis Asin wrong
+failure (2):: EOE
+    Error: unrecognized species name: 'wrong' (not found in file header)
+    (line 16 column 16 in 'distrib_areas_lines.txt')
+EOE
+
+# Clear for later tests specs.
+stderr:: *
+EXITCODE 0

@@ -160,8 +160,8 @@ AdjMap parse_file(const std::string_view filename,
   while (!compact && p != n_periods) {
 
     // Keep track of the matrix structure as we progressively understand it.
-    Areas header{}; // Remain empty if none given.
-    Areas namer{};  // Remain empty if none given.
+    Areas header{};          // Remain empty if none given.
+    Areas namer{};           // Remain empty if none given.
     bool diag_header{false}; // Raise if header is not on all on the top line.
     bool triangular{false};  // Raise if only the lower half is given.
     bool diag_elided{false}; // Raise if the trivial 1's do not appear.
@@ -228,8 +228,8 @@ AdjMap parse_file(const std::string_view filename,
               std::cerr << "(with explicit diagonal) ";
               std::cerr << "or '" << header[1] << "' ";
               std::cerr << "(with implicity diagonal), ";
-              std::cerr << "found '" << *step.token << "' instead."
-                        << std::endl;
+              std::cerr << "found '" << *step.token << "' ";
+              std::cerr << "instead." << std::endl;
               step.source_and_exit();
             }
             diag_elided = true;
@@ -440,7 +440,6 @@ AdjMap parse_file(const std::string_view filename,
     // If the matrix was not compact,
     // go check the next one.
     ++p;
-
   }
   is_eof(step);
 

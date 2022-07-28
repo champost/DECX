@@ -49,7 +49,7 @@ read -r -d '' COMPILATION_LAYER <<-'EOF'
     make -j $(nproc)
 
     # Test
-    ../tests/input/main.py
+    ../tests/input/main.bash
     #---------------------------------------------------------------------------
 EOF
 

@@ -15,8 +15,8 @@ Map parse_file(const std::string_view filename, const Areas& areas) {
     first = lexer.step();
   }
   if (first.is_eof()) {
-    std::cerr << "Error: distribution file '" << filename
-              << "' is blank (or it contains only comments)." << std::endl;
+    std::cerr << "Error: distribution file '" << filename << "' ";
+    std::cerr << "is blank (or it contains only comments)." << std::endl;
     exit(DISTRIB_ERROR);
   }
 
@@ -31,10 +31,9 @@ Map parse_file(const std::string_view filename, const Areas& areas) {
   try {
     n_species = boost::lexical_cast<size_t>(*first.token);
   } catch (boost::bad_lexical_cast) {
-    std::cerr << "Error: could not interpret '" << *first.token
-              << "' as a number of species or a transposition specification "
-                 "(s\\a or a\\s)."
-              << std::endl;
+    std::cerr << "Error: could not interpret '" << *first.token << "' ";
+    std::cerr << "as a number of species or ";
+    std::cerr << "a transposition specification (s\\a or a\\s)." << std::endl;
     first.source_and_exit();
   }
   // In this case, defer to legacy parsing.

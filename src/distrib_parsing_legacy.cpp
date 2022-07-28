@@ -14,23 +14,22 @@ Map legacy_parse(Lexer& lexer, const size_t n_species, const Areas& areas) {
   // Interpret first next token (same line) as a number of areas.
   auto next{lexer.step()};
   if (!next.has_value()) {
-    std::cerr << "Error: number of areas not provided "
-                 "in legacy-style distributions."
-              << std::endl;
+    std::cerr << "Error: number of areas not provided ";
+    std::cerr << "in legacy-style distributions." << std::endl;
     next.source_and_exit();
   }
   size_t n_areas;
   try {
     n_areas = boost::lexical_cast<size_t>(*next.token);
   } catch (boost::bad_lexical_cast) {
-    std::cerr << "Error: could not interpret '" << *next.token
-              << "' as a number of areas." << std::endl;
+    std::cerr << "Error: could not interpret '" << *next.token << "' ";
+    std::cerr << "as a number of areas." << std::endl;
     next.source_and_exit();
   }
   if (n_areas != areas.size()) {
-    std::cerr << "Error: inconsistent number of areas: " << n_areas
-              << " in distributions file but " << areas.size()
-              << " in configuration file." << std::endl;
+    std::cerr << "Error: inconsistent number of areas: ";
+    std::cerr << n_areas << " in distributions file but ";
+    std::cerr << areas.size() << " in configuration file." << std::endl;
     next.source_and_exit();
   }
 
@@ -40,8 +39,8 @@ Map legacy_parse(Lexer& lexer, const size_t n_species, const Areas& areas) {
     goto nospecies;
   }
   if (next.has_value()) {
-    std::cerr << "Error: unexpected value found in header line: " << *next.token
-              << "." << std::endl;
+    std::cerr << "Error: unexpected value found in header line: ";
+    std::cerr << *next.token << "." << std::endl;
     next.source_and_exit();
   }
 
@@ -58,10 +57,10 @@ Map legacy_parse(Lexer& lexer, const size_t n_species, const Areas& areas) {
   while (!next.is_eof()) {
 
     if (map.size() == n_species) {
-      std::cerr << "Error: more species found than specified at the beginning "
-                   "of the file: expected "
-                << n_species << ", got at least " << n_species + 1 << "."
-                << std::endl;
+      std::cerr << "Error: more species found ";
+      std::cerr << "than specified at the beginning of the file: ";
+      std::cerr << "expected " << n_species << ", ";
+      std::cerr << "got at least " << n_species + 1 << "." << std::endl;
       next.source_and_exit();
     }
 
@@ -69,14 +68,14 @@ Map legacy_parse(Lexer& lexer, const size_t n_species, const Areas& areas) {
     const auto distribution{lexer.step()};
 
     if (!distribution.has_value()) {
-      std::cerr << "Error: no distribution specified for species " << species
-                << "." << std::endl;
+      std::cerr << "Error: no distribution specified ";
+      std::cerr << "for species " << species << "." << std::endl;
       distribution.source_and_exit();
     }
 
     if (map.count(species)) {
-      std::cerr << "Error: distribution for species " << species
-                << " specified more than once." << std::endl;
+      std::cerr << "Error: distribution for species " << species << " ";
+      std::cerr << "specified more than once." << std::endl;
       next.source_and_exit();
     }
 
@@ -93,24 +92,25 @@ Map legacy_parse(Lexer& lexer, const size_t n_species, const Areas& areas) {
         d.emplace_back(1);
         break;
       default:
-        std::cerr
-            << "Error: unexpected char in legacy species distribution format: "
-            << c << std::endl;
+        std::cerr << "Error: unexpected char ";
+        std::cerr << "in legacy species distribution format: ";
+        std::cerr << c << std::endl;
         distribution.source_and_exit(i);
       }
       if (i >= areas.size()) {
-        std::cerr
-            << "Error: too many digits in legacy species distribution format: "
-            << "expected " << areas.size() << ", got "
-            << distribution.token->size() << "." << std::endl;
+        std::cerr << "Error: too many digits ";
+        std::cerr << "in legacy species distribution format: ";
+        std::cerr << "expected " << areas.size() << ", ";
+        std::cerr << "got " << distribution.token->size() << "." << std::endl;
         distribution.source_and_exit(i);
       }
       ++i;
     }
     if (i != areas.size()) {
-      std::cerr
-          << "Error: not enough digits in legacy species distribution format: "
-          << "expected " << areas.size() << ", got " << i << "." << std::endl;
+      std::cerr << "Error: not enough digits ";
+      std::cerr << "in legacy species distribution format: ";
+      std::cerr << "expected " << areas.size() << ", ";
+      std::cerr << "got " << i << "." << std::endl;
       distribution.source_and_exit(i - 1);
     }
 
@@ -120,8 +120,8 @@ Map legacy_parse(Lexer& lexer, const size_t n_species, const Areas& areas) {
     // Go check next species line.
     next = lexer.step();
     if (next.has_value()) {
-      std::cerr << "Error: unexpected token on species line : '" << *next.token
-                << "'" << std::endl;
+      std::cerr << "Error: unexpected token ";
+      std::cerr << "on species line : '" << *next.token << "'" << std::endl;
       next.source_and_exit();
     }
     while (next.is_eol()) {
@@ -130,17 +130,18 @@ Map legacy_parse(Lexer& lexer, const size_t n_species, const Areas& areas) {
   }
 
   if (map.size() < n_species) {
-    std::cerr << "Error: not as many species lines than specified at the "
-                 "beginning of the file: expected "
-              << n_species << ", got only " << map.size() << "." << std::endl;
+    std::cerr << "Error: not as many species lines ";
+    std::cerr << "than specified at the beginning of the file: ";
+    std::cerr << "expected " << n_species << ", ";
+    std::cerr << "got only " << map.size() << "." << std::endl;
     next.source_and_exit();
   }
 
   return map;
 
 nospecies:
-  std::cerr << "Error: no species lines provided in distribution file."
-            << std::endl;
+  std::cerr << "Error: no species lines provided ";
+  std::cerr << "in distribution file." << std::endl;
   next.source_and_exit();
 }
 

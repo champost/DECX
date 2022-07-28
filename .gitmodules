@@ -1,3 +1,6 @@
 [submodule "deps/toml++"]
 	path = extern/toml++
 	url = https://github.com/marzer/tomlplusplus
+[submodule "extern/clibate"]
+	path = extern/clibate
+	url = https://github.com/iago-lito/clibate

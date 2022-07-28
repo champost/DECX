@@ -9,7 +9,7 @@ template <std::size_t N>
 bool is_of_type(View view, Types<N> types) {
   static_assert(N > 0, "You should expect at least 1 type.");
   // Use special type 'none' as a wildcard.
-  if (N == 1 && types[0] == toml::node_type::none)  {
+  if (N == 1 && types[0] == toml::node_type::none) {
     return true;
   }
   for (auto& t : types) {
@@ -34,13 +34,13 @@ void Reader::check_type(Types<N> expected_types) {
         std::cerr << " or " << expected_types[i];
       }
     }
-    std::cerr << ", not " << focal->data.type() << ". ";
+    std::cerr << ", not " << focal->data.type() << "." << std::endl;
     // Additional information in specific cases.
     if (is_of_type(focal->data, {toml::node_type::integer}) && N == 1 &&
         expected_types[0] == toml::node_type::floating_point) {
       const auto& e{*focal->data.as_integer()};
-      std::cerr << "Consider writing `" << e << ".0`";
-      std::cerr << " instead of `" << e << "`. ";
+      std::cerr << "Consider writing `" << e << ".0` ";
+      std::cerr << "instead of `" << e << "`." << std::endl;
     }
     source_and_exit();
   }
@@ -62,9 +62,9 @@ template <size_t N>
 std::optional<View>
 Reader::seek_node(Name name, Types<N> expected_types, const bool descend) {
   if (!is_of_type(focal->data, {toml::node_type::table})) {
-    std::cerr << "Error in source code: should not seek node by name "
-                 "while standing on a non-table node."
-              << std::endl;
+    std::cerr << "Error in source code: ";
+    std::cerr << "should not seek node by name ";
+    std::cerr << "while standing on a non-table node." << std::endl;
     exit(-1);
   }
   const auto& table{focal->data.as_table()};
@@ -91,8 +91,8 @@ View Reader::require_node(Name name,
   if (option.has_value()) {
     return *option;
   }
-  std::cerr << "Configuration error: "
-            << "'" << name << "' is required, but not given. ";
+  std::cerr << "Configuration error: ";
+  std::cerr << "'" << name << "' is required, but not given." << std::endl;
   source_and_exit();
 }
 

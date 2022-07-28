@@ -1,0 +1,6 @@
+# The distribution set here should not be erased
+# with a 'success' section in the following.
+
+include(legacy_distributions): Legacy distribution parsing.
+include(species_lines_distributions): Distribution parsing with species lines.
+include(areas_lines_distributions): Distribution parsing with areas lines.

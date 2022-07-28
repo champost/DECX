@@ -21,8 +21,9 @@ Map areas_parse(Lexer& lexer, const Areas& config_areas) {
     next = lexer.step();
   }
   if (species.empty()) {
-    std::cerr << "Error: no species lines provided in distribution file header "
-              << "(sought because of 'a\\s' specification)." << std::endl;
+    std::cerr << "Error: no species lines provided ";
+    std::cerr << "in distribution file header ";
+    std::cerr << "(expected because of 'a\\s' specification)." << std::endl;
     next.source_and_exit();
   }
 
@@ -30,8 +31,8 @@ Map areas_parse(Lexer& lexer, const Areas& config_areas) {
   while (!next.has_value()) {
     next = lexer.step();
     if (next.is_eof()) {
-      std::cerr << "Error: no areas lines provided in distribution file."
-                << std::endl;
+      std::cerr << "Error: no areas lines provided ";
+      std::cerr << "in distribution file." << std::endl;
       next.source_and_exit();
     }
   }
@@ -50,14 +51,14 @@ Map areas_parse(Lexer& lexer, const Areas& config_areas) {
       }
     }
     if (!found) {
-      std::cerr << "Error: area '" << area
-                << "' not found in configuration file." << std::endl;
+      std::cerr << "Error: area '" << area << "' ";
+      std::cerr << "not found in configuration file." << std::endl;
       next.source_and_exit();
     }
     // Also, it must not already be in the map.
     if (tmap.count(area)) {
-      std::cerr << "Error: area '" << area << "' is specified twice."
-                << std::endl;
+      std::cerr << "Error: area '" << area << "' ";
+      std::cerr << "is specified twice." << std::endl;
       next.source_and_exit();
     }
 
@@ -69,8 +70,8 @@ Map areas_parse(Lexer& lexer, const Areas& config_areas) {
     // Infer the correct type based on first next token.
     next = lexer.step();
     if (!next.has_value()) {
-      std::cerr << "Error: no community information provided for area " << area
-                << "." << std::endl;
+      std::cerr << "Error: no community information provided ";
+      std::cerr << "for area " << area << "." << std::endl;
       next.source_and_exit();
     }
 
@@ -96,9 +97,9 @@ Map areas_parse(Lexer& lexer, const Areas& config_areas) {
           ++i_species;
         }
         if (!found) {
-          std::cerr << "Error: unrecognized species name: "
-                    << "'" << single_species << "'"
-                    << " (not found in file header)" << std::endl;
+          std::cerr << "Error: unrecognized species name: ";
+          std::cerr << "'" << single_species << "' ";
+          std::cerr << "(not found in file header)" << std::endl;
           next.source_and_exit();
         }
         community[i_species] = 1 - base;
@@ -116,10 +117,11 @@ Map areas_parse(Lexer& lexer, const Areas& config_areas) {
       // In this case, expect only ones and zeroes.
       for (const auto c : determinant) {
         if (c != '0' && c != '1') {
-          std::cerr << "Error: could not interpret token '" << determinant
-                    << "' as an area community specification. "
-                    << "Consider using ones and zeroes, "
-                    << "or '+' or '-' to explicitly name species." << std::endl;
+          std::cerr << "Error: could not interpret token ";
+          std::cerr << "'" << determinant << "' ";
+          std::cerr << "as an area community specification." << std::endl;
+          std::cerr << "Consider using ones and zeroes, ";
+          std::cerr << "or '+' or '-' to explicitly name species." << std::endl;
           next.source_and_exit();
         }
       }
@@ -142,9 +144,9 @@ Map areas_parse(Lexer& lexer, const Areas& config_areas) {
             break;
           }
           if (i_digit == species.size()) {
-            std::cerr << "Error: too many digits in community specification: "
-                      << "expected " << species.size() << ", got at least "
-                      << i_digit + 1 << "." << std::endl;
+            std::cerr << "Error: too many digits in community specification: ";
+            std::cerr << "expected " << species.size() << ", ";
+            std::cerr << "got at least " << i_digit + 1 << "." << std::endl;
             next.source_and_exit((split) ? 0 : i_digit);
           }
           // Only flip relevant digits in the right places.
@@ -154,9 +156,9 @@ Map areas_parse(Lexer& lexer, const Areas& config_areas) {
           ++i_digit;
         }
         if (i_digit != species.size()) {
-          std::cerr << "Error: not enough digits in community specification: "
-                    << "expected " << species.size() << ", got only " << i_digit
-                    << "." << std::endl;
+          std::cerr << "Error: not enough digits in community specification: ";
+          std::cerr << "expected " << species.size() << ", ";
+          std::cerr << "got only " << i_digit << "." << std::endl;
           next.source_and_exit((split) ? 0 : i_digit);
         }
       };
@@ -170,8 +172,8 @@ Map areas_parse(Lexer& lexer, const Areas& config_areas) {
           if (i < determinant.size()) {
             const auto& c{determinant[i]};
             if (c != '1' && c != '0') {
-              std::cerr << "Error: expected 1 or 0, got '" << c << "'."
-                        << std::endl;
+              std::cerr << "Error: expected 1 or 0, ";
+              std::cerr << "got '" << c << "'." << std::endl;
               next.source_and_exit(i - 1);
             }
             ++i;
@@ -183,8 +185,8 @@ Map areas_parse(Lexer& lexer, const Areas& config_areas) {
         // There should be nothing left on this line.
         next = lexer.step();
         if (next.has_value()) {
-          std::cerr << "Error: unexpected token " << *next.token << "."
-                    << std::endl;
+          std::cerr << "Error: unexpected token '";
+          std::cerr << *next.token << "'." << std::endl;
           next.source_and_exit();
         }
       } else {
@@ -202,8 +204,8 @@ Map areas_parse(Lexer& lexer, const Areas& config_areas) {
             } else if (*next.token == "0") {
               res = '0';
             } else {
-              std::cerr << "Error: expected 1 or 0, got '" << *next.token
-                        << "'." << std::endl;
+              std::cerr << "Error: expected 1 or 0, ";
+              std::cerr << "got '" << *next.token << "'." << std::endl;
               next.source_and_exit();
             }
             return res;
@@ -232,8 +234,9 @@ Map areas_parse(Lexer& lexer, const Areas& config_areas) {
         missing.push_back(a);
       }
     }
-    std::cerr << "Error: not all areas defined in configuration file "
-              << " have been specified. Missing:";
+    std::cerr << "Error: not all areas defined in configuration file ";
+    std::cerr << "have been specified." << std::endl;
+    std::cerr << "Missing:";
     for (const auto& a : missing) {
       std::cerr << " " << a;
     }

@@ -406,7 +406,7 @@ int main(int argc, char* argv[]){
 
       // Highjack here for testing purpose.
       if (check_distribution_file) {
-        std::cout << datafile << ":";
+        std::cout << "Distribution (" << datafile << "):";
         for (const auto& area : area_names) {
           std::cout << " " << area;
         }
