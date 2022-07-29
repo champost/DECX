@@ -1,6 +1,7 @@
 #include "adj_parsing.hpp"
 
 #include <iostream>
+#include <unordered_map>
 
 namespace adjacency {
 
@@ -29,8 +30,31 @@ AdjMap parse_file(const std::string_view filename,
       map[k][i][i] = true;
     }
   }
+  // Indices in the map correspond to areas indices,
+  // *except* if they are reordered in the first namer or header.
+  // In this situation, all subsequent namers and headers must match reordering,
+  // and the map will be reordered accordingly just before returning.
+  Areas reorder; // Empty if no reorder.
 
-  // Factorize procedures querying token under focus, assuming it's not EOL/EOF.
+  // In case exactly 1 name is missing with diagonal elision.
+  const auto& complete_reorder = [&](const Areas& names) {
+    for (const auto& a : areas) {
+      bool found{false};
+      for (const auto& n : names) {
+        if (n == a) {
+          found = true;
+          break;
+        }
+      }
+      if (!found) {
+        reorder.emplace_back(a);
+        break;
+      }
+    }
+  };
+
+  // Factorize procedures querying token under focus, assuming it's not
+  // EOL/EOF.
   const auto is_binary = [](std::string_view token) {
     for (const auto c : token) {
       if (c != '0' && c != '1') {
@@ -297,6 +321,40 @@ AdjMap parse_file(const std::string_view filename,
       step = lexer.step();
     };
 
+    // Check that no orders differ within the file.
+    const auto& same_order = [&](const Areas& names, const bool namer) {
+      // Check against file order if no reordering has been decided.
+      const Areas& against{(reorder.empty()) ? areas : reorder};
+      const std::string_view origin{(reorder.empty()) ? " (from config file)"
+                                                      : ""};
+      const std::string_view mess{(namer) ? " (in row names)"
+                                          : " (in column names)"};
+      // Careful with single-name dropping in case of diagonal elision.
+      const size_t off_start{namer && diag_elided};
+      const size_t off_end{!namer && diag_elided};
+      for (size_t i{off_start}; i < areas.size() - off_end; ++i) {
+        if (names[i] != against[i]) {
+          std::cerr << "Error: areas cannot be reordered ";
+          std::cerr << "within the same adjacency file." << std::endl;
+          std::cerr << "First order found" << origin << ":" << std::endl;
+          for (const auto& n : against) {
+            std::cerr << " " << n;
+          }
+          std::cerr << std::endl << "Found now" << mess << ":" << std::endl;
+          for (const auto& n : names) {
+            std::cerr << " " << n;
+          }
+          std::cerr << std::endl;
+          if (reorder.empty()) {
+            std::cerr << "Reordering areas within this file is possible ";
+            std::cerr << "provided it's made explicit ";
+            std::cerr << "earlier in the file." << std::endl;
+          }
+          step.source_and_exit();
+        }
+      }
+    };
+
     // One iteration per line of the matrix (i).
     while (true) {
 
@@ -356,6 +414,29 @@ AdjMap parse_file(const std::string_view filename,
       next_line();
     }
 
+    // At this point, we know whether a first header and/or namer
+    // has been given, and whether this requires a later reordering of the map.
+    if (p == 0) {
+      if (!header.empty()) {
+        reorder = header; // Copy.
+        if (diag_elided) {
+          complete_reorder(header);
+        }
+      } else if (!namer.empty()) {
+        reorder = namer; // Copy.
+        if (diag_elided) {
+          complete_reorder(namer);
+        }
+      }
+    } else {
+      // Later, check that orders are always consistent.
+      if (!header.empty()) {
+        same_order(header, false);
+      } else if (!namer.empty()) {
+        same_order(namer, true);
+      }
+    }
+
     // If the matrix was not compact,
     // go check the next one.
     ++p;
@@ -363,7 +444,30 @@ AdjMap parse_file(const std::string_view filename,
   }
   is_eof(step);
 
-  return map;
+  if (reorder.empty()) {
+    return map;
+  }
+
+  // Shuffle result into a correctly reordered copy.
+  AdjMap copy{map};
+  std::unordered_map<size_t, size_t> shuffle;
+  for (size_t i_old{0}; i_old < areas.size(); ++i_old) {
+    for (size_t i_new{0}; i_new < areas.size(); ++i_new) {
+      if (areas[i_old] == reorder[i_new]) {
+        shuffle[i_new] = i_old;
+        break;
+      }
+    }
+  }
+  for (size_t p{0}; p < n_periods; ++p) {
+    for (size_t i{0}; i < areas.size(); ++i) {
+      for (size_t j{0}; j <= i; ++j) {
+        copy[p][i][j] = copy[p][j][i] = map[p][shuffle[i]][shuffle[j]];
+      }
+    }
+  }
+
+  return copy;
 };
 
 } // namespace adjacency
