@@ -43,7 +43,7 @@ file (newick.tre):: EON
     (Sp1,(Sp2,Sp3));
 EON
 
-# Here is the expected result, shared accross all tests.
+# Here is the expected result, shared accross 'successes' and 'failures' tests.
 adjacency:
       a b c d
     a 1
@@ -62,3 +62,7 @@ EXITCODE 0
 
 include(successes): Valid adjacency matrices.
 include(failures): Invalid adjacency matrices.
+
+# Various different results are expected
+# when it comes to testing relative lines.
+include(relative): Relative adjacency specifications.

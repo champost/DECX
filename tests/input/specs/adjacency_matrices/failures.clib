@@ -353,6 +353,6 @@ failure (4):: EOE
      a b c d
     Found now (in column names):
      a b d c
-    Reordering areas within this file is possible provided it's made explicit earlier in the file.
+    Reordering areas within this file is possible provided it's made explicit in the first specified matrix.
     (line 11 column 0 in 'adjacency.txt')
 EOE

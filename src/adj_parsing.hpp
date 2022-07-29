@@ -50,6 +50,20 @@
 //    0 b
 //    1 0 c
 //    0 0 1 d
+//
+//  Instead of repeating the whole matrix,
+//  Just add or remove connections with relative + or - instructions.
+//
+//    a
+//    0 b
+//    1 0 c
+//    0 1 1 d
+//
+//    - b d
+//    + d a
+//         ← separate periods with empty lines.
+//    + a b
+//    - b d
 
 #include "lexer.hpp"
 

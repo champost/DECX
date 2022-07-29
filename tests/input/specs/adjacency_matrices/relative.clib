@@ -1,0 +1,195 @@
+# Test relative adjacency specifications.
+
+# Adjust config a little bit.
+edit* (config.toml):
+    # User smaller number of areas..
+    REPLACE a b c d
+    BY      a b c
+    # .. and higher number of periods.
+    REPLACE 5.33, 17.7
+    BY      1, 2, 3
+
+file (distrib.txt):: EOD
+    s\a a b c # Shorten to 3 areas only.
+    Sp1 0 1 1
+    Sp2 1 1 0
+    Sp3 0 0 0
+EOD
+
+# First expected result.
+adjacency:
+    a b c
+  a 1
+  b 0 1
+  c 0 0 1
+
+    a b c
+  a 1
+  b 1 1
+  c 0 0 1
+
+    a b c
+  a 1
+  b 0 1
+  c 1 1 1
+stderr:: *
+EXITCODE 0
+
+test: Only absolute matrices.
+file (adjacency.txt):: EOA
+    a
+    0 b
+    0 0 c
+
+    a
+    1 b
+    0 0 c
+
+    a
+    0 b
+    1 1 c
+EOA
+RUNTEST
+
+test: First absolute, other relatives.
+file (adjacency.txt):: EOA
+    a
+    0 b
+    0 0 c
+
+    + a b
+
+    - a b
+    + a c
+    + c b
+EOA
+RUNTEST
+
+test: Absolute, relative, absolute again.
+file (adjacency.txt):: EOA
+    a
+    0 b
+    0 0 c
+
+    + a b
+
+    a
+    0 b
+    1 1 c
+EOA
+RUNTEST
+
+test: Relative lines set digit for all successive periods.
+adjacency:
+    a b c
+  a 1
+  b 0 1
+  c 0 0 1
+
+    a b c
+  a 1
+  b 1 1
+  c 0 0 1
+
+    a b c
+  a 1
+  b 1 1
+  c 0 1 1
+file (adjacency.txt):: EOA
+    a
+    0 b
+    0 0 c
+
+    + a b
+
+    + b c
+EOA
+RUNTEST
+
+# Break in subsequent tests.
+file (adjacency.txt):: EOA
+    a
+    0 b
+    0 0 c
+
+    + a b
+
+    - a b
+    + a c
+    + c b
+EOA
+
+test: Cannot start with relative
+edit (adjacency.txt):
+    INSERT + "- a b"
+             "a"
+failure (4):: EOE
+    Error: '-' is not recognized as an area name.
+    (line 1 column 1 in 'adjacency.txt')
+EOE
+
+test: Invalid relative symbol.
+edit (adjacency.txt):
+    DIFF + a b
+    ~    / a b
+failure (4):: EOE
+    Error: '/' is not recognized as an area name.
+    (line 5 column 1 in 'adjacency.txt')
+EOE
+
+test: Invalid relative symbol within relative section.
+edit (adjacency.txt):
+    DIFF + a c
+    ~    / a c
+failure (4):: EOE
+    Error: unexpected token below relative instruction: '/'.
+    Consider leaving a blank line if a new matrix needs to be specified.
+    (line 8 column 1 in 'adjacency.txt')
+EOE
+
+test: Invalid area name in relative line.
+edit (adjacency.txt):
+    DIFF + a b
+    ~    + a X
+failure (4):: EOE
+    Error: 'X' is not recognized as an area name.
+    (line 5 column 5 in 'adjacency.txt')
+EOE
+
+test: Missing area name in relative line.
+edit (adjacency.txt):
+    DIFF + a b
+    ~    + a
+failure (4):: EOE
+    Error: unexpected end of line.
+    (line 5 column 4 in 'adjacency.txt')
+EOE
+
+test: Extra area name in relative line.
+edit (adjacency.txt):
+    DIFF + a b
+    ~    + a b c
+failure (4):: EOE
+    Error: unexpected token after relative instruction: 'c'.
+    (line 5 column 7 in 'adjacency.txt')
+EOE
+
+test: Cannot use blank lines within the same relative section.
+file (adjacency.txt):: EOA
+    a
+    0 b
+    0 0 c
+
+    # Next period (ok).
+    + a b
+
+    # Next period (not ok).
+    - a b
+
+    + a c
+    + b c
+EOA
+failure (4):: EOE
+    Error: unexpected token after end of file: '+'.
+    (line 11 column 1 in 'adjacency.txt')
+EOE

@@ -63,6 +63,9 @@ AdjMap parse_file(const std::string_view filename,
     }
     return true;
   };
+  const auto is_relative = [](std::string_view token) {
+    return token == "+" || token == "-";
+  };
   const auto is_in = [](std::string_view token, const Areas& list) {
     for (const auto& a : list) {
       if (token == a) {
@@ -160,6 +163,65 @@ AdjMap parse_file(const std::string_view filename,
   size_t p{0};
   bool compact{false}; // Raise if one compact form is found.
 
+  // We came accross a period section starting with + or -:
+  // parse it all as a relative section
+  // before returning to usual flow.
+  const auto& parse_relative = [&]() {
+    // Assumption: we're standing on the first valid
+    // + or - sign in the section.
+    while (true) {
+      const bool add{*step.token == "+"};
+
+      // We're expecting two areas then.
+      step = lexer.step();
+      is_area(step);
+      const auto first{*step.token};
+      step = lexer.step();
+      is_area(step);
+      const auto second{*step.token};
+
+      // Found: edit the map in-place to apply the change.
+      size_t i{0};
+      size_t j{0};
+      for (size_t a{0}; a < areas.size(); ++a) {
+        if (areas[a] == first) {
+          i = a;
+        }
+        if (areas[a] == second) {
+          j = a;
+        }
+      }
+      for (size_t k{p}; k < n_periods; ++k) {
+        map[k][i][j] = map[k][j][i] = add;
+      }
+
+      // Seek next line or end the section.
+      step = lexer.step();
+      if (step.has_value()) {
+        std::cerr << "Error: unexpected token after relative instruction: ";
+        std::cerr << "'" << *step.token << "'." << std::endl;
+        source_and_exit();
+      }
+      if (step.is_eof()) {
+        return;
+      }
+      // Next line found.
+      step = lexer.step();
+      if (step.has_value()) {
+        if (is_relative(*step.token)) {
+          continue;
+        } else {
+          std::cerr << "Error: unexpected token below relative instruction: ";
+          std::cerr << "'" << *step.token << "'." << std::endl;
+          std::cerr << "Consider leaving a blank line ";
+          std::cerr << "if a new matrix needs to be specified." << std::endl;
+          source_and_exit();
+        }
+      }
+      return;
+    }
+  };
+
   // One matrix is parsed on every iteration,
   // with possibly a different form every time.
   while (!compact && p != n_periods) {
@@ -183,10 +245,16 @@ AdjMap parse_file(const std::string_view filename,
     // leading to wrong interpretation as triangular + diag_elided.
     std::optional<std::string_view> missing_in_header;
 
-    // Process header and decide file organization.
+    // Process header and decide matrix organization.
     // After this chunk, `step` must point to the first actual data value.
     step = first;
     if (!is_binary(*first.token)) {
+      if (p > 0 && is_relative(*first.token)) {
+        // Coming accross a relative section.
+        parse_relative();
+        ++p;
+        continue;
+      }
       // This could be the first token in the header or the namer,
       // depending on the information found next.
       is_area(first);
@@ -360,7 +428,7 @@ AdjMap parse_file(const std::string_view filename,
           if (reorder.empty()) {
             std::cerr << "Reordering areas within this file is possible ";
             std::cerr << "provided it's made explicit ";
-            std::cerr << "earlier in the file." << std::endl;
+            std::cerr << "in the first specified matrix." << std::endl;
           }
           source_and_exit();
         }
