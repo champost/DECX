@@ -1,0 +1,259 @@
+# Tests various valid/synonymous forms for adjacency matrices.
+
+test: Legacy form.
+file (adjacency.txt):: EOA
+    1 0 1 0
+    0 1 0 1
+    1 0 1 1
+    0 1 1 1
+
+    1 0 1 1
+    0 1 0 1
+    1 0 1 1
+    1 1 1 1
+EOA
+RUNTEST
+
+test: Comments.
+file (adjacency.txt):: EOA
+    # Head comment.
+    1 0 1 0 # Comment.
+    0 1 0 1
+    1 0 1 1
+    0 1 1 1
+    # Inter-period Comment
+
+    1 0 1 1
+    0 1 0 1
+    1 0 1 1
+    1 1 1 1
+    # Comment.
+EOA
+RUNTEST
+
+test: Extra whitespace.
+file (adjacency.txt):: EOA
+    1  0 1 0
+      0  1 0   1
+    1  0 1  1
+    0  1   1 1
+
+
+    1  0 1 1
+    0  1   0 1
+     1  0  1 1
+    1  1 1 1
+EOA
+RUNTEST
+
+test: Triangular elision.
+file (adjacency.txt):: EOA
+    1
+    0 1
+    1 0 1
+    0 1 1 1
+
+    1
+    0 1
+    1 0 1
+    1 1 1 1
+EOA
+RUNTEST
+
+test: Mixed elision.
+file (adjacency.txt):: EOA
+    1 0 1 0
+    0 1 0 1
+    1 0 1 1
+    0 1 1 1
+
+    1
+    0 1
+    1 0 1
+    1 1 1 1
+EOA
+RUNTEST
+
+test: Compact form.
+file (adjacency.txt):: EOA
+    1  0  1  01
+    0  1  0  1
+    1  0  1  1
+    01 1  1  1
+EOA
+RUNTEST
+
+test: Compact form, triangular elision.
+file (adjacency.txt):: EOA
+    1
+    0  1
+    1  0  1
+    01 1  1  1
+EOA
+RUNTEST
+
+test: Header and namer.
+file (adjacency.txt):: EOA
+    a  b  c  d
+  a 1  0  1  01
+  b 0  1  0  1
+  c 1  0  1  1
+  d 01 1  1  1
+EOA
+RUNTEST
+
+test: Header and namer, triangular elision.
+file (adjacency.txt):: EOA
+    a  b  c  d
+  a 1
+  b 0  1
+  c 1  0  1
+  d 01 1  1  1
+EOA
+RUNTEST
+
+test: Header and namer, diagonal elision.
+file (adjacency.txt):: EOA
+    a  b  c
+  b 0
+  c 1  0
+  d 01 1  1
+EOA
+RUNTEST
+
+test: Diagonalize header.
+file (adjacency.txt):: EOA
+    a
+    0  b
+    1  0  c
+    01 1  1  d
+EOA
+RUNTEST
+
+test: Elide namer.
+file (adjacency.txt):: EOA
+    a  b  c  d
+    1
+    0  1
+    1  0  1
+    01 1  1  1
+EOA
+RUNTEST
+
+test: Elide header.
+file (adjacency.txt):: EOA
+  a 1
+  b 0  1
+  c 1  0  1
+  d 01 1  1  1
+EOA
+RUNTEST
+
+test: Mix non-compact forms (1).
+file (adjacency.txt):: EOA
+  a 1
+  b 0 1
+  c 1 0 1
+  d 0 1 1 1
+
+    a
+    0  b
+    1  0  c
+    01 1  1  d
+EOA
+RUNTEST
+
+test: Mix non-compact forms (2).
+file (adjacency.txt):: EOA
+    1 0 1 0
+    0 1 0 1
+    1 0 1 1
+    0 1 1 1
+
+    a b c
+  b 0
+  c 1 0
+  d 1 1 1
+EOA
+RUNTEST
+
+test: Header and namer: reorder.
+file (adjacency.txt):: EOA
+    a  d  c  b
+  a 1  01 1  0
+  d 01 1  1  1
+  c 1  1  1  0
+  b 0  1  0  1
+EOA
+RUNTEST
+
+test: Reorder with header only.
+file (adjacency.txt):: EOA
+    a  d  c  b
+    1  01 1  0
+    01 1  1  1
+    1  1  1  0
+    0  1  0  1
+EOA
+RUNTEST
+
+test: Reorder with namer only.
+file (adjacency.txt):: EOA
+  a 1  01 1  0
+  d 01 1  1  1
+  c 1  1  1  0
+  b 0  1  0  1
+EOA
+RUNTEST
+
+test: Reorder with diagonal header only.
+file (adjacency.txt):: EOA
+    a
+    01 d
+    1  1  c
+    0  1  0  b
+EOA
+RUNTEST
+
+test: Reorder with only first header.
+file (adjacency.txt):: EOA
+    a d c b
+    1 0 1 0
+    0 1 1 1
+    1 1 1 0
+    0 1 0 1
+
+    1
+    1 1
+    1 1 1
+    0 1 0 1
+EOA
+RUNTEST
+
+test: Reorder with only first namer.
+file (adjacency.txt):: EOA
+  a 1 0 1 0
+  d 0 1 1 1
+  c 1 1 1 0
+  b 0 1 0 1
+
+    1
+    1 1
+    1 1 1
+    0 1 0 1
+EOA
+RUNTEST
+
+test: Reorder with only first diagonal header.
+file (adjacency.txt):: EOA
+    a
+    0 d
+    1 1 c
+    0 1 0 b
+
+    1
+    1 1
+    1 1 1
+    0 1 0 1
+EOA
+RUNTEST

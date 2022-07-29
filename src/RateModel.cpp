@@ -161,52 +161,8 @@ void RateModel::setup_dists(vector<vector<int> > indists, bool include){
 	cout << endl;
 }
 
-void RateModel::setup_adjacency(string filename, vector<string> areaNames)
-{
-	vector<bool> adjMatCol(nareas,true);
-	vector<vector<bool> > adjMatRow(nareas,adjMatCol);
-	adjMat = vector<vector<vector<bool> > > (periods.size(),adjMatRow);
-	default_adjacency = false;
-
-	//read file
-	ifstream ifs(filename.c_str());
-	string line;
-	int period = 0;int fromarea = 0;
-	cout << "\nReading adjacency matrix file..." << endl;
-	while(getline(ifs,line)) {
-		//	CBR (18.10.2013), in case empty lines greater than 3 chars in size have been specified
-		TrimSpaces(line);
-		if (line.size() > 0) {
-			if (fromarea == 0) {
-				for (unsigned int j = 0; j < areaNames.size(); j++)
-					cout << "\t" << areaNames[j];
-				cout << endl << endl;
-			}
-			vector<string> tokens;
-			string del(" ,\t");
-			tokens.clear();
-			Tokenize(line, tokens, del);
-			for (unsigned int j = 0; j < tokens.size(); j++) {
-				TrimSpaces(tokens[j]);
-			}
-			cout << areaNames[fromarea] << "\t";
-			for (unsigned int j = 0; j < (fromarea + 1); j++) {
-				if (atoi(tokens[j].c_str()) == 0)
-					adjMat[period][fromarea][j] = adjMat[period][j][fromarea] = false;
-				cout << tokens[j] << "\t";
-			}
-			cout << endl;
-			if (fromarea < nareas - 1) {
-				++fromarea;
-			}
-			else {
-				fromarea = 0;
-				++period;
-				cout << endl;
-			}
-		}
-	}
-	ifs.close();
+void RateModel::setup_adjacency(vector<vector<vector<bool>>> matrix) {
+  adjMat = matrix;
 }
 
 void RateModel::set_adj_bool(bool adjBool)
@@ -1189,7 +1145,7 @@ inline double roundto(double in){
 
 //trying not to use octave at the moment
 /*
- * 
+ *
  * bool RateModel::get_eigenvec_eigenval_from_Q_octave(ComplexMatrix * eigval, ComplexMatrix * eigvec, int period){
 	ComplexMatrix tQ = ComplexMatrix(int(Q[period].size()),int(Q[period].size()));
 	for(unsigned int i=0;i<Q[period].size();i++){

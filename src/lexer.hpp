@@ -2,8 +2,8 @@
 
 // A simple lexer, useful to parse the various configuration files.
 
-#include <string>
 #include <optional>
+#include <string>
 
 auto read_file(std::string_view path) -> std::string;
 
@@ -54,7 +54,8 @@ public:
 
     // Exit with error message pointing to current focus
     // + possible shift within current token.
-    [[noreturn]] void source_and_exit(const size_t shift = 0) const;
+    [[noreturn]] void source_and_exit(const size_t shift = 0,
+                                      const int code = LEXING_ERROR) const;
   };
 
   // Query for next token.
@@ -65,4 +66,3 @@ private:
   bool no_input_left() const;
   bool newline() const;
 };
-

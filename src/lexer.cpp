@@ -85,10 +85,10 @@ std::ostream& operator<<(std::ostream& out, const Lexer::StepType& t) {
   return out;
 };
 
-void Lexer::Step::source_and_exit(const size_t shift) const {
+void Lexer::Step::source_and_exit(const size_t shift, const int code) const {
   std::cerr << "(line " << line << " column " << column + shift << " in '"
             << filename << "')" << std::endl;
-  exit(LEXING_ERROR);
+  exit(code);
 }
 
 std::ostream& operator<<(std::ostream& out, const Lexer::Step& s) {

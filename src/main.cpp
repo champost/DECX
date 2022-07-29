@@ -504,30 +504,42 @@ int main(int argc, char* argv[]){
 		* if there is a adjacencymatrixfile then it will be processed
 		*/
 		if (adjacencyfile.size() > 0) {
-      rm.setup_adjacency(adjacencyfile, area_names);
+
+      // Reproduce legacy display of adjacency matrix files..
+      std::cout << "\nReading adjacency matrix file..." << std::endl;
+
+      // .. but with the new file format parsing..
+      const auto& am{
+          adjacency::parse_file(adjacencyfile, area_names, periods.size())};
+      // .. reinjected into the program logic.
+      rm.setup_adjacency(am);
+      rm.set_adj_bool(false);
+
+      for (const auto& period : am) {
+        for (const auto& area : area_names) {
+          std::cout << '\t' << area;
+        }
+        std::cout << std::endl << std::endl;
+        for (size_t i{0}; i < area_names.size(); ++i) {
+          std::cout << area_names[i] << '\t';
+          const auto& row{period[i]};
+          for (size_t j{0}; j <= i; ++j) {
+            const auto& val{row[j]};
+            std::cout << val << '\t';
+          }
+          std::cout << std::endl;
+        }
+        std::cout << std::endl;
+      }
 
       if (check_adjacency_file) {
-        // New file format parsing.
-        const auto& am{
-            adjacency::parse_file(adjacencyfile, area_names, periods.size())};
-        rm.set_adj_bool(false); // To be reinjected into the program's logic.
-
-        // Compare with legacy one.
-        std::cout << "Legacy Parsing: " << rm.default_adjacency << std::endl;
-        for (size_t p{0}; p < periods.size(); ++p) {
-          for (size_t i{0}; i < area_names.size(); ++i) {
-            for (size_t j{0}; j < area_names.size(); ++j) {
-              if (rm.adjMat[p][i][j] != am[p][i][j]) {
-                std::cerr << "LEGACY/NEW NOMATCH!" << std::endl;
-                std::exit(1);
-              }
-            }
-          }
-        }
-        // Display new one.
+        // Display full adjacency information and exit.
+        std::cout << "Adjacency (" << adjacencyfile << "):" << std::endl;
         for (const auto& period : am) {
-          for (const auto& row : period) {
-            for (const auto& val : row) {
+          for (size_t i{0}; i < area_names.size(); ++i) {
+            const auto& row{period[i]};
+            for (size_t j{0}; j < area_names.size(); ++j) {
+              const auto& val{row[j]};
               std::cout << val << " ";
             }
             std::cout << std::endl;

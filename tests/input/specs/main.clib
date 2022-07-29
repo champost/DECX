@@ -1,4 +1,7 @@
-# Basic success with dummy config file.
+# The 4 first test files have been crafted before clibate
+# and are not strictly autonomous.
+# Configuration set here is common to all of them
+# and should not be erased eg. with a 'success' section within them.
 
 # This configuration is also shared with the "distributions" part of tests.
 # TODO: separate the two so they are more autonomous.
@@ -27,3 +30,7 @@ RUNTEST
 
 include(config): Main config file parsing.
 include(distribution_matrix/main): Distribution matrix parsing.
+
+# The following files (crafted later) are supposed to be more autonomous,
+# defining their own config.toml and adjacency file(s).
+include(adjacency_matrices/main.clib): Adjacency matrices parsing.

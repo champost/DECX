@@ -1,0 +1,358 @@
+# Tests various invalid forms for adjacency matrices.
+
+# Break in subsequent tests.
+file (adjacency.txt):: EOA
+1 0 1 0
+0 1 0 1
+1 0 1 1
+0 1 1 1
+
+1 0 1 1
+0 1 0 1
+1 0 1 1
+1 1 1 1
+EOA
+
+test: Non-symetric redundant data.
+edit (adjacency.txt):
+    DIFF  1 0 1 0
+    ~     1 0 1 1
+failure (4):: EOE
+    Error: found non-symmetric data '0' in the symmetric matrix.
+    (line 4 column 1 in 'adjacency.txt')
+EOE
+
+test: Missing data.
+edit (adjacency.txt):
+    DIFF  0 1 0 1
+    ~     0 1 0
+failure (4):: EOE
+    Error: unexpected end of line.
+    (line 2 column 6 in 'adjacency.txt')
+EOE
+
+test: Extra data.
+edit (adjacency.txt):
+    DIFF  0 1 0 1
+    ~     0 1 0 1 1
+failure (4):: EOE
+    Error: unexpected token after end of line: '1'.
+    (line 2 column 9 in 'adjacency.txt')
+EOE
+
+test: Invalid data.
+edit (adjacency.txt):
+    DIFF  0 1 0 1
+    ~     0 1 0 X
+failure (4):: EOE
+    Error: expected binary data (0 or 1), found 'X' instead.
+    (line 2 column 7 in 'adjacency.txt')
+EOE
+
+test: Invalid blank line.
+edit (adjacency.txt):
+    INSERT  0 1 0 1
+         +  ""
+failure (4):: EOE
+    Error: unexpected end of line.
+    (line 3 column 1 in 'adjacency.txt')
+EOE
+
+test: Non-blank line commented out.
+edit (adjacency.txt):
+    PREFIX (#1) 0 1 0 1
+failure (4):: EOE
+    Error: unexpected end of line.
+    (line 2 column 10 in 'adjacency.txt')
+EOE
+
+# Triangular elision style.
+file (adjacency.txt):: EOA
+1
+0 1
+1 0 1
+0 1 1 1
+
+1
+0 1
+1 0 1
+1 1 1 1
+EOA
+
+test: Extra data with triangular elision.
+edit (adjacency.txt):
+    DIFF  0 1
+    ~     0 1 0
+failure (4):: EOE
+    Error: unexpected token after end of line: '0'.
+    (line 2 column 5 in 'adjacency.txt')
+EOE
+
+test: Missing data with triangular elision.
+edit (adjacency.txt):
+    DIFF  0 1
+    ~     0
+failure (4):: EOE
+    Error: unexpected end of line.
+    (line 2 column 2 in 'adjacency.txt')
+EOE
+
+test: Extra period.
+edit (adjacency.txt):
+    INSERT  1 1 1 1
+         +  ""
+         +  1
+         +  0 1
+         +  1 0 1
+         +  0 1 1 1
+failure (4):: EOE
+    Error: unexpected token after end of file: '1'.
+    (line 11 column 1 in 'adjacency.txt')
+EOE
+
+test: Missing period.
+file (adjacency.txt):: EOA
+1
+0 1
+1 0 1
+0 1 1 1
+EOA
+failure (4):: EOE
+    Error: unexpected end of file.
+    (line 4 column 8 in 'adjacency.txt')
+EOE
+
+# Compact form style.
+file (adjacency.txt):: EOA
+1  0  1  01
+0  1  0  1
+1  0  1  1
+01 1  1  1
+EOA
+
+test: Non-symmetric compact form.
+edit (adjacency.txt):
+    DIFF  1  0  1  01
+    ~     1  0  1  0
+failure (4):: EOE
+    Error: found non-symmetric data '01' in the symmetric matrix.
+    (line 4 column 1 in 'adjacency.txt')
+EOE
+
+test: Inconsistent compact form.
+edit (adjacency.txt):
+    DIFF  01 1  1  1
+    ~     10 1  1  1
+failure (4):: EOE
+    Error: found non-symmetric data '10' in the symmetric matrix.
+    (line 4 column 1 in 'adjacency.txt')
+EOE
+
+test: Too many periods in compact form.
+edit (adjacency.txt):
+    REPLACE ALL  01  BY  010
+failure (4):: EOE
+    Error: too many digits in '010' to cover 2 periods.
+    (line 1 column 10 in 'adjacency.txt')
+EOE
+
+test: Partial compact form.
+file (adjacency.txt):: EOA
+1  0  1  01
+0  1  0  1
+1  0  1  1
+01 1  1  1
+
+1  0  1  1
+0  1  0  1
+1  0  1  1
+1 1  1  1
+EOA
+failure (4):: EOE
+    Error: unexpected token after end of file: '1'.
+    (line 6 column 1 in 'adjacency.txt')
+EOE
+
+# Header/namer style.
+file (adjacency.txt):: EOA
+  a  b  c  d
+a 1  0  1  01
+b 0  1  0  1
+c 1  0  1  1
+d 01 1  1  1
+EOA
+
+test: One missing name in header.
+edit (adjacency.txt):
+    DIFF  a  b  c  d
+    ~     a  b  c
+failure (4):: EOE
+    Error: unexpected token after end of line: '0'.
+    Unless area 'd' is missing from header?
+    (line 2 column 6 in 'adjacency.txt')
+EOE
+
+test: Several missing names in header.
+edit (adjacency.txt):
+    DIFF  a  b  c  d
+    ~     a  b
+failure (4):: EOE
+    Error: area 'c' is missing from header.
+    (line 1 column 7 in 'adjacency.txt')
+EOE
+
+test: Extra name in header.
+edit (adjacency.txt):
+    DIFF  a  b  c  d
+    ~     a  b  c  d  e
+failure (4):: EOE
+    Error: 'e' is not recognized as an area name.
+    (line 1 column 15 in 'adjacency.txt')
+EOE
+
+test: Duplicate name in header.
+edit (adjacency.txt):
+    DIFF  a  b  c  d
+    ~     a  b  a  d
+failure (4):: EOE
+    Error: area name 'a' given twice.
+    (line 1 column 9 in 'adjacency.txt')
+EOE
+
+test: Duplicate name in namer.
+edit (adjacency.txt):
+    DIFF  c 1  0  1  1
+    ~     a 1  0  1  1
+failure (4):: EOE
+    Error: area name 'a' given twice.
+    (line 4 column 1 in 'adjacency.txt')
+EOE
+
+test: Invalid name in namer.
+edit (adjacency.txt):
+    DIFF  c 1  0  1  1
+    ~     X 1  0  1  1
+failure (4):: EOE
+    Error: 'X' is not recognized as an area name.
+    (line 4 column 1 in 'adjacency.txt')
+EOE
+
+test: Double name in namer.
+edit (adjacency.txt):
+    DIFF  c 1  0  1  1
+    ~     c d 1  0  1  1
+failure (4):: EOE
+    Error: expected binary data (0 or 1), found 'd' instead.
+    (line 4 column 3 in 'adjacency.txt')
+EOE
+
+test: Missing name in namer.
+edit (adjacency.txt):
+    DIFF  c 1  0  1  1
+    ~(2)    1  0  1  1
+failure (4):: EOE
+    Error: '1' is not recognized as an area name.
+    (line 4 column 3 in 'adjacency.txt')
+EOE
+
+test: Namer order does not match header order.
+file (adjacency.txt):: EOA
+  a  b  c  d
+a 1  0  1  01
+b 0  1  0  1
+d 01 1  1  1
+c 1  0  1  1
+EOA
+failure (4):: EOE
+    Error: row names inconsistent with column names: expected 'c', got 'd'.
+    (line 4 column 1 in 'adjacency.txt')
+EOE
+
+test: Reordering within the file (header -> header).
+file (adjacency.txt):: EOA
+  a  b  c  d
+a 1  0  1  0
+b 0  1  0  1
+c 1  0  1  1
+d 0  1  1  1
+
+  a  b  d  c
+a 1  0  1  1
+b 0  1  1  0
+d 1  1  1  1
+c 1  0  1  1
+EOA
+failure (4):: EOE
+    Error: areas cannot be reordered within the same adjacency file.
+    First order found:
+     a b c d
+    Found now (in column names):
+     a b d c
+    (line 12 column 0 in 'adjacency.txt')
+EOE
+
+test: Reordering within the file (header -> namer).
+file (adjacency.txt):: EOA
+  a  b  c  d
+a 1  0  1  0
+b 0  1  0  1
+c 1  0  1  1
+d 0  1  1  1
+
+a 1  0  1  1
+b 0  1  1  0
+d 1  1  1  1
+c 1  0  1  1
+EOA
+failure (4):: EOE
+    Error: areas cannot be reordered within the same adjacency file.
+    First order found:
+     a b c d
+    Found now (in row names):
+     a b d c
+    (line 11 column 0 in 'adjacency.txt')
+EOE
+
+test: Reordering within the file (namer -> diagonal header).
+file (adjacency.txt):: EOA
+a 1  0  1  0
+b 0  1  0  1
+c 1  0  1  1
+d 0  1  1  1
+
+  a
+  0  b
+  1  1  d
+  1  0  1  c
+EOA
+failure (4):: EOE
+    Error: areas cannot be reordered within the same adjacency file.
+    First order found:
+     a b c d
+    Found now (in column names):
+     a b d c
+    (line 10 column 0 in 'adjacency.txt')
+EOE
+
+test: Reordering within the file (implicit -> header).
+file (adjacency.txt):: EOA
+  1  0  1  0
+  0  1  0  1
+  1  0  1  1
+  0  1  1  1
+
+  a  b  d  c
+  1
+  0  1
+  1  1  1
+  1  0  1  1
+EOA
+failure (4):: EOE
+    Error: areas cannot be reordered within the same adjacency file.
+    First order found (from config file):
+     a b c d
+    Found now (in column names):
+     a b d c
+    Reordering areas within this file is possible provided it's made explicit earlier in the file.
+    (line 11 column 0 in 'adjacency.txt')
+EOE

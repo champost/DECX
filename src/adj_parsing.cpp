@@ -72,17 +72,25 @@ AdjMap parse_file(const std::string_view filename,
     return false;
   };
 
+  // Major focus for the algorithm.
+  auto step{lexer.step()};
+
+  // Exit with correct error code.
+  const auto source_and_exit = [&](const size_t shift = 0) {
+    step.source_and_exit(shift, ADJ_ERROR);
+  };
+
   // Basic token checking, with divergence points.
-  const auto not_eof = [](auto& step) {
+  const auto not_eof = [&](auto& step) {
     if (step.is_eof()) {
       std::cerr << "Error: unexpected end of file." << std::endl;
-      step.source_and_exit();
+      source_and_exit();
     }
   };
-  const auto not_eol = [](auto& step) {
+  const auto not_eol = [&](auto& step) {
     if (step.is_eol()) {
       std::cerr << "Error: unexpected end of line." << std::endl;
-      step.source_and_exit();
+      source_and_exit();
     }
   };
   const auto is_eol = [&](auto& step) {
@@ -90,7 +98,7 @@ AdjMap parse_file(const std::string_view filename,
     if (step.has_value()) {
       std::cerr << "Error: unexpected token after end of line: ";
       std::cerr << "'" << *step.token << "'." << std::endl;
-      step.source_and_exit();
+      source_and_exit();
     }
   };
   const auto is_eof = [&](auto& step) {
@@ -98,7 +106,7 @@ AdjMap parse_file(const std::string_view filename,
       if (step.has_value()) {
         std::cerr << "Error: unexpected token after end of file: ";
         std::cerr << "'" << *step.token << "'." << std::endl;
-        step.source_and_exit();
+        source_and_exit();
       }
       step = lexer.step();
     }
@@ -112,7 +120,7 @@ AdjMap parse_file(const std::string_view filename,
     if (!is_binary(*step.token)) {
       std::cerr << "Error: expected binary data (0 or 1), ";
       std::cerr << "found '" << *step.token << "' instead." << std::endl;
-      step.source_and_exit();
+      source_and_exit();
     }
   };
   const auto is_area = [&](auto& step) {
@@ -120,7 +128,7 @@ AdjMap parse_file(const std::string_view filename,
     if (!is_in(*step.token, areas)) {
       std::cerr << "Error: '" << *step.token << "' is not recognized ";
       std::cerr << "as an area name." << std::endl;
-      step.source_and_exit();
+      source_and_exit();
     }
   };
   const auto not_duplicate = [&](auto& step, auto& list) {
@@ -128,7 +136,7 @@ AdjMap parse_file(const std::string_view filename,
     if (is_in(*step.token, list)) {
       std::cerr << "Error: area name '" << *step.token << "' ";
       std::cerr << "given twice." << std::endl;
-      step.source_and_exit();
+      source_and_exit();
     }
   };
   const auto check_history_size = [&](auto& step) {
@@ -144,12 +152,9 @@ AdjMap parse_file(const std::string_view filename,
       std::cerr << "Error: " << mismatch << " digits ";
       std::cerr << "in '" << *step.token << "' ";
       std::cerr << "to cover " << n_periods << " periods." << std::endl;
-      step.source_and_exit();
+      source_and_exit();
     }
   };
-
-  // Major focus for the algorithm.
-  auto step{lexer.step()};
 
   // The main loop iterates over matrices in the file one for every period.
   size_t p{0};
@@ -172,6 +177,11 @@ AdjMap parse_file(const std::string_view filename,
       first = lexer.step();
     }
     not_eof(first);
+
+    // Prepare helpful error message
+    // in case only one name is missing in header,
+    // leading to wrong interpretation as triangular + diag_elided.
+    std::optional<std::string_view> missing_in_header;
 
     // Process header and decide file organization.
     // After this chunk, `step` must point to the first actual data value.
@@ -201,17 +211,19 @@ AdjMap parse_file(const std::string_view filename,
         }
         // Check that the header is complete.
         // The last one *may* be missing if diagonal is elided.
-        if (header.size() < areas.size() - 1) {
-          for (const auto& missing : areas) {
-            if (!is_in(missing, header)) {
+        for (const auto& missing : areas) {
+          if (!is_in(missing, header)) {
+            if (header.size() < areas.size() - 1) {
               std::cerr << "Error: area '" << missing << "' ";
               std::cerr << "is missing from header." << std::endl;
-              step.source_and_exit();
+              source_and_exit();
+            } else if (header.size() == areas.size() - 1) {
+              diag_elided = true;
+              triangular = true;
+              missing_in_header = {missing};
+              break;
             }
           }
-        } else if (header.size() == areas.size() - 1) {
-          diag_elided = true;
-          triangular = true;
         }
         // Then move to the next line.
         step = lexer.step();
@@ -230,7 +242,7 @@ AdjMap parse_file(const std::string_view filename,
               std::cerr << "(with implicity diagonal), ";
               std::cerr << "found '" << *step.token << "' ";
               std::cerr << "instead." << std::endl;
-              step.source_and_exit();
+              source_and_exit();
             }
             diag_elided = true;
             triangular = true;
@@ -297,7 +309,7 @@ AdjMap parse_file(const std::string_view filename,
         std::cerr << "Error: found non-symmetric data ";
         std::cerr << "'" << *step.token << "' ";
         std::cerr << "in the symmetric matrix." << std::endl;
-        step.source_and_exit();
+        source_and_exit();
       }
     };
 
@@ -315,7 +327,7 @@ AdjMap parse_file(const std::string_view filename,
         std::cerr << "with column names: expected ";
         std::cerr << "'" << header[i] << "', got ";
         std::cerr << "'" << *step.token << "'." << std::endl;
-        step.source_and_exit();
+        source_and_exit();
       }
       namer.emplace_back(*step.token);
       step = lexer.step();
@@ -350,7 +362,7 @@ AdjMap parse_file(const std::string_view filename,
             std::cerr << "provided it's made explicit ";
             std::cerr << "earlier in the file." << std::endl;
           }
-          step.source_and_exit();
+          source_and_exit();
         }
       }
     };
@@ -386,7 +398,6 @@ AdjMap parse_file(const std::string_view filename,
             next_line();
             continue;
           }
-          triangular = false; // Confirmed.
         }
 
         // Read data after the diagonal (if any).
@@ -399,6 +410,17 @@ AdjMap parse_file(const std::string_view filename,
           }
         }
 
+        // We should check for end of line,
+        // but the error message may be unhelpful in a few corner cases.
+        not_eof(step);
+        if (step.has_value() && is_binary(*step.token) &&
+            missing_in_header.has_value()) {
+          std::cerr << "Error: unexpected token after end of line: ";
+          std::cerr << "'" << *step.token << "'." << std::endl;
+          std::cerr << "Unless area '" << *missing_in_header << "' ";
+          std::cerr << "is missing from header?" << std::endl;
+          source_and_exit();
+        }
         is_eol(step);
       }
 

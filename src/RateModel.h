@@ -36,10 +36,8 @@ private:
 	bool rapid_anagenesis;
 
 	//	adjacency conditioned data types
-public: // TEMP HACKING
 	bool default_adjacency;
 	vector<vector<vector<bool> > > adjMat;
-private:
 	vector<vector<vector<int> > > incldists_per_period;
 	vector<vector<int> > incldistsint_per_period;
 	vector<vector<vector<int> > > excldists_per_period;
@@ -69,7 +67,7 @@ public:
 	int get_nthreads();
 	void setup_dists();
 	void setup_dists(vector<vector<int> >, bool);
-	void setup_adjacency(string filename, vector<string> areaNames);
+	void setup_adjacency(vector<vector<vector<bool>>>);
 	void set_adj_bool(bool adjBool);
 	vector< vector<int> > generate_adjacent_dists(int maxareas, map<int,string> areanamemaprev);
 	vector< vector<int> >  iterate_all_from_num_max_areas(int m, int n);
