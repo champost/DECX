@@ -34,3 +34,4 @@ include(distribution_matrix/main): Distribution matrix parsing.
 # The following files (crafted later) are supposed to be more autonomous,
 # defining their own config.toml and adjacency file(s).
 include(adjacency_matrices/main.clib): Adjacency matrices parsing.
+include(rates_matrices/main.clib): Rates matrices parsing.

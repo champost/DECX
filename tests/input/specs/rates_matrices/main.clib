@@ -2,17 +2,17 @@
 # for adjacency matrices specifications.
 
 # One dedicated reader to compare actual matrices to expected matrices.
-readers (../period_matrices_reader.py): + AdjacencyReader
+readers (../period_matrices_reader.py): + RatesReader
 
 # Only dry-run.
-command: ./decx config.toml --check-adjacency-file-parsing
+command: ./decx config.toml --check-rates-file-parsing
 
 # One dummy configuration file.
 file (config.toml):: EOC
     [input_files]
     tree = "newick.tre"
     data = "distrib.txt"
-    adjacency = "adjacency.txt"
+    rate_matrix = "rates.txt"
 
     [parameters]
     ancestral_states = true
@@ -29,7 +29,7 @@ file (config.toml):: EOC
     constraint = "include"
 
     [output]
-    file_tag = "test"
+    file_tag = "_test"
 EOC
 
 file (distrib.txt):: EOD
@@ -44,25 +44,24 @@ file (newick.tre):: EON
 EON
 
 # Here is the expected result, shared accross 'successes' and 'failures' tests.
-adjacency:
-      a b c d
-    a 1
-    b 0 1
-    c 1 0 1
-    d 0 1 1 1
+rates:
+        a     b        c     d
+    a   1     1        0     0.0001
+    b   0     0.0001   1     1
+    c   1     0        1     0.7
+    d   0.7   1        0.8   1
 
-      a b c d
-    a 1
-    b 0 1
-    c 1 0 1
-    d 1 1 1 1
-
+        a     b        c     d
+    a   1     0.0001   0     0.0001
+    b   0     0        0.8   1
+    c   1     0        1     0.8
+    d   0.8   1        0.8   0
 stderr:: *
 EXITCODE 0
 
-include(successes): Valid adjacency matrices.
-include(failures): Invalid adjacency matrices.
+include(successes): Valid rates matrices.
+include(failures): Invalid rates matrices.
 
 # Various different results are expected
 # when it comes to testing relative lines.
-include(relative): Relative adjacency specifications.
+include(relative): Relative rates specifications.

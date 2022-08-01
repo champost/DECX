@@ -271,16 +271,16 @@ EOE
 test: Reordering within the file (header -> header).
 file (adjacency.txt):: EOA
   a  b  c  d
-a 1  0  1  0
-b 0  1  0  1
-c 1  0  1  1
-d 0  1  1  1
+  1  0  1  0
+  0  1  0  1
+  1  0  1  1
+  0  1  1  1
 
   a  b  d  c
-a 1  0  1  1
-b 0  1  1  0
-d 1  1  1  1
-c 1  0  1  1
+  1  0  1  1
+  0  1  1  0
+  1  1  1  1
+  1  0  1  1
 EOA
 failure (4):: EOE
     Error: areas cannot be reordered within the same adjacency file.

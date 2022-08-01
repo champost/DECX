@@ -1,0 +1,320 @@
+# Tests various invalid forms for rates matrices.
+
+# Break in subsequent tests.
+file (rates.txt):: EOA
+1     1        0     0.0001
+0     0.0001   1     1
+1     0        1     0.7
+0.7   1        0.8   1
+
+1     0.0001   0     0.0001
+0     0        0.8   1
+1     0        1     0.8
+0.8   1        0.8   0
+EOA
+
+test: Missing data.
+edit (rates.txt):
+    DIFF  0     0.0001   1     1
+    ~     0     0.0001   1
+failure (5):: EOE
+    Error: unexpected end of line.
+    (line 2 column 17 in 'rates.txt')
+EOE
+
+test: Extra data.
+edit (rates.txt):
+    DIFF  0     0.0001   1     1
+    ~     0     0.0001   1     1    0.2
+failure (5):: EOE
+    Error: unexpected token after end of line: '0.2'.
+    (line 2 column 27 in 'rates.txt')
+EOE
+
+test: Invalid data.
+edit (rates.txt):
+    DIFF  0     0.0001   1     1
+    ~     0     0.0001   1     X
+failure (5):: EOE
+    Error: token 'X' is neither a valid number or a variable name.
+    (line 2 column 22 in 'rates.txt')
+EOE
+
+# With variables.
+file (rates.txt):: EOA
+U = 0.7
+V = 0.8
+e = 0.0001
+
+  a b c d
+a 1 1 0 e
+b 0 e 1 1
+c 1 0 1 U
+d U 1 V 1
+
+  a b c d
+a 1 e 0 e
+b 0 0 V 1
+c 1 0 1 V
+d V 1 V 0
+EOA
+
+test: Invalid varname.
+edit (rates.txt):
+    DIFF  a 1 1 0 e
+    ~     a 1 1 0 X
+failure (5):: EOE
+    Error: token 'X' is neither a valid number or a variable name.
+    (line 6 column 9 in 'rates.txt')
+EOE
+
+test: Invalid number to bind.
+edit (rates.txt):
+    DIFF  U = 0.7
+    ~     U = X
+failure (5):: EOE
+    Error: token 'X' is neither a valid number or a variable name.
+    (line 1 column 5 in 'rates.txt')
+EOE
+
+test: Missing number to bind.
+edit (rates.txt):
+    DIFF  U = 0.7
+    ~     U =
+failure (5):: EOE
+    Error: unexpected end of line.
+    (line 1 column 4 in 'rates.txt')
+EOE
+
+test: Extra data on bind line.
+edit (rates.txt):
+    DIFF  U = 0.7
+    ~     U = 0.7 more
+failure (5):: EOE
+    Error: unexpected token after variable definition: 'more'.
+    (line 1 column 9 in 'rates.txt')
+EOE
+
+test: Area name as varname.
+edit (rates.txt):
+    DIFF  U = 0.7
+    ~     a = 0.7
+failure (5):: EOE
+    Error: cannot use area name 'a' as a variable name.
+    (line 1 column 3 in 'rates.txt')
+EOE
+
+test: Invalid blank line.
+edit (rates.txt):
+    INSERT  b 0 e 1 1
+         +  ""
+failure (5):: EOE
+    Error: unexpected end of line.
+    (line 8 column 1 in 'rates.txt')
+EOE
+
+test: Non-blank line commented out.
+edit (rates.txt):
+    PREFIX (#1)  c 1 0 1 U
+failure (5):: EOE
+    Error: unexpected end of line.
+    (line 8 column 12 in 'rates.txt')
+EOE
+
+test: Non blank separation after variables section.
+edit (rates.txt): REMOVE ""
+failure (5):: EOE
+    Error: unexpected token below variables definitions: 'a'.
+    Consider leaving a blank line if a new matrix needs to be specified.
+    (line 4 column 5 in 'rates.txt')
+EOE
+
+test: Missing name in header.
+edit (rates.txt):
+    DIFF  a b c d
+    ~     a b c
+failure (5):: EOE
+    Error: area 'd' is missing from header.
+    (line 5 column 8 in 'rates.txt')
+EOE
+
+test: Extra name in header.
+edit (rates.txt):
+    DIFF  a b c d
+    ~     a b c d e
+failure (5):: EOE
+    Error: 'e' is not recognized as an area name.
+    (line 5 column 11 in 'rates.txt')
+EOE
+
+test: Duplicate name in header.
+edit (rates.txt):
+    DIFF  a b c d
+    ~     a b a d
+failure (5):: EOE
+    Error: area name 'a' given twice.
+    (line 5 column 7 in 'rates.txt')
+EOE
+
+test: Duplicate name in namer.
+edit (rates.txt):
+    DIFF  c 1 0 1 U
+    ~     a 1 0 1 U
+failure (5):: EOE
+    Error: area name 'a' given twice.
+    (line 8 column 1 in 'rates.txt')
+EOE
+
+test: Invalid name in namer.
+edit (rates.txt):
+    DIFF  c 1 0 1 U
+    ~     X 1 0 1 U
+failure (5):: EOE
+    Error: 'X' is not recognized as an area name.
+    (line 8 column 1 in 'rates.txt')
+EOE
+
+test: Double name in namer.
+edit (rates.txt):
+    DIFF  c 1 0 1 U
+    ~     c d 1 0 1 U
+failure (5):: EOE
+    Error: token 'd' is neither a valid number or a variable name.
+    (line 8 column 3 in 'rates.txt')
+EOE
+
+test: Missing name in namer.
+edit (rates.txt):
+    DIFF  c 1 0 1 U
+    ~(2)    1 0 1 U
+failure (5):: EOE
+    Error: '1' is not recognized as an area name.
+    (line 8 column 3 in 'rates.txt')
+EOE
+
+test: Extra period.
+edit (rates.txt):
+    INSERT  d V 1 V 0
+        +   ""
+        +(2)  a b c d
+        +   a 1 1 1 1
+        +   b 1 1 1 1
+        +   c 1 1 1 1
+        +   d 1 1 1 1
+failure (5):: EOE
+    Error: unexpected token after end of file: 'a'.
+    (line 17 column 3 in 'rates.txt')
+EOE
+
+test: Missing period.
+file (rates.txt):: EOA
+U = 0.7
+V = 0.8
+e = 0.0001
+
+  a b c d
+a 1 1 0 e
+b 0 e 1 1
+c 1 0 1 U
+d U 1 V 1
+EOA
+failure (5):: EOE
+    Error: unexpected end of file.
+    (line 9 column 10 in 'rates.txt')
+EOE
+
+test: Namer order does not match header order.
+file (rates.txt):: EOA
+U = 0.7
+V = 0.8
+e = 0.0001
+
+  a b c d
+a 1 1 0 e
+b 0 e 1 1
+d 1 0 1 U
+c U 1 V 1
+EOA
+failure (5):: EOE
+    Error: row names inconsistent with column names: expected 'c', got 'd'.
+    (line 8 column 1 in 'rates.txt')
+EOE
+
+test: Reordering within the file (header -> header).
+file (rates.txt):: EOA
+U = 0.7
+V = 0.8
+e = 0.0001
+
+  a b c d
+  1 1 0 e
+  0 e 1 1
+  1 0 1 U
+  U 1 V 1
+
+  a b d c
+  1 e 0 e
+  0 0 V 1
+  1 0 1 V
+  V 1 V 0
+EOA
+failure (5):: EOE
+    Error: areas cannot be reordered within the same rates matrices file.
+    First order found:
+     a b c d
+    Found now (in column names):
+     a b d c
+    (line 16 column 0 in 'rates.txt')
+EOE
+
+test: Reordering within the file (header -> namer).
+file (rates.txt):: EOA
+U = 0.7
+V = 0.8
+e = 0.0001
+
+  a b c d
+  1 1 0 e
+  0 e 1 1
+  1 0 1 U
+  U 1 V 1
+
+a 1 e 0 e
+b 0 0 V 1
+d 1 0 1 V
+c V 1 V 0
+EOA
+failure (5):: EOE
+    Error: areas cannot be reordered within the same rates matrices file.
+    First order found:
+     a b c d
+    Found now (in row names):
+     a b d c
+    (line 15 column 0 in 'rates.txt')
+EOE
+
+test: Reordering within the file (implicit -> namer).
+file (rates.txt):: EOA
+U = 0.7
+V = 0.8
+e = 0.0001
+
+  1 1 0 e
+  0 e 1 1
+  1 0 1 U
+  U 1 V 1
+
+a 1 e 0 e
+b 0 0 V 1
+d 1 0 1 V
+c V 1 V 0
+EOA
+failure (5):: EOE
+    Error: areas cannot be reordered within the same rates matrices file.
+    First order found (from config file):
+     a b c d
+    Found now (in row names):
+     a b d c
+    Reordering areas within this file is possible provided it's made explicit in the first specified matrix.
+    (line 14 column 0 in 'rates.txt')
+EOE

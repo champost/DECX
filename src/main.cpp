@@ -40,6 +40,7 @@ using namespace std;
 #include "config_parsing.hpp"
 #include "distrib_parsing.hpp"
 #include "adj_parsing.hpp"
+#include "rates_parsing.hpp"
 
 #ifdef XYZ
 #include "gmpfrxx/gmpfrxx.h"
@@ -52,6 +53,7 @@ int main(int argc, char* argv[]){
   // Raise these flags for dry-run-like checks of input interpretation.
   bool check_distribution_file{false};
   bool check_adjacency_file{false};
+  bool check_rates_file{false};
 
   // Get a few things out of the way.
   if (argc < 2) {
@@ -65,6 +67,9 @@ int main(int argc, char* argv[]){
     } else if (strcmp(argv[2], "--check-adjacency-file-parsing") == 0) {
       std::cout << "Dry run to check adjacency file.." << std::endl;
       check_adjacency_file = true;
+    } else if (strcmp(argv[2], "--check-rates-file-parsing") == 0) {
+      std::cout << "Dry run to check rates file.." << std::endl;
+      check_rates_file = true;
     } else {
       std::cerr << "Too many arguments. Exiting." << std::endl;
       exit(1);
@@ -478,7 +483,8 @@ int main(int argc, char* argv[]){
 		 */
 		if(rate_matrix_file.has_value()){
 			cout << "Reading rate matrix file" << endl;
-			vector<vector<vector<double> > > dmconfig = processRateMatrixConfigFile(rate_matrix_file.value(),ir.nareas,periods.size());
+      const auto& dmconfig{
+          rates::parse_file(*rate_matrix_file, area_names, periods.size())};
 			for(unsigned int i=0;i<dmconfig.size();i++){
 				for(unsigned int j=0;j<dmconfig[i].size();j++){
 					for(unsigned int k=0;k<dmconfig[i][j].size();k++){
@@ -492,6 +498,25 @@ int main(int argc, char* argv[]){
 					cout << endl;
 				}cout << endl;
 			}
+
+      if (check_rates_file) {
+        // Display full rates information and exit.
+        std::cout << "Rates (" << *rate_matrix_file << "):" << std::endl;
+        for (size_t p{0}; p < periods.size(); ++p) {
+          const auto& period{dmconfig[p]};
+          for (size_t i{0}; i < area_names.size(); ++i) {
+            const auto& row{period[i]};
+            for (size_t j{0}; j < area_names.size(); ++j) {
+              const auto& val{row[j]};
+              std::cout << val << " ";
+            }
+            std::cout << std::endl;
+          }
+          std::cout << "---" << std::endl;
+        }
+        exit(0);
+      }
+
 			for(unsigned int i=0;i<dmconfig.size();i++){
 				for(unsigned int j=0;j<dmconfig[i].size();j++){
 					for(unsigned int k=0;k<dmconfig[i][j].size();k++){

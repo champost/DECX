@@ -1,0 +1,256 @@
+# Tests various valid/synonymous forms for rates matrices.
+
+test: Legacy form.
+file (rates.txt):: EOA
+    1     1        0     0.0001
+    0     0.0001   1     1
+    1     0        1     0.7
+    0.7   1        0.8   1
+
+    1     0.0001   0     0.0001
+    0     0        0.8   1
+    1     0        1     0.8
+    0.8   1        0.8   0
+EOA
+RUNTEST
+
+test: Comments.
+file (rates.txt):: EOA
+    # Head comment.
+   1     1        0     0.0001 # Comment
+   0     0.0001   1     1
+   1     0        1     0.7
+   0.7   1        0.8   1
+   # Inter-period Comment
+
+   1     0.0001   0     0.0001
+   0     0        0.8   1
+   1     0        1     0.8
+   0.8   1        0.8   0
+   # Comment
+EOA
+RUNTEST
+
+test: Flexible whitespace.
+file (rates.txt):: EOA
+ 1 1 0 0.0001
+ 0 0.0001 1 1
+ 1 0 1 0.7
+ 0.7 1 0.8 1
+
+ 1 0.0001 0 0.0001
+ 0 0 0.8 1
+ 1 0 1 0.8
+ 0.8 1 0.8 0
+EOA
+RUNTEST
+
+test: Bind values to variables.
+file (rates.txt):: EOA
+ U = 0.7
+ e = 0.0001
+
+ 1 1 0   e
+ 0 e 1   1
+ 1 0 1   U
+ U 1 0.8 1
+
+ U = .8
+
+ 1 e 0   e
+ 0 0 U   1
+ 1 0 1   U
+ U 1 0.8 0
+EOA
+RUNTEST
+
+test: Header and namer.
+file (rates.txt):: EOA
+  U = 0.7
+  V = 0.8
+  e = 0.0001
+
+    a b c d
+  a 1 1 0 e
+  b 0 e 1 1
+  c 1 0 1 U
+  d U 1 V 1
+
+    a b c d
+  a 1 e 0 e
+  b 0 0 V 1
+  c 1 0 1 V
+  d V 1 V 0
+EOA
+RUNTEST
+
+test: Elide namer.
+file (rates.txt):: EOA
+  U = 0.7
+  V = 0.8
+  e = 0.0001
+
+  a b c d
+  1 1 0 e
+  0 e 1 1
+  1 0 1 U
+  U 1 V 1
+
+  a b c d
+  1 e 0 e
+  0 0 V 1
+  1 0 1 V
+  V 1 V 0
+EOA
+RUNTEST
+
+test: Elide header.
+file (rates.txt):: EOA
+  U = 0.7
+  V = 0.8
+  e = 0.0001
+
+  a 1 1 0 e
+  b 0 e 1 1
+  c 1 0 1 U
+  d U 1 V 1
+
+  a 1 e 0 e
+  b 0 0 V 1
+  c 1 0 1 V
+  d V 1 V 0
+EOA
+RUNTEST
+
+test: Mix forms (1).
+file (rates.txt):: EOA
+  U = 0.7
+  V = 0.8
+  e = 0.0001
+
+  a 1 1 0 e
+  b 0 e 1 1
+  c 1 0 1 U
+  d U 1 V 1
+
+    a b c d
+    1 e 0 e
+    0 0 V 1
+    1 0 1 V
+    V 1 V 0
+EOA
+RUNTEST
+
+test: Mix forms (2).
+file (rates.txt):: EOA
+  U = 0.7
+  V = 0.8
+  e = 0.0001
+
+    1 1 0 e
+    0 e 1 1
+    1 0 1 U
+    U 1 V 1
+
+    a b c d
+  a 1 e 0 e
+  b 0 0 V 1
+  c 1 0 1 V
+  d V 1 V 0
+EOA
+RUNTEST
+
+test: Header and namer: reorder.
+file (rates.txt):: EOA
+  U = 0.7
+  V = 0.8
+  e = 0.0001
+
+    a d c b
+  a 1 e 0 1
+  d U 1 V 1
+  c 1 U 1 0
+  b 0 1 1 e
+
+    a d c b
+  a 1 e 0 e
+  d V 0 V 1
+  c 1 V 1 0
+  b 0 1 V 0
+EOA
+RUNTEST
+
+test: Reorder with header only.
+file (rates.txt):: EOA
+  U = 0.7
+  V = 0.8
+  e = 0.0001
+
+  a d c b
+  1 e 0 1
+  U 1 V 1
+  1 U 1 0
+  0 1 1 e
+
+  a d c b
+  1 e 0 e
+  V 0 V 1
+  1 V 1 0
+  0 1 V 0
+EOA
+RUNTEST
+
+test: Reorder with namer only.
+file (rates.txt):: EOA
+  U = 0.7
+  V = 0.8
+  e = 0.0001
+
+  a 1 e 0 1
+  d U 1 V 1
+  c 1 U 1 0
+  b 0 1 1 e
+
+  a 1 e 0 e
+  d V 0 V 1
+  c 1 V 1 0
+  b 0 1 V 0
+EOA
+RUNTEST
+
+test: Reorder with only first header.
+file (rates.txt):: EOA
+  U = 0.7
+  V = 0.8
+  e = 0.0001
+
+  a d c b
+  1 e 0 1
+  U 1 V 1
+  1 U 1 0
+  0 1 1 e
+
+  1 e 0 e
+  V 0 V 1
+  1 V 1 0
+  0 1 V 0
+EOA
+RUNTEST
+
+test: Reorder with only first namer.
+file (rates.txt):: EOA
+  U = 0.7
+  V = 0.8
+  e = 0.0001
+
+  a 1 e 0 1
+  d U 1 V 1
+  c 1 U 1 0
+  b 0 1 1 e
+
+  1 e 0 e
+  V 0 V 1
+  1 V 1 0
+  0 1 V 0
+EOA
+RUNTEST

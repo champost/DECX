@@ -1,0 +1,205 @@
+# Test relative rates specifications.
+
+# Adjust config a little bit.
+edit* (config.toml):
+    # User smaller number of areas..
+    REPLACE a b c d
+    BY      a b c
+    # .. and higher number of periods.
+    REPLACE 5.33, 17.7
+    BY      1, 2, 3
+
+file (distrib.txt):: EOD
+    s\a a b c # Shorten to 3 areas only.
+    Sp1 0 1 1
+    Sp2 1 1 0
+    Sp3 0 0 0
+EOD
+
+# First expected result.
+rates:
+
+    a    b    c
+a   1    1    .3
+b   0    .2   1
+c   .1   0    1
+
+    a    b    c
+a   .4   1    .3
+b   0    .5   1
+c   .1   0    .6
+
+    a    b    c
+a   .4   .7   .3
+b   1    .5   .8
+c   .1   .9   .6
+
+stderr:: *
+EXITCODE 0
+
+test: Only absolute matrices.
+file (rates.txt):: EOA
+
+a  1    1    .3
+b  0    .2   1
+c  .1   0    1
+
+a  .4   1    .3
+b  0    .5   1
+c  .1   0    .6
+
+a  .4   .7   .3
+b  1    .5   .8
+c  .1   .9   .6
+
+EOA
+RUNTEST
+
+test: First absolute, other relatives.
+file (rates.txt):: EOA
+
+a  1    1    .3
+b  0    .2   1
+c  .1   0    1
+
+~ a a .4
+~ b b .5
+~ c c .6
+
+~ a b .7
+~ b c .8
+~ c b .9
+~ b a 1
+
+EOA
+RUNTEST
+
+test: Use variables in relative specs.
+file (rates.txt):: EOA
+
+three = .3
+
+a  1    1    three
+b  0    .2   1
+c  .1   0    1
+
+four = .4
+five = .5
+one = 1
+
+~ a a four
+~ b b five
+~ c c .6
+
+eight = .8
+
+~ a b .7
+~ b c eight
+~ c b .9
+~ b a one
+
+EOA
+RUNTEST
+
+test: Absolute, relative, absolute again.
+file (rates.txt):: EOA
+a  1    1    .3
+b  0    .2   1
+c  .1   0    1
+
+~ a a .4
+~ b b .5
+~ c c .6
+
+a  .4   .7   .3
+b  1    .5   .8
+c  .1   .9   .6
+EOA
+RUNTEST
+
+test: Cannot start with relative
+edit (rates.txt):
+    INSERT + ~ a a .4
+             a  1    1    .3
+failure (5):: EOE
+    Error: '~' is not recognized as an area name.
+    (line 1 column 3 in 'rates.txt')
+EOE
+
+test: Invalid relative symbol.
+edit (rates.txt):
+    DIFF ~ a a .4
+    ~    / a a .4
+failure (5):: EOE
+    Error: '/' is not recognized as an area name.
+    (line 5 column 3 in 'rates.txt')
+EOE
+
+test: Invalid relative symbol within relative section.
+edit (rates.txt):
+    DIFF ~ b b .5
+    ~    / b b .5
+failure (5):: EOE
+    Error: unexpected token below relative instruction: '/'.
+    Consider leaving a blank line if a new matrix needs to be specified.
+    (line 6 column 1 in 'rates.txt')
+EOE
+
+test: Invalid area name in relative line.
+edit (rates.txt):
+    DIFF ~ a a .4
+    ~    ~ X a .4
+failure (5):: EOE
+    Error: 'X' is not recognized as an area name.
+    (line 5 column 3 in 'rates.txt')
+EOE
+
+test: Missing area name in relative line (with value).
+edit (rates.txt):
+    DIFF ~ a a .4
+    ~    ~   a .4
+failure (5):: EOE
+    Error: '.4' is not recognized as an area name.
+    (line 5 column 7 in 'rates.txt')
+EOE
+
+test: Missing area name in relative line (without value).
+edit (rates.txt):
+    DIFF ~ a a .4
+    ~    ~   a
+failure (5):: EOE
+    Error: unexpected end of line.
+    (line 5 column 6 in 'rates.txt')
+EOE
+
+test: Extra area name in relative line.
+edit (rates.txt):
+    DIFF ~ a a .4
+    ~    ~ a a b .4
+failure (5):: EOE
+    Error: token 'b' is neither a valid number or a variable name.
+    (line 5 column 7 in 'rates.txt')
+EOE
+
+test: Cannot use blank lines within the same relative section.
+file (rates.txt):: EOA
+a  1    1    .3
+b  0    .2   1
+c  .1   0    1
+
+# Next period (ok).
+~ a a .4
+~ b b .5
+~ c c .6
+
+~ a b .7
+~ b c .8
+# not ok.
+~ c b .9
+~ b a 1
+
+EOA
+failure (5):: EOE
+    Error: unexpected token after end of file: '~'.
+    (line 13 column 1 in 'rates.txt')
+EOE
