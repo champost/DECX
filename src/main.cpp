@@ -118,6 +118,32 @@ int main(int argc, char* argv[]){
 
   config.step_up();
 
+  // Algorithm table (optional) ------------------------------------------------
+  // Default values here, possibly overwritten with configuration.
+  double D{0.1};
+  double E{0.1};
+  int M{1000};
+  double S{0.0001};
+
+  if (config.seek_table("algorithm", true).has_value()) {
+    const auto& m{config.seek_integer("max_iterations", false)};
+    const auto& s{config.seek_float("stopping_precision", false)};
+    if (m.has_value()) { M = *m; }
+    if (s.has_value()) { S = *s; }
+    if (config.seek_table("initial_rates", true).has_value()) {
+      const auto& d{config.seek_float("dispersal", false)};
+      const auto& e{config.seek_float("extinction", false)};
+      if (d.has_value()) { D = *d; }
+      if (e.has_value()) { E = *e; }
+      config.step_up();
+    }
+    config.step_up();
+  }
+  const double dispersal{D};
+  const double extinction{E};
+  const int maxiterations{M};
+  const double stoppingprecision{S};
+
   // Geographical parameters ---------------------------------------------------
   config.require_table("areas", true);
 
@@ -223,11 +249,6 @@ int main(int argc, char* argv[]){
 		bool LHOODS = false;
 		bool NodeLHOODS = false;
 
-		int maxiterations = 1000;
-		double stoppingprecision = 0.0001;
-
-		double dispersal = 0.1;
-		double extinction = 0.1;
 		bool estimate = true;
 		bool simulate = false;
 		int simNum = 1;
@@ -349,26 +370,6 @@ int main(int argc, char* argv[]){
 						if(tokens.size() > 1){
 							numreps = atoi(tokens[1].c_str());
 						}
-					}else if ((!strcmp(tokens[0].c_str(), "dispersal")) || (!strcmp(tokens[0].c_str(), "sim_dispersal"))){
-						if(tokens.size() > 1){
-							dispersal = atof(tokens[1].c_str());
-							cout << "setting dispersal: " << dispersal << endl;
-							if (!strcmp(tokens[0].c_str(), "sim_dispersal"))
-								estimate = false;
-						}
-					}else if ((!strcmp(tokens[0].c_str(), "extinction")) || (!strcmp(tokens[0].c_str(), "sim_extinction"))){
-						if(tokens.size() > 1){
-							extinction = atof(tokens[1].c_str());
-							cout << "setting extinction: " << extinction << endl;
-							if (!strcmp(tokens[0].c_str(), "sim_extinction"))
-								estimate = false;
-						}
-					}else if(!strcmp(tokens[0].c_str(), "maxiterations")){
-						maxiterations = atoi(tokens[1].c_str());
-						cout << "setting maxiterations: " << maxiterations << endl;
-					}else if(!strcmp(tokens[0].c_str(), "stoppingprecision")){
-						stoppingprecision = atof(tokens[1].c_str());
-						cout << "setting stoppingprecision: " << stoppingprecision << endl;
 					}else if(!strcmp(tokens[0].c_str(), "simbiogeotree")){
 						simulate = true;
 						if(tokens.size() > 1)

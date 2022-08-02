@@ -129,8 +129,8 @@ public:
 	void simulate(Node & node);
 	double getSim_D();
 	double getSim_E();
-	void setSim_D(double & disp);
-	void setSim_E(double & ext);
+	void setSim_D(const double disp);
+	void setSim_E(const double ext);
 
 	void read_true_states(string truestatesfile);
 	vector<int> * get_true_state(int num);

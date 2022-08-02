@@ -16,6 +16,14 @@ rapid_anagenesis = false
 
 durations = [5.33, 17.7, 10.87, 22.1, 14.0]
 
+[algorithm]
+max_iterations = 1000
+stopping_precision = 0.0001
+
+[algorithm.initial_rates]
+dispersal = 0.1
+extinction = 0.1
+
 # --- Geographical parameters --------------------------------------------------
 [areas]
 # names = ["WP", "EP", "WN", "EN", "CA", "SA", "AF", "MD", "IN", "WA", "AU"]

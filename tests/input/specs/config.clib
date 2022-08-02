@@ -138,8 +138,8 @@ test: No areas table.
 edit (config.toml):
     PREFIX (#1) [areas]
 failure (1):: EOE
-    Configuration error: table contains unexpected parameter 'names'.
-    ('parameters' line 11, column 1 of 'config.toml')
+    Configuration error: 'names' is required, but not given.
+    ('areas' line 32, column 1 of 'config.toml')
 EOE
 
 # Distributions ================================================================
@@ -151,7 +151,7 @@ edit (config.toml):
 failure (1):: EOE
     Unknown area name in distribution: 'wrong'.
     (known areas: 'WP' 'EP' 'WN' 'EN' 'CA' 'SA' 'AF' 'MD' 'IN' 'WA' 'AU')
-    ('areas:distributions:set:1' line 28, column 3 of 'config.toml')
+    ('areas:distributions:set:1' line 36, column 3 of 'config.toml')
 EOE
 
 test: Catch missing area in binary distribution.
@@ -161,7 +161,7 @@ edit (config.toml):
 failure (1):: EOE
     Invalid binary specification of a distribution:
     '1101011010' contains 10 digits but there are 11 areas.
-    ('areas:distributions:set:3' line 30, column 3 of 'config.toml')
+    ('areas:distributions:set:3' line 38, column 3 of 'config.toml')
 EOE
 
 test: Catch extra area in binary distribution.
@@ -171,7 +171,7 @@ edit (config.toml):
 failure (1):: EOE
     Invalid binary specification of a distribution:
     '110101101011' contains 12 digits but there are 11 areas.
-    ('areas:distributions:set:3' line 30, column 3 of 'config.toml')
+    ('areas:distributions:set:3' line 38, column 3 of 'config.toml')
 EOE
 
 test: Catch the ambiguous case.
@@ -184,7 +184,7 @@ failure (1):: EOE
     Ambiguous distribution specification:
     '101' could either represent the single area '101' or a binary set of other areas..
     Now be honest: you did that on purpose, right?
-    ('areas:distributions:set:1' line 28, column 3 of 'config.toml')
+    ('areas:distributions:set:1' line 36, column 3 of 'config.toml')
 EOE
 
 # MRCAs ========================================================================
@@ -194,7 +194,7 @@ edit (config.toml):
     REPLACE (age = 15.8) BY r'# \1'
 failure (1):: EOE
     Configuration error: 'age' is required, but not given.
-    ('mrca:Gavialidae' line 36, column 1 of 'config.toml')
+    ('mrca:Gavialidae' line 44, column 1 of 'config.toml')
 EOE
 
 test: Catch invalid area.
@@ -203,7 +203,7 @@ edit (config.toml):
     ~    'area = "wrong"'
 failure (1):: EOE
     Unknown area 'wrong' provided.
-    ('mrca:Gavialidae:area' line 39, column 8 of 'config.toml')
+    ('mrca:Gavialidae:area' line 47, column 8 of 'config.toml')
 EOE
 
 test: Catch invalid MRCA type specification.
@@ -213,7 +213,7 @@ edit (config.toml):
 failure (1):: EOE
     Unknown MRCA type: 'fixed branch'.
     Supported types are 'fixed node', 'fossil node' and 'fossil branch'.
-    ('mrca:Caiman:type' line 43, column 8 of 'config.toml')
+    ('mrca:Caiman:type' line 51, column 8 of 'config.toml')
 EOE
 
 # Clear for later tests specs.

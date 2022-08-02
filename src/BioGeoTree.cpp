@@ -970,12 +970,12 @@ double BioGeoTree::getSim_E()
 	return sim_E;
 }
 
-void BioGeoTree::setSim_D(double & disp)
+void BioGeoTree::setSim_D(const double disp)
 {
 	sim_D = disp;
 }
 
-void BioGeoTree::setSim_E(double & ext)
+void BioGeoTree::setSim_E(const double ext)
 {
 	sim_E = ext;
 }
