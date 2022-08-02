@@ -30,7 +30,7 @@ edit (config.toml):
     DIFF 'tree = "newick.tre"'
     ~    'tree = "unexistent.tre"'
 failure (1):: EOE
-    Configuration error: Could not find file 'unexistent.tre'.
+    Configuration error: Could not find file 'unexistent.tre' in "<TEST_FOLDER>".
     ('input_files:tree' line 6, column 8 of 'config.toml')
 EOE
 
@@ -47,7 +47,7 @@ edit (config.toml):
     DIFF 'data = "distrib_legacy.txt"'
     ~    'data = "unexistent.txt"'
 failure (1):: EOE
-    Configuration error: Could not find file 'unexistent.txt'.
+    Configuration error: Could not find file 'unexistent.txt' in "<TEST_FOLDER>".
     ('input_files:data' line 7, column 8 of 'config.toml')
 EOE
 
@@ -56,7 +56,7 @@ edit (config.toml):
     DIFF 'adjacency = "adjacency.txt"'
     ~    'adjacency = "unexistent.txt"'
 failure (1):: EOE
-    Configuration error: Could not find file 'unexistent.txt'.
+    Configuration error: Could not find file 'unexistent.txt' in "<TEST_FOLDER>".
     ('input_files:adjacency' line 8, column 13 of 'config.toml')
 EOE
 

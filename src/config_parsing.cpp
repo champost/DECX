@@ -6,7 +6,9 @@
 namespace config {
 
 // Core reader tree-logic and memory handling. = = = = = = = = = = = = = = = = =
-Reader::Reader(Table root) : focal(new Node((View)root, {}, {})){};
+Reader::Reader(std::string_view filename, Table root) :
+    focal(new Node((View)root, {}, {})),
+    folder(std::filesystem::canonical(filename).parent_path()){};
 
 void Reader::descend(View data, Name name) {
   focal = new Node(data, std::string(name), focal);
@@ -118,9 +120,11 @@ bool Reader::has_node(Name name) {
 }
 
 void Reader::check_file(Name filename) {
-  if (!std::filesystem::exists(filename)) {
+  std::filesystem::path path{folder / filename};
+  if (!std::filesystem::exists(path)) {
     std::cerr << "Configuration error: ";
-    std::cerr << "Could not find file '" << filename << "'." << std::endl;
+    std::cerr << "Could not find file '" << filename << "' ";
+    std::cerr << "in " << folder << "." << std::endl;
     source_and_exit();
   }
 };
@@ -138,7 +142,7 @@ DEFINE_REQUIRER(integer, integer, int);
 DEFINE_REQUIRER(string, string, std::string);
 
 // This one's special because there is the file checking.
-std::string Reader::require_file(Name name, const bool descend) {
+File Reader::require_file(Name name, const bool descend) {
   // Always descend to get correct error messages about file..
   const auto& filename{require_string(name, true)};
   check_file(filename);
@@ -146,7 +150,7 @@ std::string Reader::require_file(Name name, const bool descend) {
   if (!descend) {
     step_up();
   }
-  return filename;
+  return {filename, folder / filename};
 };
 
 Table Reader::require_table(Name name, const bool descend) {
@@ -176,14 +180,14 @@ DEFINE_SEEKER(float, floating_point, double);
 DEFINE_SEEKER(integer, integer, int);
 DEFINE_SEEKER(string, string, std::string);
 
-std::optional<std::string> Reader::seek_file(Name name, const bool descend) {
+std::optional<File> Reader::seek_file(Name name, const bool descend) {
   const auto& filename{seek_string(name, true)};
   if (filename.has_value()) {
     check_file(*filename);
     if (!descend) {
       step_up();
     }
-    return filename;
+    return {{*filename, folder / *filename}};
   }
   return {};
 };

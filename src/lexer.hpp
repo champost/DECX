@@ -2,10 +2,18 @@
 
 // A simple lexer, useful to parse the various configuration files.
 
+#include <filesystem>
 #include <optional>
 #include <string>
 
-auto read_file(std::string_view path) -> std::string;
+// Given a filename, always manipulate it's full path on one side,
+// and the way it has been specified (by a human) on the other side.
+struct File {
+  std::string name;
+  std::filesystem::path path;
+};
+
+auto read_file(const File& path) -> std::string;
 
 // Dedicate this code to errors with the lexer.
 constexpr int LEXING_ERROR{2};
@@ -21,17 +29,13 @@ class Lexer {
   size_t focus;
 
   // Keep track of linecol location within file.
-  const std::string_view filename;
+  const File file;
   size_t line;
   size_t llf; // Focus value at the end of Last Line.
 
 public:
-  Lexer(const std::string_view filename) :
-      input(read_file(filename)),
-      filename(filename),
-      focus(0),
-      line(1),
-      llf(0){};
+  Lexer(const File filename) :
+      input(read_file(filename)), file(filename), focus(0), line(1), llf(0){};
 
   enum StepType {
     Token,

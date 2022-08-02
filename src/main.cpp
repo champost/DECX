@@ -86,7 +86,7 @@ int main(int argc, char* argv[]){
     std::cerr << "  " << err << std::endl;
     exit(2);
   }
-  config::Reader config{&parsed};
+  config::Reader config{toml_file, &parsed};
 
   //============================================================================
   // The input parameters file has been refreshed below with TOML format,
@@ -98,12 +98,10 @@ int main(int argc, char* argv[]){
   // Input files table. --------------------------------------------------------
   config.require_table("input_files", true);
 
-  const std::string treefile{config.require_file("tree", false)};
-  const std::string datafile{config.require_file("data", false)};
-  const std::string adjacencyfile{
-      config.seek_file("adjacency", false).value_or("")};
-  const std::optional<std::string> rate_matrix_file{
-      config.seek_file("rate_matrix", false)};
+  const auto& treefile{config.require_file("tree", false)};
+  const auto& datafile{config.require_file("data", false)};
+  const auto& adjacencyfile{config.seek_file("adjacency", false)};
+  const auto& rate_matrix_file{config.seek_file("rate_matrix", false)};
 
   config.step_up();
 
@@ -404,14 +402,14 @@ int main(int argc, char* argv[]){
 		cout << "reading tree..." << endl;
 		vector<Tree *> intrees;
 		map<string,vector<int> > data;
-		ir.readMultipleTreeFile(treefile,intrees);
+		ir.readMultipleTreeFile(treefile.path,intrees);
 		if (!simulate) {
 			cout << "reading data..." << endl;
 			data = distribution::parse_file(datafile, area_names);
 
       // Highjack here for testing purpose.
       if (check_distribution_file) {
-        std::cout << "Distribution (" << datafile << "):";
+        std::cout << "Distribution (" << datafile.name << "):";
         for (const auto& area : area_names) {
           std::cout << " " << area;
         }
@@ -501,7 +499,7 @@ int main(int argc, char* argv[]){
 
       if (check_rates_file) {
         // Display full rates information and exit.
-        std::cout << "Rates (" << *rate_matrix_file << "):" << std::endl;
+        std::cout << "Rates (" << rate_matrix_file->name << "):" << std::endl;
         for (size_t p{0}; p < periods.size(); ++p) {
           const auto& period{dmconfig[p]};
           for (size_t i{0}; i < area_names.size(); ++i) {
@@ -528,14 +526,14 @@ int main(int argc, char* argv[]){
 	    /*
 		* if there is a adjacencymatrixfile then it will be processed
 		*/
-		if (adjacencyfile.size() > 0) {
+		if (adjacencyfile.has_value() > 0) {
 
       // Reproduce legacy display of adjacency matrix files..
       std::cout << "\nReading adjacency matrix file..." << std::endl;
 
       // .. but with the new file format parsing..
       const auto& am{
-          adjacency::parse_file(adjacencyfile, area_names, periods.size())};
+          adjacency::parse_file(*adjacencyfile, area_names, periods.size())};
       // .. reinjected into the program logic.
       rm.setup_adjacency(am);
       rm.set_adj_bool(false);
@@ -559,7 +557,7 @@ int main(int argc, char* argv[]){
 
       if (check_adjacency_file) {
         // Display full adjacency information and exit.
-        std::cout << "Adjacency (" << adjacencyfile << "):" << std::endl;
+        std::cout << "Adjacency (" << adjacencyfile->name << "):" << std::endl;
         for (const auto& period : am) {
           for (size_t i{0}; i < area_names.size(); ++i) {
             const auto& row{period[i]};
@@ -1077,9 +1075,9 @@ int main(int argc, char* argv[]){
 						 */
 						if (!readTrueStates) {
 							if (intrees.size() > 1)
-								outTreeKeyFile.open((treefile+fileTag+".bgkey.tre").c_str(),ios::app);
+								outTreeKeyFile.open((treefile.name+fileTag+".bgkey.tre").c_str(),ios::app);
 							else
-								outTreeKeyFile.open((treefile+fileTag+".bgkey.tre").c_str(),ios::out);
+								outTreeKeyFile.open((treefile.name+fileTag+".bgkey.tre").c_str(),ios::out);
 							//need to output numbers for internal nodes and states for the tips
 							for(int j=0;j<intrees[i]->getExternalNodeCount();j++){
 								Node * currNode = intrees[i]->getExternalNode(j);
@@ -1145,10 +1143,10 @@ int main(int argc, char* argv[]){
 					}
 					if(report_type == config::ReportType::Splits && !readTrueStates){
 						if (intrees.size() > 1) {
-							outTreeFile.open((treefile+fileTag+".bgsplits.tre").c_str(),ios::app);
+							outTreeFile.open((treefile.name+fileTag+".bgsplits.tre").c_str(),ios::app);
             }
 						else {
-							outTreeFile.open((treefile+fileTag+".bgsplits.tre").c_str(),ios::out);
+							outTreeFile.open((treefile.name+fileTag+".bgsplits.tre").c_str(),ios::out);
             }
 						//need to output object "split"
 						for(int j=0;j<intrees[i]->getExternalNodeCount();j++){
@@ -1166,9 +1164,9 @@ int main(int argc, char* argv[]){
 					if(report_type == config::ReportType::States){
 						if (!readTrueStates) {
 							if (intrees.size() > 1)
-								outTreeFile.open((treefile+fileTag+".bgstates.tre").c_str(),ios::app);
+								outTreeFile.open((treefile.name+fileTag+".bgstates.tre").c_str(),ios::app);
 							else
-								outTreeFile.open((treefile+fileTag+".bgstates.tre").c_str(),ios::out);
+								outTreeFile.open((treefile.name+fileTag+".bgstates.tre").c_str(),ios::out);
 							//need to output object "state"
 							for(int j=0;j<intrees[i]->getExternalNodeCount();j++){
 								Node * currNode = intrees[i]->getExternalNode(j);

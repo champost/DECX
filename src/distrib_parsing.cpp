@@ -5,9 +5,9 @@
 
 namespace distribution {
 
-Map parse_file(const std::string_view filename, const Areas& areas) {
-  const auto file{read_file(filename)};
-  Lexer lexer{filename};
+Map parse_file(const File& file, const Areas& areas) {
+  const auto content{read_file(file)};
+  Lexer lexer{file};
 
   // Lex to first token.
   auto first{lexer.step()};
@@ -15,7 +15,7 @@ Map parse_file(const std::string_view filename, const Areas& areas) {
     first = lexer.step();
   }
   if (first.is_eof()) {
-    std::cerr << "Error: distribution file '" << filename << "' ";
+    std::cerr << "Error: distribution file '" << file.name << "' ";
     std::cerr << "is blank (or it contains only comments)." << std::endl;
     exit(DISTRIB_ERROR);
   }

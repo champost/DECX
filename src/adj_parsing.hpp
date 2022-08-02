@@ -78,8 +78,6 @@ using Areas = std::vector<std::string>;
 // Dedicate this code to errors with distribution files.
 constexpr int ADJ_ERROR{4};
 
-AdjMap parse_file(const std::string_view filename,
-                  const Areas& areas,
-                  const size_t n_periods);
+AdjMap parse_file(const File& file, const Areas& areas, const size_t n_periods);
 
 } // namespace adjacency

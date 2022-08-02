@@ -4,9 +4,9 @@
 #include <iostream>
 
 // https://stackoverflow.com/a/116220/3719101
-auto read_file(std::string_view path) -> std::string {
+auto read_file(const File& file) -> std::string {
   constexpr auto read_size = std::size_t(4096);
-  auto stream = std::ifstream(path.data());
+  auto stream = std::ifstream(std::string(file.path).data());
   stream.exceptions(std::ios_base::badbit);
   auto out = std::string();
   auto buf = std::string(read_size, '\0');
@@ -21,14 +21,14 @@ Lexer::Step Lexer::step() {
 
 #define CHECK_EOF()                                                            \
   if (no_input_left()) {                                                       \
-    return {StepType::EndOfFile, {}, filename, line, focus - llf};             \
+    return {StepType::EndOfFile, {}, file.name, line, focus - llf};            \
   }
 #define CHECK_EOL()                                                            \
   if (newline()) {                                                             \
     ++focus; /* Consume it. */                                                 \
     const auto col{focus - llf};                                               \
     llf = focus;                                                               \
-    return {StepType::EndOfLine, {}, filename, line++, col};                   \
+    return {StepType::EndOfLine, {}, file.name, line++, col};                  \
   }
 
   // What's under focus?
@@ -60,7 +60,7 @@ Lexer::Step Lexer::step() {
   }
   return {StepType::Token,
           std::string_view(input).substr(start, focus - start),
-          filename,
+          file.name,
           line,
           start - llf + 1};
 };

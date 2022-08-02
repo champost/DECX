@@ -4,6 +4,9 @@
 // and use these few utilities to check consistency
 // and handle errors.
 
+#include "lexer.hpp"
+
+#include <filesystem>
 #include <iostream>
 #include <toml++/toml.h>
 #include <unordered_set>
@@ -90,6 +93,9 @@ class Reader {
   // for setting it to a user-facing *table*.
   Node* focal;
 
+  // Paths specified within the config file are understood relatively to it.
+  std::filesystem::path folder;
+
   // Set focus one step down into a new subnode.
   void descend(View data, Name name);
 
@@ -98,7 +104,7 @@ public:
   void step_up();
 
   Reader(){};
-  Reader(Table root);
+  Reader(std::string_view filename, Table root);
   ~Reader();
 
   // Get focal node sources.
@@ -140,7 +146,7 @@ public:
 
   // Boilerplate type-specific cases.  = = = = = = = = = = = =
   bool require_bool(Name name, const bool descend);
-  std::string require_file(Name name, const bool descend);
+  File require_file(Name name, const bool descend);
   double require_float(Name name, const bool descend);
   int require_integer(Name name, const bool descend);
   std::string require_string(Name name, const bool descend);
@@ -149,7 +155,7 @@ public:
 
   // Same logic with optional nodes. = = = = = = = = = = = = =
   std::optional<bool> seek_bool(Name name, const bool descend);
-  std::optional<std::string> seek_file(Name name, const bool descend);
+  std::optional<File> seek_file(Name name, const bool descend);
   std::optional<double> seek_float(Name name, const bool descend);
   std::optional<int> seek_integer(Name name, const bool descend);
   std::optional<std::string> seek_string(Name name, const bool descend);

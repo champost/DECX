@@ -5,11 +5,10 @@
 
 namespace adjacency {
 
-AdjMap parse_file(const std::string_view filename,
-                  const Areas& areas,
-                  const size_t n_periods) {
-  const auto file{read_file(filename)};
-  Lexer lexer{filename};
+AdjMap
+parse_file(const File& file, const Areas& areas, const size_t n_periods) {
+  const auto content{read_file(file)};
+  Lexer lexer{file};
 
   // Initialize map to identity.
   const size_t n_areas{areas.size()};

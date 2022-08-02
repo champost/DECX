@@ -49,14 +49,14 @@ using Areas = std::vector<std::string>;
 // Dedicate this code to errors with distribution files.
 constexpr int DISTRIB_ERROR{3};
 
-Map parse_file(const std::string_view filename, const Areas& areas);
+Map parse_file(const File& file, const Areas& areas);
 
 // The various types of distribution files
 // are parsed differently.
 // Separate the associated parsers into dedicated files.
 Map legacy_parse(Lexer& lexer, const size_t n_species, const Areas& areas);
 Map species_parse(Lexer& lexer, const Areas& config_areas); // s\a
-Map areas_parse(Lexer& lexer, const Areas& config_areas); // a\s
+Map areas_parse(Lexer& lexer, const Areas& config_areas);   // a\s
 
 // Useful print options to debug.
 std::ostream& operator<<(std::ostream& out, const Lexer::StepType& t);
