@@ -530,7 +530,17 @@ parse_file(const File& file, const Areas& areas, const size_t n_periods) {
     // go check the next one.
     ++p;
   }
-  is_eof(step);
+  while (step.is_eol()) {
+    step = lexer.step();
+  }
+  if (!step.is_eof()) {
+    std::cerr << "Error: adjacency has been specified ";
+    std::cerr << "for the " << n_periods << " periods ";
+    std::cerr << "defined in the main configuration file." << std::endl;
+    std::cerr << "But there is still information in the file, ";
+    std::cerr << "starting with token '" << *step.token << "'." << std::endl;
+    source_and_exit();
+  }
 
   if (reorder.empty()) {
     return map;

@@ -190,6 +190,7 @@ file (adjacency.txt):: EOA
     + b c
 EOA
 failure (4):: EOE
-    Error: unexpected token after end of file: '+'.
+    Error: adjacency has been specified for the 3 periods defined in the main configuration file.
+    But there is still information in the file, starting with token '+'.
     (line 11 column 1 in 'adjacency.txt')
 EOE
