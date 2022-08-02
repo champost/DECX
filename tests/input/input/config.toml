@@ -14,7 +14,7 @@ report = "states" # or "splits"
 classic_vicariance = false
 rapid_anagenesis = false
 
-periods = [5.33, 17.7, 10.87, 22.1, 14.0]
+durations = [5.33, 17.7, 10.87, 22.1, 14.0]
 
 # --- Geographical parameters --------------------------------------------------
 [areas]

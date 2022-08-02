@@ -9,6 +9,17 @@ edit (config.toml):
     PREFIX (#1) 'adjacency = "adjacency.txt"'
 RUNTEST
 
+test: Use legacy 'periods' keyword for durations.
+edit (config.toml):
+    REPLACE durations BY periods
+RUNTEST
+
+test: Use alternate 'dates' specifications of periods.
+edit (config.toml):
+    DIFF   durations = [5.33, 17.7, 10.87, 22.1, 14.0]
+    ~      dates =   [5.33, 23.03, 33.9, 56.0, 70]
+RUNTEST
+
 test: Areas as table or space-separated words.
 edit (config.toml):
     PREFIX (#1) 'names = "WP EP WN EN CA SA AF MD IN WA AU"'
@@ -94,13 +105,31 @@ failure (1):: EOE
     ('parameters:rapid_anagenesis' line 15, column 20 of 'config.toml')
 EOE
 
-test: Wrong type for single period.
+test: Wrong type for single duration.
 edit (config.toml):
-    DIFF "periods = [5.33, 17.7, 10.87, 22.1, 14.0]"
-    ~    "periods = [5.33, '17.7', 10.87, 22.1, 14.0]"
+    DIFF "durations = [5.33, 17.7, 10.87, 22.1, 14.0]"
+    ~    "durations = [5.33, '17.7', 10.87, 22.1, 14.0]"
 failure (1):: EOE
     Configuration error: node should either be of type floating-point or integer, not string.
-    ('parameters:periods:2' line 17, column 18 of 'config.toml')
+    ('parameters:durations:2' line 17, column 20 of 'config.toml')
+EOE
+
+test: Dates not in order.
+edit (config.toml):
+    DIFF durations = [5.33, 17.7, 10.87, 22.1, 14.0]
+    ~      dates =   [5.33, 23.03, 33.9, 96.0, 70]
+failure (1):: EOE
+    Configuration error: dates must be specified in increasing order.
+    ('parameters:dates:5' line 17, column 37 of 'config.toml')
+EOE
+
+test: No periods specifications.
+edit (config.toml):
+    REPLACE durations BY '# durations'
+failure (1):: EOE
+    Configuration error: missing periods specifications.
+    Consider providing a 'dates' or a 'durations' array.
+    ('parameters' line 11, column 1 of 'config.toml')
 EOE
 
 # Areas ========================================================================

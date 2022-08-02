@@ -167,8 +167,15 @@ public:
   AncestralState read_ancestral_state();
   ReportType read_report_type();
 
-  // Read uniform array types.
+  // Periods are either specified with the 'periods' key = 'durations' key.
+  // In this case, each value in the array
+  // represents the duration of the period.
+  // Alternately, it may be specified with the 'dates' key instead,
+  // and the values represent (ordered) past dates.
+  // In any case the (legacy) durations form is returned.
+  // An error is raised if more than one of the three forms is given.
   std::vector<double> read_periods();
+
   // Read + check for unicity.
   // (item_meaning is used to make error message more informative).
   std::vector<std::string>

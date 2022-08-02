@@ -253,18 +253,51 @@ ReportType Reader::read_report_type() {
 }
 
 std::vector<double> Reader::read_periods() {
-  auto node{require_node("periods", {toml::node_type::array}, true)};
+  bool dates{false};
+  auto node{seek_node("periods", {toml::node_type::array}, true)};
+  if (!node.has_value()) {
+    node = seek_node("durations", {toml::node_type::array}, true);
+  }
+  if (!node.has_value()) {
+    dates = true;
+    node = seek_node("dates", {toml::node_type::array}, true);
+  }
+  if (!node.has_value()) {
+    std::cerr << "Configuration error: ";
+    std::cerr << "missing periods specifications." << std::endl;
+    std::cerr << "Consider providing ";
+    std::cerr << "a 'dates' or a 'durations' array." << std::endl;
+    source_and_exit();
+  }
+  std::vector<double> periods{};
   check_uniform_array(
       {toml::node_type::floating_point, toml::node_type::integer});
-  std::vector<double> periods{};
-  for (auto& element : *node.as_array()) {
+  double sum{0.};
+  size_t i{1};
+  for (auto& element : *node->as_array()) {
+    descend((View)element, std::to_string(i));
+    double value;
     if (element.type() == toml::node_type::floating_point) {
-      periods.emplace_back(*element.as_floating_point());
+      value = **element.as_floating_point();
     } else if (element.type() == toml::node_type::integer) {
-      periods.emplace_back(static_cast<double>(element.as_integer()->get()));
+      value = static_cast<double>(element.as_integer()->get());
     } else {
       exit(-1); // unreachable.
     }
+    if (dates) {
+      if (value < sum) {
+        std::cerr << "Configuration error: dates must be specified ";
+        std::cerr << "in increasing order." << std::endl;
+        source_and_exit();
+      }
+      const double& duration{value - sum};
+      periods.emplace_back(duration);
+      sum += duration;
+    } else {
+      periods.emplace_back(value);
+    }
+    step_up();
+    ++i;
   }
   step_up();
   return periods;
