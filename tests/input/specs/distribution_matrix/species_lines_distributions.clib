@@ -45,10 +45,10 @@ distribution:
       Tom: 1  1  1  1  0  0  1  0  1  0  1 # unchanged because by exclusion
 RUNTEST
 
-test: Include no areas in species line.
+test: Include all areas in species line.
 edit (distrib_species_lines.txt):
     DIFF Gav + WP EP IN
-    ~    Gav +
+    ~    Gav + *
 distribution:
            WP EP WN EN CA SA AF MD IN WA AU
      Amis: 1  1  0  1  0  1  1  0  1  0  0
@@ -56,14 +56,14 @@ distribution:
     Ccroc: 1  1  0  1  0  1  0  0  1  0  1
      Clat: 1  1  0  0  0  0  0  0  1  0  0
      Cyac: 0  1  1  0  0  0  0  0  1  0  1
-      Gav: 0  0  0  0  0  0  0  0  0  0  0 # whole line set to zero
+      Gav: 1  1  1  1  1  1  1  1  1  1  1 # whole line set to one
       Tom: 1  1  1  1  0  0  1  0  1  0  1
 RUNTEST
 
-test: Exclude no areas in species line.
+test: Exclude all areas from species line.
 edit (distrib_species_lines.txt):
     DIFF Tom - CA SA MD WA
-    ~    Tom -
+    ~    Tom - *
 distribution:
            WP EP WN EN CA SA AF MD IN WA AU
      Amis: 1  1  0  1  0  1  1  0  1  0  0
@@ -72,7 +72,7 @@ distribution:
      Clat: 1  1  0  0  0  0  0  0  1  0  0
      Cyac: 0  1  1  0  0  0  0  0  1  0  1
       Gav: 1  1  0  0  0  0  0  0  1  0  0
-      Tom: 1  1  1  1  1  1  1  1  1  1  1 # whole line set to one
+      Tom: 0  0  0  0  0  0  0  0  0  0  0 # whole line set to zero
 RUNTEST
 
 test: Catch incomplete header.
@@ -164,6 +164,24 @@ edit (distrib_species_lines.txt):
 failure (2):: EOE
     Error: unrecognized area name: 'wrong'.
     (line 12 column 16 in 'distrib_species_lines.txt')
+EOE
+
+test: Catch missing area names in inclusion.
+edit (distrib_species_lines.txt):
+    DIFF Gav + WP EP IN
+    ~    Gav +
+failure (2):: EOE
+    Error: no areas provided after '+' symbol.
+    (line 11 column 6 in 'distrib_species_lines.txt')
+EOE
+
+test: Catch missing area names in exclusion.
+edit (distrib_species_lines.txt):
+    DIFF Tom - CA SA MD WA
+    ~    Tom -
+failure (2):: EOE
+    Error: no areas provided after '-' symbol.
+    (line 12 column 6 in 'distrib_species_lines.txt')
 EOE
 
 test: Catch duplicated species name.

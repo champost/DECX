@@ -203,3 +203,67 @@ failure (5):: EOE
     Error: unexpected token after end of file: '~'.
     (line 13 column 1 in 'rates.txt')
 EOE
+
+test: Relative glob patterns.
+rates:
+
+    a    b    c
+a   1    1    .3
+b   0    .2   1
+c   .1   0    1
+
+    a    b    c
+a   0    .5   0
+b   0    .5   0
+c   1    1    1
+
+    a    b    c
+a   .2    .2   .2
+b   0    .5   .8
+c   1    1    1
+
+file (rates.txt):: EOA
+a  1    1    .3
+b  0    .2   1
+c  .1   0    1
+
+~ * * 0  # Whole matrix to zero.
+~ * b .5 # Whole b column to 0.5
+~ c * 1  # Whole c line to 1.
+
+v = 0.2
+
+~ a * v
+~ b c 0.8
+EOA
+stderr:: *
+EXITCODE 0
+RUNTEST
+
+test: Missing area in relative line.
+edit (rates.txt):
+    REPLACE  ~ b c 0.8
+    BY       ~ b 0.8
+failure (5):: EOE
+    Error: '0.8' is not recognized as an area name.
+    (line 12 column 5 in 'rates.txt')
+EOE
+
+test: Missing value in relative line.
+edit (rates.txt):
+    REPLACE  ~ b c 0.8
+    BY       ~ b c
+failure (5):: EOE
+    Error: unexpected end of line.
+    (line 12 column 6 in 'rates.txt')
+EOE
+
+test: Too many globs in relative line.
+edit (rates.txt):
+    REPLACE  ~ \* \* 0
+    BY       ~ * * *
+failure (5):: EOE
+    Error: token '*' is neither a valid number or a variable name.
+    (line 5 column 7 in 'rates.txt')
+EOE
+

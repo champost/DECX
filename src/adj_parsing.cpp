@@ -171,27 +171,48 @@ parse_file(const File& file, const Areas& areas, const size_t n_periods) {
     while (true) {
       const bool add{*step.token == "+"};
 
-      // We're expecting two areas then.
+      // We're expecting two areas then,
+      // unless the second one is a glob '*'.
       step = lexer.step();
       is_area(step);
       const auto first{*step.token};
       step = lexer.step();
-      is_area(step);
-      const auto second{*step.token};
+      is_token(step);
+      if (*step.token == "*") {
+        // Got a glob pattern: edit the map in-place to apply the changes.
+        // Find area index first.
+        size_t i{0};
+        for (const auto& area : areas) {
+          if (first == area) {
+            break;
+          }
+          ++i;
+        }
+        // Then apply the change to the whole column/line.
+        for (size_t k{p}; k < n_periods; ++k) {
+          for (size_t j{0}; j < areas.size(); ++j) {
+            map[k][i][j] = map[k][j][i] = add;
+          }
+        }
+      } else {
 
-      // Found: edit the map in-place to apply the change.
-      size_t i{0};
-      size_t j{0};
-      for (size_t a{0}; a < areas.size(); ++a) {
-        if (areas[a] == first) {
-          i = a;
+        is_area(step);
+        const auto second{*step.token};
+
+        // Got two areas: same principle.
+        size_t i{0};
+        size_t j{0};
+        for (size_t a{0}; a < areas.size(); ++a) {
+          if (areas[a] == first) {
+            i = a;
+          }
+          if (areas[a] == second) {
+            j = a;
+          }
         }
-        if (areas[a] == second) {
-          j = a;
+        for (size_t k{p}; k < n_periods; ++k) {
+          map[k][i][j] = map[k][j][i] = add;
         }
-      }
-      for (size_t k{p}; k < n_periods; ++k) {
-        map[k][i][j] = map[k][j][i] = add;
       }
 
       // Seek next line or end the section.

@@ -10,7 +10,7 @@ AF    1100101
 
 # Relative lines.
 SA + Amis Asin Ccroc
-MD + # all zero
-IN - # all one
-WA +
+MD - * # all zero
+IN + * # all one
+WA - *
 AU - Amis Asin Gav

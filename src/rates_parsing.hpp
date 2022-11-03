@@ -36,6 +36,9 @@
 //    ~ a b U  ← relative specifications
 //    ~ c d e
 //    ~ c b 0
+//    ~ d * 1 ← modify whole line
+//    ~ * c U ← modify whole column
+//    ~ * * 0 ← modify all values
 
 #include "lexer.hpp"
 

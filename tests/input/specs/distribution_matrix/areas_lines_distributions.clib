@@ -125,6 +125,24 @@ failure (2):: EOE
     (line 16 column 16 in 'distrib_areas_lines.txt')
 EOE
 
+test: Catch missing species names in inclusion line.
+edit (distrib_areas_lines.txt):
+    DIFF AU - Amis Asin Gav
+    ~    AU +
+failure (2):: EOE
+    Error: no species provided after '+' symbol.
+    (line 16 column 5 in 'distrib_areas_lines.txt')
+EOE
+
+test: Catch missing species names in exclusion line.
+edit (distrib_areas_lines.txt):
+    DIFF AU - Amis Asin Gav
+    ~    AU -
+failure (2):: EOE
+    Error: no species provided after '-' symbol.
+    (line 16 column 5 in 'distrib_areas_lines.txt')
+EOE
+
 # Clear for later tests specs.
 stderr:: *
 EXITCODE 0

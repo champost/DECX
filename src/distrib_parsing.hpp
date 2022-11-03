@@ -18,7 +18,8 @@
 //    spA   1 0 1 1 0 1 0 1 1  <- indifferent whitespace to ease alignment
 //    spB 1010110101           <- legacy style
 //    spC + a f i              <- name areas in the distributions
-//    spD - c e                <- define by *exclusion* of areas.
+//    spD - c e                <- define by *exclusion* of areas
+//    spE + *                  <- include all areas with a glob pattern '*'
 //
 // Note that the list of area names is known prior to parsing,
 // because it is specified in the general configuration file,

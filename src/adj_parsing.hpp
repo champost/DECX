@@ -61,9 +61,9 @@
 //
 //    - b d
 //    + d a
-//         ← separate periods with empty lines.
+//           ← separate periods with empty lines.
 //    + a b
-//    - b d
+//    - a *  ← remove all connections with 'a'
 
 #include "lexer.hpp"
 

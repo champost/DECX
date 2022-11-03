@@ -77,16 +77,33 @@ Map areas_parse(Lexer& lexer, const Areas& config_areas) {
 
     // When given + or -, the next tokens are area names counted within or
     // without the distribution from a uniform 0 or 1 base. Factorize procedure.
-    auto plus_minus = [&species, &community, &next, &lexer](int base) {
+    const auto& plus_minus = [&species, &community, &next, &lexer](int base) {
       // (treat brutally: fill with zeroes then linear-search every
       // remaining token on the line to flip corresponding element in
       // distribution to 1).
+      // Special case glob token '*', which means flipping *all* values.
       for (size_t i{0}; i < species.size(); ++i) {
         community.emplace_back(base);
       }
       next = lexer.step();
+      if (!next.has_value()) {
+        std::cerr << "Error: no species provided after '";
+        std::cerr << ((base) ? '-' : '+') << "' symbol." << std::endl;
+        next.source_and_exit();
+      }
+      bool first{true};
       while (next.has_value()) {
         const auto& single_species{*next.token};
+        if (first && single_species == "*") {
+          for (size_t i{0}; i < species.size(); ++i) {
+            community[i] = 1 - base;
+          }
+          // No further token on the line is expected after a glob.
+          next = lexer.step();
+          return;
+        }
+        first = false;
+        // Otherwise, look for the species one by one.
         size_t i_species{0};
         bool found{false};
         for (const auto& s : species) {

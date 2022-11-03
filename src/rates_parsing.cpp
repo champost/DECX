@@ -131,6 +131,18 @@ parse_file(const File& file, const Areas& areas, const size_t n_periods) {
       source_and_exit();
     }
   };
+  // Areas in relative lines are possibly glob patterns '*',
+  // return empty option if they are.
+  const auto& area_or_glob = [&]() {
+    is_token(step);
+    auto result{step.token};
+    if (*step.token == "*") {
+      result = {};
+    } else {
+      is_area(step);
+    }
+    return result;
+  };
 
   // The main loop iterates over matrices in the file one for every period.
   size_t p{0};
@@ -192,29 +204,54 @@ parse_file(const File& file, const Areas& areas, const size_t n_periods) {
     // Assumption: we're standing on the first valid ~ symbol in the section.
     while (true) {
 
-      // We're expecting two areas and a value then.
+      // We're expecting two tokens then,
+      // either areas or glob patterns '*'.
       step = lexer.step();
-      is_area(step);
-      const auto first{*step.token};
+      const auto& first{area_or_glob()};
       step = lexer.step();
-      is_area(step);
-      const auto second{*step.token};
+      const auto& second{area_or_glob()};
       step = lexer.step();
       const auto value{is_data(step)};
 
       // Found: edit the map in-place to apply the change.
-      size_t i{0};
-      size_t j{0};
+      std::optional<size_t> i{};
+      std::optional<size_t> j{};
       for (size_t a{0}; a < areas.size(); ++a) {
-        if (areas[a] == first) {
-          i = a;
+        if (first.has_value() && areas[a] == *first) {
+          i = {a};
+          if (second.has_value() && j.has_value()) {
+            break;
+          }
         }
-        if (areas[a] == second) {
-          j = a;
+        if (second.has_value() && areas[a] == *second) {
+          j = {a};
+          if (first.has_value() && i.has_value()) {
+            break;
+          }
         }
       }
       for (size_t k{p}; k < n_periods; ++k) {
-        map[k][i][j] = value;
+        if (i.has_value() && j.has_value()) {
+          // None is a glob, set single value.
+          map[k][*i][*j] = value;
+        } else if (i.has_value()) {
+          // Second is a glob, set whole line.
+          for (size_t j{0}; j < areas.size(); ++j) {
+            map[k][*i][j] = value;
+          }
+        } else if (j.has_value()) {
+          // First is a glob, set whole column.
+          for (size_t i{0}; i < areas.size(); ++i) {
+            map[k][i][*j] = value;
+          }
+        } else {
+          // Both are globs, set whole matrix.
+          for (size_t i{0}; i < areas.size(); ++i) {
+            for (size_t j{0}; j < areas.size(); ++j) {
+              map[k][i][j] = value;
+            }
+          }
+        }
       }
 
       // Seek next line or end the section.
