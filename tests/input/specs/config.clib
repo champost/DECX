@@ -142,6 +142,42 @@ failure (1):: EOE
     ('areas' line 32, column 1 of 'config.toml')
 EOE
 
+test: Invalid areas id: non-ascii.
+edit (config.toml):
+    DIFF 'names = "WP EP WN EN CA SA AF MD IN WA AU"'
+    ~    'names = "WP EÉP WN"'
+failure (1):: EOE
+    Invalid Area name: non-ascii characters are disallowed in identifiers: 'EÉP'.
+    ('areas:names' line 30, column 9 of 'config.toml')
+EOE
+
+test: Invalid areas id: invalid character.
+edit (config.toml):
+    DIFF 'names = "WP EP WN EN CA SA AF MD IN WA AU"'
+    ~    'names = "WP E* WN"'
+failure (1):: EOE
+    Invalid Area name: invalid character in identifier: '*'.
+    ('areas:names' line 30, column 9 of 'config.toml')
+EOE
+
+test: Invalid areas id: digit first.
+edit (config.toml):
+    DIFF 'names = "WP EP WN EN CA SA AF MD IN WA AU"'
+    ~    'names = "WP 2EP WN"'
+failure (1):: EOE
+    Invalid Area name: identifier cannot start with a digit: '2EP'.
+    ('areas:names' line 30, column 9 of 'config.toml')
+EOE
+
+test: Invalid areas id: no letters.
+edit (config.toml):
+    DIFF 'names = "WP EP WN EN CA SA AF MD IN WA AU"'
+    ~    'names = "WP .-8 WN"'
+failure (1):: EOE
+    Invalid Area name: identifier must contain at least one letter or underscore: '.-8'.
+    ('areas:names' line 30, column 9 of 'config.toml')
+EOE
+
 # Distributions ================================================================
 
 test: Catch invalid area names in distribution.
@@ -172,19 +208,6 @@ failure (1):: EOE
     Invalid binary specification of a distribution:
     '110101101011' contains 12 digits but there are 11 areas.
     ('areas:distributions:set:3' line 38, column 3 of 'config.toml')
-EOE
-
-test: Catch the ambiguous case.
-edit (config.toml):
-    DIFF 'names = "WP EP WN EN CA SA AF MD IN WA AU"'
-    ~    'names = "101 B C"'
-    DIFF '"WP EP WN",'
-    ~    '"101",'
-failure (1):: EOE
-    Ambiguous distribution specification:
-    '101' could either represent the single area '101' or a binary set of other areas..
-    Now be honest: you did that on purpose, right?
-    ('areas:distributions:set:1' line 36, column 3 of 'config.toml')
 EOE
 
 # MRCAs ========================================================================

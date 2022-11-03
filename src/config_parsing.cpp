@@ -303,16 +303,62 @@ std::vector<double> Reader::read_periods() {
   return periods;
 }
 
-std::vector<std::string>
-Reader::read_unique_strings(Name name, const std::string_view item_meaning) {
+Reader::IdValidation Reader::variable_like(const std::string_view word) {
+  std::stringstream error;
+  size_t loc{0};
+#define ERROR_OUT return {error.str(), loc};
+
+  bool first{true};
+  bool found_letter{false};
+  for (const auto& c : word) {
+    if (!isascii(c)) {
+      error << "non-ascii characters are disallowed in identifiers: ";
+      error << "'" << word << "'";
+      ERROR_OUT;
+    }
+    if (!(isdigit(c) || isalpha(c) || c == '_' || c == '.' || c == '-')) {
+      error << "invalid character in identifier: '" << c << "'";
+      ERROR_OUT;
+    }
+    if (first && isdigit(c)) {
+      error << "identifier cannot start with a digit: ";
+      error << "'" << word << "'";
+      ERROR_OUT;
+    }
+    if (isalpha(c) || c == '_') {
+      found_letter = true;
+    }
+    if (loc == 0) {
+      first = false;
+    }
+    ++loc;
+  }
+  if (!found_letter) {
+    error << "identifier must contain at least one letter or underscore: ";
+    error << "'" << word << "'";
+    ERROR_OUT;
+  }
+  return {{}, 0};
+};
+#undef ERROR_OUT
+
+std::vector<std::string> Reader::read_unique_strings(
+    Name name, const std::string_view item_meaning, const IdValider valider) {
   auto node{require_node(name, {toml::node_type::array}, true)};
   check_uniform_array({toml::node_type::string});
   std::vector<std::string> result{};
   size_t i{1};
   for (const auto& element : *node.as_array()) {
     descend((View)element, std::to_string(i));
-    // Bruteforce check that no duplicate has been given.
     const std::string item{*element.as_string()};
+    // Check validity.
+    const auto& [error, _] = valider(item);
+    if (!error.empty()) {
+      std::cerr << "Invalid " << item_meaning << " name: ";
+      std::cerr << error << "." << std::endl;
+      source_and_exit();
+    }
+    // Bruteforce check that no duplicate has been given.
     for (const auto& given : result) {
       if (item == given) {
         std::cerr << item_meaning << " name '" << item << "' ";
@@ -328,8 +374,8 @@ Reader::read_unique_strings(Name name, const std::string_view item_meaning) {
   return result;
 }
 
-std::vector<std::string>
-Reader::read_unique_words(Name name, const std::string& item_meaning) {
+std::vector<std::string> Reader::read_unique_words(
+    Name name, const std::string& item_meaning, const IdValider valider) {
   auto words{require_string(name, true)};
   std::vector<std::string> result{};
   std::string current{};
@@ -340,6 +386,13 @@ Reader::read_unique_words(Name name, const std::string& item_meaning) {
     } else if (next) {
       if (!current.empty()) {
         // We have a new word.
+        // Check validity.
+        const auto& [error, _] = valider(current);
+        if (!error.empty()) {
+          std::cerr << "Invalid " << item_meaning << " name: ";
+          std::cerr << error << "." << std::endl;
+          source_and_exit();
+        }
         // Check against others for unicity.
         for (const auto& other : result) {
           if (other == current) {
@@ -369,14 +422,14 @@ Reader::read_unique_words(Name name, const std::string& item_meaning) {
   return result;
 };
 
-std::vector<std::string>
-Reader::read_unique_identifiers(Name name, const std::string& item_meaning) {
+std::vector<std::string> Reader::read_unique_identifiers(
+    Name name, const std::string& item_meaning, const IdValider valider) {
   const auto node{require_node(
       name, {toml::node_type::array, toml::node_type::string}, false)};
   if (node.type() == toml::node_type::string) {
-    return read_unique_words(name, item_meaning);
+    return read_unique_words(name, item_meaning, valider);
   }
-  return read_unique_strings(name, item_meaning);
+  return read_unique_strings(name, item_meaning, valider);
 }
 
 std::vector<std::vector<int>>
@@ -471,17 +524,6 @@ Reader::read_distribution(const std::vector<std::string>& area_names) {
       ++i;
     }
     const auto index{indexof(word)};
-    // Forbid the ambiguous case.
-    if (is_binary && index.has_value() && word.size() == area_names.size() &&
-        !(result.size() == 1 && result[0] == index.value())) {
-      std::cerr << "Ambiguous distribution specification:" << std::endl;
-      std::cerr << "'" << word << "' could either represent ";
-      std::cerr << "the single area '" << word << "' or ";
-      std::cerr << "a binary set of other areas.." << std::endl;
-      std::cerr << "Now be honest: ";
-      std::cerr << "you did that on purpose, right?" << std::endl;
-      source_and_exit();
-    }
 
     if (!is_binary) {
       // Then it's a single area name.

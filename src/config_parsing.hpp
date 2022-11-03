@@ -7,6 +7,7 @@
 #include "lexer.hpp"
 
 #include <filesystem>
+#include <functional>
 #include <iostream>
 #include <toml++/toml.h>
 #include <unordered_set>
@@ -176,18 +177,31 @@ public:
   // An error is raised if more than one of the three forms is given.
   std::vector<double> read_periods();
 
+  // Check that identifier is valid for region or species name:
+  // Authorized characters: [a-Z0-9-_.]
+  // Cannot start with a digit.
+  // Must contain at least one letter a-Z or underscore '_'.
+  // Returns non-empty error message in case the chain is invalid id,
+  // along with location of faulty character.
+  using IdValidation = std::pair<std::string, size_t>;
+  static IdValidation variable_like(const std::string_view chain);
+  using IdValider = std::function<IdValidation(const std::string_view)>;
+
   // Read + check for unicity.
   // (item_meaning is used to make error message more informative).
-  std::vector<std::string>
-  read_unique_strings(Name name, const std::string_view item_meaning);
+  std::vector<std::string> read_unique_strings(
+      Name name, const std::string_view item_meaning, const IdValider valider);
   // Same principle but with space-separated words,
   // so the user can type "A B C" instead of ["A", "B", "C"].
   // Multiple/prefix/trailing spaces are allowed.
   std::vector<std::string> read_unique_words(Name name,
-                                             const std::string& item_meaning);
+                                             const std::string& item_meaning,
+                                             const IdValider valider);
   // Abstract over the two previous ones when both are supported.
   std::vector<std::string>
-  read_unique_identifiers(Name name, const std::string& item_meaning);
+  read_unique_identifiers(Name name,
+                          const std::string& item_meaning,
+                          const IdValider = variable_like);
 
   // Parse distributions specifications.
   // Every given string is one distribution, specified either as:
