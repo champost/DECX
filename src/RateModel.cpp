@@ -91,7 +91,8 @@ void RateModel::setup_dists(){
 /*
  * need to make a generator function for setting distributions
  */
-void RateModel::setup_dists(vector<vector<int> > indists, bool include){
+void RateModel::setup_dists(vector<vector<int> > indists, bool include,
+                            const bool display_ranges_detail){
 	if(include == true){
 		dists = indists;
 //		if(calculate_vector_int_sum(&dists[0]) > 0){
@@ -154,11 +155,34 @@ void RateModel::setup_dists(vector<vector<int> > indists, bool include){
 		cout << endl;
 	}
 
-	cout << "Total number of considered ranges : " << dists.size() << endl;
-	for (unsigned int prd = 0; prd < periods.size(); prd++)
-		cout << "\nPeriod : " << prd + 1 << endl
-			 << "Number of considered ranges during this period : " << incldists_per_period[prd].size() << endl;
-	cout << endl;
+  cout << "Total number of considered ranges : " << dists.size() << endl;
+  for (unsigned int prd = 0; prd < periods.size(); prd++) {
+    const auto& considered{incldists_per_period[prd]};
+    cout << "\nPeriod : " << prd + 1 << endl
+         << "Number of considered ranges during this period : "
+         << considered.size() << endl;
+    if (display_ranges_detail) {
+      std::cout << "Ranges considered:";
+      for (const auto& range : considered) {
+        std::cout << ' ';
+        size_t n_in_range{0};
+        for (size_t i{0}; i < range.size(); ++i) {
+          if (range[i]) {
+            if (n_in_range++ > 0) {
+              std::cout << '_';
+            }
+            std::cout << areanamemaprev[i];
+          }
+        }
+        if (n_in_range == 0) {
+          std::cout << "<EMPTY_RANGE>";
+        }
+      }
+      std::cout << std::endl;
+    }
+  }
+  cout << endl;
+
 }
 
 void RateModel::setup_adjacency(vector<vector<vector<bool>>> matrix) {

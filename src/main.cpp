@@ -54,6 +54,7 @@ int main(int argc, char* argv[]){
   bool check_distribution_file{false};
   bool check_adjacency_file{false};
   bool check_rates_file{false};
+  bool check_considered_ranges{false};
 
   // Get a few things out of the way.
   if (argc < 2) {
@@ -61,7 +62,10 @@ int main(int argc, char* argv[]){
     exit(1);
   } else if (argc > 2) {
     // Hidden arguments for testing purpose only.
-    if (strcmp(argv[2], "--check-distribution-file-parsing") == 0) {
+    if (strcmp(argv[2], "--check-considered-ranges-detail") == 0) {
+      std::cout << "Dry run to check considered ranges detail.." << std::endl;
+      check_considered_ranges = true;
+    } else if (strcmp(argv[2], "--check-distribution-file-parsing") == 0) {
       std::cout << "Dry run to check distribution file.." << std::endl;
       check_distribution_file = true;
     } else if (strcmp(argv[2], "--check-adjacency-file-parsing") == 0) {
@@ -603,7 +607,10 @@ int main(int argc, char* argv[]){
 		includedists = rm.generate_adjacent_dists(max_areas, areanamemaprev);
 		if (!simulate)
 			rm.include_tip_dists(data, includedists, areanamemaprev);
-		rm.setup_dists(includedists,true);
+		rm.setup_dists(includedists,true, check_considered_ranges);
+    if (check_considered_ranges) {
+      exit(0);
+    }
 		rm.setup_D(dispersal);
 		rm.setup_E(extinction);
 //		rm.setup_Q();

@@ -66,7 +66,7 @@ public:
 	void set_nthreads(int nthreads);
 	int get_nthreads();
 	void setup_dists();
-	void setup_dists(vector<vector<int> >, bool);
+	void setup_dists(vector<vector<int> >, bool, const bool display_ranges_detail);
 	void setup_adjacency(vector<vector<vector<bool>>>);
 	void set_adj_bool(bool adjBool);
 	vector< vector<int> > generate_adjacent_dists(int maxareas, map<int,string> areanamemaprev);
