@@ -60,6 +60,8 @@ Then run the container:
 docker run --rm -it -v ${PWD}:/home/decx decx my_config.file.toml
 ```
 
+(for DOS/batch users out there: replace `${PWD}` with `%cd%`)
+
 [Docker]: https://www.docker.com/
 
 
